@@ -1,65 +1,151 @@
-# 个人朋友圈 + 知识/媒体库
+# Moments Library
 
-一个基于 Flask 的全栈 Web 应用，支持公开浏览、管理员登录、多附件动态发布、分类管理、中文地址解析、软删除和回收站。
+A full-stack Flask web app for running a private "Moments" space with media management, folder organization, edit history, geolocation, and a recycle bin.
 
-## 技术栈
+This project is designed as a personal archive that feels part social feed, part knowledge library:
+- publish text, images, videos, PDFs, and documents
+- attach a readable location using browser geolocation plus reverse geocoding
+- organize content into nested folders with descriptions
+- assign one moment to multiple folders
+- edit published moments with revision history
+- soft-delete content and restore it from the recycle bin
+- search across text, files, locations, and folder metadata
 
-- Flask + Jinja2
-- Flask-SQLAlchemy + Flask-Migrate
-- Flask-Login + Flask-WTF
+## Features
+
+### Feed and Publishing
+- public read-only feed
+- admin-only publishing and management
+- mixed file upload support for images, videos, PDFs, and documents
+- UUID-based file renaming for safe storage
+- in-feed image and video preview
+- inline PDF preview
+- document download/open links for other file types
+
+### Folder System
+- create folders with descriptions
+- create nested child folders
+- browse folders in a tree-style sidebar
+- assign one moment to multiple folders
+- delete folders without losing moments
+
+### Editing and History
+- edit existing moments after publishing
+- keep revision snapshots of previous versions
+- review edit history in a dedicated admin-only view
+
+### Safety and Recovery
+- soft delete instead of hard delete
+- recycle bin view for deleted moments
+- restore deleted moments
+- CLI command to purge old recycle-bin content
+
+### Search
+- search by moment text
+- search by location label
+- search by attachment file name
+- search by folder name and folder description
+
+## Tech Stack
+
+- Python 3.13
+- Flask
+- Flask-SQLAlchemy
+- Flask-Migrate
+- Flask-Login
+- Flask-WTF
 - SQLite
-- 原生 HTML / CSS / JavaScript
+- HTML, CSS, and vanilla JavaScript
 
-## 本地启动
+## Project Structure
 
-当前仓库已经包含完整代码，但本机环境里尚未检测到可用的 Python。请先安装 Python 3.11 或更高版本，然后执行：
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+```text
+app/
+  blueprints/        Routes for pages, auth, and APIs
+  services/          Upload, geocoding, folder, and schema helpers
+  static/            CSS, JS, and upload directory
+  templates/         Jinja templates and reusable UI partials
+tests/               Pytest coverage for core behavior
+run.py               Local entry point with admin bootstrap
 ```
 
-## 初始化数据库与管理员
+## Quick Start
+
+### 1. Install dependencies
 
 ```powershell
-$env:FLASK_APP="run.py"
-flask init-db
-flask init-admin
+python -m pip install -r requirements.txt
 ```
 
-这会在 `instance/app.db` 中创建 SQLite 数据库，并初始化单个管理员账号。
+### 2. Run the app
 
-如果你想接入 Flask-Migrate 的迁移工作流，也可以在安装环境后执行：
+The easiest local entry point is:
 
 ```powershell
-flask db init
-flask db migrate -m "init schema"
-flask db upgrade
+python run.py
 ```
 
-## 运行应用
+On first launch, the app will:
+- create the database schema
+- ensure compatibility upgrades for the local SQLite database
+- prompt you to create an admin account if none exists
+
+The app runs at:
+
+- [http://127.0.0.1:5000](http://127.0.0.1:5000)
+
+## Useful Commands
+
+### Reset admin credentials
 
 ```powershell
-flask run --debug
+python run.py --reset-admin
 ```
 
-默认访问地址为 [http://localhost:5000](http://localhost:5000)。
-
-## 主要能力
-
-- 公开信息流浏览
-- 管理员登录、发布动态、创建分类
-- 图片、视频、PDF、文档多附件混合上传
-- UUID 重命名上传文件，防止中文名和空格导致的存储问题
-- 浏览器定位 + Nominatim 中文逆地址解析
-- 左侧分类筛选与卡片内即时改分类
-- 软删除、回收站恢复和 30 天清理命令
-
-## 测试
+### Initialize the database manually
 
 ```powershell
-pytest
+python -m flask --app run.py init-db
 ```
 
-测试覆盖了登录、公开/管理员权限、发布上传、分类修改、软删除恢复和逆地址解析接口。
+### Create or update the admin account manually
+
+```powershell
+python -m flask --app run.py init-admin
+```
+
+### Purge old recycle-bin data
+
+```powershell
+python -m flask --app run.py purge-recycle-bin --days 30
+```
+
+## Testing
+
+```powershell
+python -m pytest
+```
+
+Current automated coverage includes:
+- login behavior
+- public/admin access control
+- publishing with uploads
+- nested folder creation
+- multi-folder assignment
+- folder deletion behavior
+- moment editing and revision history
+- recycle bin restore flow
+- search behavior
+- reverse geocoding API behavior
+
+## Notes
+
+- local SQLite data is stored under `instance/app.db`
+- uploaded files are stored under `app/static/uploads/`
+- the repository ignores the local database and uploaded content by default
+
+## GitHub
+
+Repository:
+
+- [https://github.com/ZhehuaZhu/moments-library](https://github.com/ZhehuaZhu/moments-library)
