@@ -1,0 +1,66 @@
+<div class="modal-shell" data-modal="composer" hidden>
+    <div class="modal-backdrop" data-close-composer></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="composer-modal-title">
+        <div class="modal-card__header">
+            <div>
+                <p class="eyebrow">New Moment</p>
+                <h2 id="composer-modal-title">Publish a New Moment</h2>
+                <p class="helper-text">Pick one or more folders, add media, and keep the main feed focused on reading.</p>
+            </div>
+            <button type="button" class="icon-button icon-button--ghost" data-close-composer aria-label="Close composer">
+                &#10005;
+            </button>
+        </div>
+
+        <form action="{{ url_for('main.create_moment') }}" method="post" enctype="multipart/form-data" class="composer-form" data-composer-form>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <label class="field">
+                <span>Text</span>
+                <textarea
+                    name="content"
+                    rows="6"
+                    class="input textarea"
+                    placeholder="Write about your day, save a note, or share something worth remembering."
+                ></textarea>
+            </label>
+
+            <div class="composer-grid">
+                <div class="field">
+                    <span>Folders</span>
+                    {% include "includes/folder_picker.html" %}
+                </div>
+
+                <label class="field">
+                    <span>Attachments</span>
+                    <input
+                        type="file"
+                        name="files"
+                        class="input input--file"
+                        data-file-input
+                        multiple
+                        accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
+                    >
+                    <small class="helper-text" data-file-summary>Mixed uploads are supported for images, videos, PDFs, and documents.</small>
+                </label>
+            </div>
+
+            <div class="location-card">
+                <div>
+                    <strong>Current Location</strong>
+                    <p class="helper-text" data-location-status>No location attached yet.</p>
+                </div>
+                <button type="button" class="button button--ghost" data-action="resolve-location">Use My Current Location</button>
+            </div>
+
+            <input type="hidden" name="latitude" data-location-latitude>
+            <input type="hidden" name="longitude" data-location-longitude>
+            <input type="hidden" name="location_label" data-location-label>
+
+            <div class="composer-actions">
+                <button type="submit" class="button">Publish</button>
+                <button type="button" class="button button--subtle" data-close-composer>Cancel</button>
+            </div>
+        </form>
+    </section>
+</div>

@@ -1,0 +1,76 @@
+<article
+    class="moment-card"
+    data-moment-card
+    data-moment-id="{{ moment.id }}"
+    data-folder-ids="{{ moment.category_ids_list|join(',') }}"
+>
+    <div class="moment-card__header">
+        <div class="moment-card__header-main">
+            <div class="moment-card__badges">
+                {% if moment.assigned_categories %}
+                    {% for folder in moment.assigned_categories %}
+                        <span class="badge badge--category">{{ folder.name }}</span>
+                    {% endfor %}
+                {% else %}
+                    <span class="badge badge--category">Uncategorized</span>
+                {% endif %}
+                {% if moment.location_label %}
+                    <span class="badge badge--location">{{ moment.location_label }}</span>
+                {% endif %}
+                {% if moment.is_edited and not recycle_view %}
+                    <span class="badge badge--edit">Edited</span>
+                {% endif %}
+                {% if recycle_view %}
+                    <span class="badge badge--muted">Deleted {{ moment.deleted_at|datetimeformat }}</span>
+                {% endif %}
+            </div>
+
+            <div class="moment-card__meta">
+                <span class="moment-card__time">Published {{ moment.created_at|datetimeformat }}</span>
+                {% if moment.is_edited and not recycle_view %}
+                    <span class="moment-card__time">Updated {{ moment.updated_at|datetimeformat }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if can_manage %}
+            {% include "includes/moment_action_menu.html" %}
+        {% endif %}
+    </div>
+
+    {% if moment.content %}
+        <div class="moment-card__content">{{ moment.content|e|replace('\n', '<br>')|safe }}</div>
+    {% endif %}
+
+    {% if moment.attachments %}
+        <div class="attachment-grid">
+            {% for attachment in moment.attachments %}
+                {% set file_url = url_for('static', filename=attachment.relative_path) %}
+                {% if attachment.media_kind == 'image' %}
+                    <figure class="media-card media-card--image">
+                        <img src="{{ file_url }}" alt="{{ attachment.original_name }}" loading="lazy">
+                        <figcaption>{{ attachment.original_name }}</figcaption>
+                    </figure>
+                {% elif attachment.media_kind == 'video' %}
+                    <div class="media-card media-card--video">
+                        <video controls preload="metadata">
+                            <source src="{{ file_url }}" type="{{ attachment.mime_type }}">
+                        </video>
+                        <p>{{ attachment.original_name }}</p>
+                    </div>
+                {% elif attachment.is_pdf %}
+                    <div class="media-card media-card--pdf">
+                        <embed src="{{ file_url }}" type="application/pdf">
+                        <a href="{{ file_url }}" target="_blank" rel="noopener">Open {{ attachment.original_name }}</a>
+                    </div>
+                {% else %}
+                    <a class="media-card media-card--document" href="{{ file_url }}" target="_blank" rel="noopener">
+                        <span>Document</span>
+                        <strong>{{ attachment.original_name }}</strong>
+                        <small>Open or download</small>
+                    </a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</article>

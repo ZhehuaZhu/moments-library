@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ title or "Moments Library" }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
+</head>
+<body class="app-body {{ body_class or '' }}">
+    <div class="page-shell {% if show_sidebar is defined and not show_sidebar %}page-shell--auth{% endif %}">
+        {% if show_sidebar is not defined or show_sidebar %}
+            <button
+                type="button"
+                class="sidebar-overlay"
+                data-sidebar-overlay
+                aria-label="Close navigation"
+                hidden
+            ></button>
+            {% include "includes/sidebar.html" %}
+        {% endif %}
+
+        <div class="page-frame {% if show_sidebar is defined and not show_sidebar %}page-frame--auth{% endif %}">
+            {% if show_sidebar is not defined or show_sidebar %}
+                {% include "includes/app_header.html" %}
+            {% endif %}
+
+            <main class="main-panel {% if show_sidebar is defined and not show_sidebar %}main-panel--auth{% endif %}">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-stack">
+                            {% for category, message in messages %}
+                                <div class="flash flash--{{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    {% if (show_sidebar is not defined or show_sidebar) and can_manage %}
+        {% include "includes/composer_modal.html" %}
+    {% endif %}
+</body>
+</html>

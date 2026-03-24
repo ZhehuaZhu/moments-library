@@ -1,0 +1,40 @@
+<div class="folder-tree__node folder-tree__node--depth-{{ folder_node.depth }}">
+    <div class="folder-tree__row">
+        <a
+            class="nav-link folder-tree__link {% if active_nav == 'feed' and selected_folder_key == 'folder:' ~ folder_node.folder.id %}is-active{% endif %}"
+            href="{{ url_for('main.index', folder_id=folder_node.folder.id, q=search_query or None) }}"
+            title="{{ folder_node.folder.name }}"
+        >
+            <span class="nav-link__icon">{{ folder_node.folder.name[:1] }}</span>
+            <span class="nav-link__text">
+                <span class="nav-link__label">{{ folder_node.folder.name }}</span>
+                {% if folder_node.folder.description %}
+                    <small class="folder-tree__description">{{ folder_node.folder.description }}</small>
+                {% endif %}
+            </span>
+            <strong>{{ folder_counts.get(folder_node.folder.id, 0) }}</strong>
+        </a>
+
+        {% if can_manage %}
+            <form
+                action="{{ url_for('main.delete_category', category_id=folder_node.folder.id) }}"
+                method="post"
+                class="folder-tree__delete"
+                onsubmit="return confirm('Delete this folder? Child folders will move up and assigned moments will stay.')"
+            >
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="icon-button icon-button--ghost" aria-label="Delete folder">
+                    &times;
+                </button>
+            </form>
+        {% endif %}
+    </div>
+
+    {% if folder_node.children %}
+        <div class="folder-tree__children">
+            {% for folder_node in folder_node.children %}
+                {% include "includes/folder_tree_item.html" %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

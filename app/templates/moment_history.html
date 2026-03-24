@@ -1,0 +1,86 @@
+{% set header_eyebrow = "Revision History" %}
+{% set header_title = "Moment History" %}
+{% set header_description = "A private record of earlier versions, separated from the main feed so day-to-day browsing stays clean." %}
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Admin History</p>
+        <h1>Moment Revision Timeline</h1>
+        <p class="page-description">Each saved edit keeps the previous state here so you can trace what changed over time.</p>
+    </div>
+    <div class="page-header__stats">
+        <a class="button button--ghost" href="{{ url_for('main.edit_moment', moment_id=moment.id) }}">Edit Current Version</a>
+        <a class="button button--subtle" href="{{ url_for('main.index') }}">Back to Feed</a>
+    </div>
+</section>
+
+<section class="detail-card">
+    <div class="section-title-row">
+        <div>
+            <h2>Current Version</h2>
+            <p>Published {{ moment.created_at|datetimeformat }}{% if moment.is_edited %}, last updated {{ moment.updated_at|datetimeformat }}{% endif %}</p>
+        </div>
+    </div>
+    <div class="history-card">
+        <div class="history-card__meta">
+            <span class="badge badge--edit">Live Version</span>
+            {% if moment.assigned_categories %}
+                {% for folder in moment.assigned_categories %}
+                    <span class="badge badge--category">{{ folder.name }}</span>
+                {% endfor %}
+            {% else %}
+                <span class="badge badge--category">Uncategorized</span>
+            {% endif %}
+            {% if moment.location_label %}
+                <span class="badge badge--location">{{ moment.location_label }}</span>
+            {% endif %}
+        </div>
+        <div class="history-card__content">{{ (moment.content or "No text content.")|e|replace('\n', '<br>')|safe }}</div>
+    </div>
+</section>
+
+<section class="detail-card">
+    <div class="section-title-row">
+        <div>
+            <h2>Saved Revisions</h2>
+            <p>{{ revisions|length }} snapshot(s) available for private review.</p>
+        </div>
+    </div>
+    <div class="history-list">
+        {% if revisions %}
+            {% for revision in revisions %}
+                <article class="history-card">
+                    <div class="history-card__meta">
+                        <span class="badge badge--muted">Saved {{ revision.edited_at|datetimeformat }}</span>
+                        {% if revision.snapshot_categories %}
+                            {% for folder in revision.snapshot_categories %}
+                                <span class="badge badge--category">{{ folder.name }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="badge badge--category">Uncategorized</span>
+                        {% endif %}
+                        {% if revision.location_label %}
+                            <span class="badge badge--location">{{ revision.location_label }}</span>
+                        {% endif %}
+                    </div>
+                    <p class="history-card__caption">
+                        Snapshot taken before the update by {{ revision.editor.username if revision.editor else "admin" }}.
+                    </p>
+                    <div class="history-card__content">{{ (revision.content or "No text content.")|e|replace('\n', '<br>')|safe }}</div>
+                    <div class="history-card__coords">
+                        <span>Latitude: {{ revision.latitude if revision.latitude is not none else "-" }}</span>
+                        <span>Longitude: {{ revision.longitude if revision.longitude is not none else "-" }}</span>
+                    </div>
+                </article>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <h3>No revisions yet</h3>
+                <p>The current post has not been edited since it was first published.</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

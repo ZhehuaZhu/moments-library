@@ -1,0 +1,151 @@
+<aside class="sidebar" data-sidebar>
+    <div class="sidebar__header">
+        <div class="sidebar__brand">
+            <div class="sidebar__brand-mark">ML</div>
+            <div class="sidebar__brand-copy">
+                <p class="eyebrow">Moments Library</p>
+                <h2>Personal Feed Library</h2>
+                <p>Posts, files, locations, and private organization in one place.</p>
+            </div>
+        </div>
+
+        <button
+            type="button"
+            class="icon-button icon-button--ghost sidebar__close"
+            data-close-sidebar
+            aria-label="Close navigation"
+        >
+            &#10005;
+        </button>
+    </div>
+
+    {% if can_manage %}
+        <button
+            type="button"
+            class="button button--full sidebar__compose"
+            data-open-composer
+            title="Publish a new moment"
+        >
+            <span class="nav-link__icon">+</span>
+            <span class="nav-link__text">New Moment</span>
+        </button>
+    {% endif %}
+
+    <section class="sidebar-section">
+        <div class="section-title-row section-title-row--compact">
+            <div>
+                <h3>Search</h3>
+            </div>
+        </div>
+        <form action="{{ url_for(search_action) }}" method="get" class="stack-form">
+            {% if selected_filter_mode == 'folder' and selected_folder_id %}
+                <input type="hidden" name="folder_id" value="{{ selected_folder_id }}">
+            {% elif selected_filter_mode == 'uncategorized' %}
+                <input type="hidden" name="category" value="uncategorized">
+            {% endif %}
+            <input type="search" name="q" class="input" value="{{ search_query }}" placeholder="Search posts, files, or folders">
+            <button type="submit" class="button button--ghost">Search</button>
+        </form>
+    </section>
+
+    <nav class="sidebar-nav">
+        <a
+            class="nav-link {% if active_nav == 'feed' and selected_folder_key == 'all' %}is-active{% endif %}"
+            href="{{ url_for('main.index', q=search_query or None) }}"
+            title="All Moments"
+        >
+            <span class="nav-link__icon">A</span>
+            <span class="nav-link__text">
+                <span class="nav-link__label">All Moments</span>
+            </span>
+            <strong>{{ total_count }}</strong>
+        </a>
+
+        <a
+            class="nav-link {% if active_nav == 'feed' and selected_folder_key == 'uncategorized' %}is-active{% endif %}"
+            href="{{ url_for('main.index', category='uncategorized', q=search_query or None) }}"
+            title="Uncategorized"
+        >
+            <span class="nav-link__icon">U</span>
+            <span class="nav-link__text">
+                <span class="nav-link__label">Uncategorized</span>
+            </span>
+            <strong>{{ uncategorized_count }}</strong>
+        </a>
+
+        <a
+            class="nav-link nav-link--recycle {% if active_nav == 'recycle' %}is-active{% endif %}"
+            href="{{ url_for('main.recycle_bin', q=search_query or None) }}"
+            title="Recycle Bin"
+        >
+            <span class="nav-link__icon">B</span>
+            <span class="nav-link__text">
+                <span class="nav-link__label">Recycle Bin</span>
+            </span>
+            <strong>Admin</strong>
+        </a>
+    </nav>
+
+    <section class="sidebar-section">
+        <div class="section-title-row section-title-row--compact">
+            <div>
+                <h3>Folders</h3>
+                <p class="helper-text">Use nested folders as a quick jump tree once the library starts growing.</p>
+            </div>
+        </div>
+
+        <div class="folder-tree">
+            {% if sidebar_folder_tree %}
+                {% for folder_node in sidebar_folder_tree %}
+                    {% include "includes/folder_tree_item.html" %}
+                {% endfor %}
+            {% else %}
+                <p class="helper-text">No folders yet. Start with one root folder or keep posting uncategorized moments.</p>
+            {% endif %}
+        </div>
+    </section>
+
+    {% if can_manage %}
+        <section class="sidebar-section">
+            <div class="section-title-row section-title-row--compact">
+                <div>
+                    <h3>New Folder</h3>
+                </div>
+            </div>
+            <form action="{{ url_for('main.create_category') }}" method="post" class="stack-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="text" name="name" class="input" placeholder="For example: Study Notes" required>
+                <textarea name="description" class="input textarea textarea--compact" rows="3" placeholder="Short description for this folder"></textarea>
+                <label class="field">
+                    <span>Parent Folder</span>
+                    <select name="parent_id" class="input">
+                        <option value="">Top level</option>
+                        {% for choice in sidebar_folder_choices %}
+                            <option value="{{ choice.id }}">{{ "-- " * choice.depth }}{{ choice.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <button type="submit" class="button button--ghost">Create Folder</button>
+            </form>
+        </section>
+
+        <section class="sidebar-section sidebar-section--account">
+            <div class="sidebar__account-copy">
+                <p class="sidebar-section__label">Signed in as</p>
+                <strong>Administrator</strong>
+            </div>
+            <form action="{{ url_for('auth.logout') }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="button button--subtle">Logout</button>
+            </form>
+        </section>
+    {% else %}
+        <section class="sidebar-section">
+            <div class="sidebar__account-copy">
+                <p class="sidebar-section__label">Current mode</p>
+                <strong>Public read-only</strong>
+            </div>
+            <a href="{{ url_for('auth.login') }}" class="button button--ghost button--full">Admin Login</a>
+        </section>
+    {% endif %}
+</aside>

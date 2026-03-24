@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="auth-card">
+    <div class="auth-card__intro">
+        <p class="eyebrow">Admin Access</p>
+        <h1>Administrator Login</h1>
+        <p>Sign in to publish moments, manage categories, and review the recycle bin.</p>
+    </div>
+    <form method="post" class="auth-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <label class="field">
+            <span>Username</span>
+            <input type="text" name="username" class="input" autocomplete="username" required>
+        </label>
+        <label class="field">
+            <span>Password</span>
+            <input type="password" name="password" class="input" autocomplete="current-password" required>
+        </label>
+        <button type="submit" class="button">Login</button>
+        <a href="{{ url_for('main.index') }}" class="text-link">Back to the public feed</a>
+    </form>
+</section>
+{% endblock %}

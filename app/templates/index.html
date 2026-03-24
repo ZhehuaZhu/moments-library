@@ -1,0 +1,33 @@
+{% set header_eyebrow = "Personal Feed" %}
+{% set header_title = selected_folder_name %}
+{% set header_description = "Browse your private posts, media, and notes with a cleaner reading-first layout." %}
+{% set recycle_view = false %}
+{% set feed_title = "Feed" %}
+{% set feed_description = "Cards stay focused on content, while folders now support nesting, descriptions, and multi-folder assignment." %}
+{% set empty_title = "Nothing here yet" %}
+{% set empty_description = "Create your first moment from the sidebar, or switch to another folder." %}
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Private Social Archive</p>
+        <h1>{{ selected_folder_name }}</h1>
+        <p class="page-description">
+            {% if search_query %}
+                Showing {{ result_count }} result(s) for "{{ search_query }}".
+            {% else %}
+                A quieter homepage for reading first, with folders, search, and creation moved into dedicated controls.
+            {% endif %}
+        </p>
+    </div>
+    <div class="page-header__stats">
+        <span class="stat-chip">Public Reading</span>
+        {% if can_manage %}
+            <span class="stat-chip stat-chip--accent">Admin Controls Enabled</span>
+        {% endif %}
+    </div>
+</section>
+
+{% include "includes/feed_list.html" %}
+{% endblock %}

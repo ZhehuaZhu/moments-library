@@ -1,0 +1,166 @@
+@media (min-width: 1081px) {
+    body.is-sidebar-collapsed {
+        --sidebar-width-current: 96px;
+    }
+
+    body.is-sidebar-collapsed .sidebar {
+        padding-inline: 14px;
+        align-items: center;
+    }
+
+    body.is-sidebar-collapsed .sidebar__header {
+        justify-content: center;
+    }
+
+    body.is-sidebar-collapsed .sidebar__brand-copy,
+    body.is-sidebar-collapsed .sidebar-section,
+    body.is-sidebar-collapsed .nav-link__text,
+    body.is-sidebar-collapsed .nav-link strong,
+    body.is-sidebar-collapsed .sidebar__close {
+        display: none;
+    }
+
+    body.is-sidebar-collapsed .sidebar__compose {
+        width: 56px;
+        height: 56px;
+        padding: 0;
+        border-radius: 18px;
+    }
+
+    body.is-sidebar-collapsed .sidebar__compose .nav-link__text {
+        display: none;
+    }
+
+    body.is-sidebar-collapsed .nav-link {
+        width: 100%;
+        min-height: 56px;
+        justify-content: center;
+        padding-inline: 0;
+    }
+}
+
+@media (max-width: 1080px) {
+    .page-shell {
+        grid-template-columns: 1fr;
+        padding: 18px;
+        gap: 18px;
+    }
+
+    .page-frame {
+        width: 100%;
+    }
+
+    .app-header {
+        top: 18px;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 18px;
+        left: 18px;
+        bottom: 18px;
+        width: min(86vw, 360px);
+        max-height: none;
+        transform: translateX(calc(-100% - 24px));
+        z-index: 40;
+    }
+
+    body.is-sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+
+    .sidebar__close {
+        display: inline-flex;
+    }
+
+    .composer-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .page-shell {
+        padding: 14px;
+        gap: 14px;
+    }
+
+    .main-panel {
+        gap: 18px;
+    }
+
+    .app-header,
+    .page-header,
+    .sidebar,
+    .composer-card,
+    .moment-card,
+    .detail-card,
+    .auth-card {
+        padding: 20px;
+    }
+
+    .app-header__main,
+    .page-header,
+    .section-title-row,
+    .location-card,
+    .inline-field,
+    .sidebar-section--account,
+    .moment-card__header,
+    .modal-card__header,
+    .history-card__coords {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .folder-tree__row {
+        grid-template-columns: 1fr;
+    }
+
+    .app-header {
+        padding: 8px;
+        border-radius: 18px;
+    }
+
+    .app-header__main {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .app-header__copy {
+        min-height: 36px;
+    }
+
+    .app-header__label {
+        font-size: 0.9rem;
+    }
+
+    .moment-card__header-main {
+        width: 100%;
+    }
+
+    .modal-shell {
+        padding: 0;
+    }
+
+    .modal-card {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        border-radius: 0;
+        padding: 22px 18px 28px;
+    }
+
+    .moment-menu {
+        min-width: 0;
+        width: min(280px, calc(100vw - 32px));
+    }
+}
+
+@media (max-width: 480px) {
+    .app-header {
+        padding: 6px;
+    }
+
+    .app-header__copy {
+        display: none;
+    }
+}

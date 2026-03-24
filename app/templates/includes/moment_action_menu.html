@@ -1,0 +1,34 @@
+<div class="moment-menu-wrapper" data-menu-root>
+    <button
+        type="button"
+        class="icon-button icon-button--ghost"
+        data-menu-toggle
+        aria-haspopup="true"
+        aria-expanded="false"
+        aria-label="Open moment actions"
+    >
+        &#8942;
+    </button>
+
+    <div class="moment-menu" data-card-menu hidden>
+        {% if not recycle_view %}
+            <a class="moment-menu__item" href="{{ url_for('main.edit_moment', moment_id=moment.id) }}">Edit</a>
+            <a class="moment-menu__item" href="{{ url_for('main.moment_history', moment_id=moment.id) }}">History</a>
+
+            {% set selected_folder_ids = moment.category_ids_list %}
+            {% set compact_picker = true %}
+            <form class="moment-menu__field moment-menu__field--stack" data-folder-form>
+                <span>Folders</span>
+                {% include "includes/folder_picker.html" %}
+                <button type="submit" class="button button--ghost button--full">Save Folders</button>
+            </form>
+
+            <button type="button" class="moment-menu__item moment-menu__item--danger" data-delete-moment>
+                Delete
+            </button>
+        {% else %}
+            <a class="moment-menu__item" href="{{ url_for('main.moment_history', moment_id=moment.id) }}">History</a>
+            <button type="button" class="moment-menu__item" data-restore-moment>Restore</button>
+        {% endif %}
+    </div>
+</div>

@@ -1,0 +1,11 @@
+.auth-card {
+    width: min(100%, 480px);
+}
+
+.auth-card__intro {
+    margin-bottom: 18px;
+}
+
+.auth-card__intro p:last-child {
+    margin-bottom: 0;
+}

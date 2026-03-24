@@ -1,0 +1,88 @@
+{% set header_eyebrow = "Edit Mode" %}
+{% set header_title = "Edit Moment" %}
+{% set header_description = "Update text, folders, and location while keeping earlier versions in a separate history view." %}
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Edit Moment</p>
+        <h1>Update Your Post</h1>
+        <p class="page-description">Text, folders, and location can be changed here. Existing attachments stay as they are.</p>
+    </div>
+    <div class="page-header__stats">
+        <a class="button button--subtle" href="{{ url_for('main.moment_history', moment_id=moment.id) }}">View History</a>
+        <a class="button button--ghost" href="{{ url_for('main.index') }}">Back to Feed</a>
+    </div>
+</section>
+
+<section class="composer-card">
+    <div class="section-title-row">
+        <div>
+            <h2>Moment Editor</h2>
+            <p>Saving changes will keep a snapshot of the previous version for admin-only review.</p>
+        </div>
+    </div>
+    <form action="{{ url_for('main.update_moment', moment_id=moment.id) }}" method="post" class="composer-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="field">
+            <span>Text</span>
+            <textarea name="content" rows="7" class="input textarea" placeholder="Write your updated moment here.">{{ moment.content or '' }}</textarea>
+        </label>
+        <div class="composer-grid">
+            <div class="field">
+                <span>Folders</span>
+                {% include "includes/folder_picker.html" %}
+            </div>
+            <div class="field">
+                <span>Current Attachments</span>
+                <div class="readonly-card">
+                    {% if moment.attachments %}
+                        <strong>{{ moment.attachments|length }} attachment(s) attached</strong>
+                        <p class="helper-text">Attachment editing is intentionally left for the next iteration so version history stays clear.</p>
+                    {% else %}
+                        <strong>No attachments</strong>
+                        <p class="helper-text">This moment currently contains text and metadata only.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="composer-grid">
+            <label class="field">
+                <span>Location Label</span>
+                <input type="text" name="location_label" data-location-label class="input" value="{{ moment.location_label or '' }}" placeholder="Optional readable location">
+            </label>
+            <div class="field">
+                <span>Use Geolocation</span>
+                <div class="location-card">
+                    <div>
+                        <strong>Refresh current location</strong>
+                        <p class="helper-text" data-location-status>
+                            {% if moment.location_label %}
+                                Current value: {{ moment.location_label }}
+                            {% else %}
+                                No location attached yet.
+                            {% endif %}
+                        </p>
+                    </div>
+                    <button type="button" class="button button--ghost" data-action="resolve-location">Use current location</button>
+                </div>
+            </div>
+        </div>
+        <div class="composer-grid">
+            <label class="field">
+                <span>Latitude</span>
+                <input type="text" name="latitude" data-location-latitude class="input" value="{{ moment.latitude if moment.latitude is not none else '' }}" placeholder="Optional latitude">
+            </label>
+            <label class="field">
+                <span>Longitude</span>
+                <input type="text" name="longitude" data-location-longitude class="input" value="{{ moment.longitude if moment.longitude is not none else '' }}" placeholder="Optional longitude">
+            </label>
+        </div>
+        <div class="composer-actions">
+            <button type="submit" class="button">Save Changes</button>
+            <a class="button button--subtle" href="{{ url_for('main.index') }}">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

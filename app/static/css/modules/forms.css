@@ -1,0 +1,143 @@
+.stack-form,
+.composer-form,
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.composer-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input {
+    width: 100%;
+    padding: 13px 14px;
+    border: 1px solid rgba(34, 48, 60, 0.12);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--text);
+    transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+}
+
+.input:focus,
+.input:hover,
+.textarea:hover {
+    outline: none;
+    border-color: rgba(63, 111, 100, 0.38);
+    box-shadow: 0 0 0 4px rgba(63, 111, 100, 0.08);
+}
+
+.textarea {
+    min-height: 140px;
+    resize: vertical;
+}
+
+.textarea--compact {
+    min-height: 88px;
+}
+
+.input--compact {
+    min-width: 170px;
+    padding: 10px 12px;
+}
+
+.input--file {
+    padding: 10px;
+}
+
+.folder-picker {
+    display: grid;
+    gap: 10px;
+    max-height: 260px;
+    overflow: auto;
+    padding: 14px;
+    border: 1px solid rgba(34, 48, 60, 0.08);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.folder-picker--compact {
+    max-height: 220px;
+    padding: 10px;
+}
+
+.folder-picker__option {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 10px;
+    border-radius: 12px;
+    background: rgba(34, 48, 60, 0.03);
+}
+
+.folder-picker__option:hover {
+    background: rgba(63, 111, 100, 0.08);
+}
+
+.folder-picker__option input {
+    margin-top: 2px;
+}
+
+.folder-picker__body {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.folder-picker__body strong,
+.folder-picker__body small {
+    display: block;
+}
+
+.folder-picker__body small {
+    color: var(--muted);
+}
+
+.folder-picker__option--depth-1 {
+    margin-left: 16px;
+}
+
+.folder-picker__option--depth-2 {
+    margin-left: 32px;
+}
+
+.folder-picker__option--depth-3,
+.folder-picker__option--depth-4,
+.folder-picker__option--depth-5 {
+    margin-left: 48px;
+}
+
+.helper-text,
+.page-description,
+.moment-card__time,
+.sidebar-section__label,
+.auth-card__intro p,
+.media-card figcaption,
+.media-card small,
+.app-header__description,
+.sidebar__brand-copy p:last-child,
+.section-title-row p,
+.moment-card__meta,
+.history-card__caption,
+.history-card__coords,
+.readonly-card p {
+    color: var(--muted);
+}
+
+.helper-text {
+    margin: 0;
+}
+
+.text-link {
+    color: var(--accent-strong);
+    font-weight: 600;
+}

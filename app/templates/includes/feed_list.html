@@ -1,0 +1,21 @@
+<section class="feed-section">
+    <div class="section-title-row">
+        <div>
+            <h2>{{ feed_title }}</h2>
+            <p>{{ feed_description }}</p>
+        </div>
+    </div>
+
+    <div class="feed-list" id="moments-feed" data-filter-mode="{{ filter_mode }}" data-filter-key="{{ filter_key }}">
+        {% if moments %}
+            {% for moment in moments %}
+                {% include "includes/moment_card.html" %}
+            {% endfor %}
+        {% endif %}
+
+        <div class="empty-state" data-empty-state {% if moments %}hidden{% endif %}>
+            <h3>{{ empty_title }}</h3>
+            <p>{{ empty_description }}</p>
+        </div>
+    </div>
+</section>

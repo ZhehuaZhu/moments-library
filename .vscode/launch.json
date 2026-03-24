@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run run.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}\\run.py",
+            "cwd": "${workspaceFolder}",
+            "python": "C:\\Users\\Zhehua\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\python.exe",
+            "jinja": true,
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

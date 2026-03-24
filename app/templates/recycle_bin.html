@@ -1,0 +1,32 @@
+{% set header_eyebrow = "Admin View" %}
+{% set header_title = "Recycle Bin" %}
+{% set header_description = "Deleted content stays in a separate space and can be restored from the action menu." %}
+{% set recycle_view = true %}
+{% set filter_mode = "recycle" %}
+{% set filter_key = "" %}
+{% set feed_title = "Deleted Moments" %}
+{% set feed_description = "Review removed content without mixing it back into the main feed." %}
+{% set empty_title = "Recycle bin is empty" %}
+{% set empty_description = "Deleted moments will appear here until they are restored or purged." %}
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">Admin View</p>
+        <h1>Recycle Bin</h1>
+        <p class="page-description">
+            {% if search_query %}
+                Showing {{ result_count }} deleted result(s) for "{{ search_query }}".
+            {% else %}
+                Deleted content is separated from the main feed so cleanup and recovery stay deliberate.
+            {% endif %}
+        </p>
+    </div>
+    <div class="page-header__stats">
+        <span class="stat-chip stat-chip--warn">Admin Only</span>
+    </div>
+</section>
+
+{% include "includes/feed_list.html" %}
+{% endblock %}
