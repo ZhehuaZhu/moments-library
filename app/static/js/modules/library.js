@@ -3,13 +3,24 @@ import { t } from "./i18n.js";
 import { requestJson } from "./http.js";
 import { initTimestampHelpers, initTrackLyrics } from "./library-audio-helpers.js";
 import { secondsToClock } from "./library-time-utils.js";
+import {
+    applyPlayerAppearance,
+    applyPlayerSize,
+    playerDockPositionKey,
+    playerDockStateKey,
+    playerStorageKey,
+    readPlayerAppearance,
+    readPlayerSize,
+    readStoredJson,
+    readStoredPlayerState,
+    readTrackCatalog,
+    writePlayerAppearance,
+    writePlayerSize,
+    writeStoredPlayerState,
+    normalizePlayerState,
+} from "./library-player-utils.js";
 import { initVideoCardPreviews } from "./library-video-previews.js";
 
-const playerStorageKey = "moments-global-player";
-const playerDockStateKey = "moments-global-player-dock-state";
-const playerDockPositionKey = "moments-global-player-dock-position";
-const playerAppearanceKey = "moments-global-player-appearance";
-const playerSizeKey = "moments-global-player-size";
 const readerUiTimers = new WeakMap();
 let libraryPageController = null;
 let immersiveReaderGlobalsBound = false;
@@ -211,20 +222,6 @@ function createReaderProgressSaver(endpoint, buildPayload) {
             void persist({ immediate: true });
         },
     };
-}
-
-function readTrackCatalog() {
-    const script = document.querySelector("[data-track-catalog]");
-    if (!script) {
-        return [];
-    }
-
-    try {
-        const payload = JSON.parse(script.textContent || "[]");
-        return Array.isArray(payload) ? payload : [];
-    } catch {
-        return [];
-    }
 }
 
 function initBookReaderSelection() {
@@ -1550,137 +1547,6 @@ async function initEpubReaders() {
             )}</p>`;
         }
     }
-}
-
-function readStoredJson(key) {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) {
-        return null;
-    }
-
-    try {
-        return JSON.parse(raw);
-    } catch {
-        return null;
-    }
-}
-
-function normalizePlayerQueue(rawQueue, fallbackQueue = []) {
-    const source = Array.isArray(rawQueue) && rawQueue.length ? rawQueue : fallbackQueue;
-    return source.filter(
-        (track) =>
-            track &&
-            typeof track === "object" &&
-            typeof track.title === "string" &&
-            typeof track.src === "string"
-    );
-}
-
-function normalizePlayerState(rawState, fallbackQueue = []) {
-    const queue = normalizePlayerQueue(rawState?.queue, fallbackQueue);
-    let currentIndex = Number.isInteger(rawState?.currentIndex) ? rawState.currentIndex : -1;
-    if (currentIndex >= queue.length) {
-        currentIndex = queue.length - 1;
-    }
-    if (currentIndex < -1) {
-        currentIndex = -1;
-    }
-
-    const currentTime = Number(rawState?.currentTime);
-    const duration = Number(rawState?.duration);
-
-    return {
-        queue,
-        currentIndex,
-        currentTime: Number.isFinite(currentTime) ? Math.max(currentTime, 0) : 0,
-        duration: Number.isFinite(duration) ? Math.max(duration, 0) : 0,
-        wasPlaying: Boolean(rawState?.wasPlaying),
-    };
-}
-
-function readStoredPlayerState(fallbackQueue = []) {
-    return normalizePlayerState(readStoredJson(playerStorageKey), fallbackQueue);
-}
-
-function writeStoredPlayerState(state, fallbackQueue = []) {
-    const normalized = normalizePlayerState(state, fallbackQueue);
-    window.localStorage.setItem(playerStorageKey, JSON.stringify(normalized));
-    return normalized;
-}
-
-function normalizePlayerAppearance(rawAppearance) {
-    const opacity = Number(rawAppearance?.opacity);
-    return {
-        opacity: Number.isFinite(opacity) ? Math.min(Math.max(opacity, 70), 100) : 92,
-    };
-}
-
-function readPlayerAppearance() {
-    return normalizePlayerAppearance(readStoredJson(playerAppearanceKey));
-}
-
-function writePlayerAppearance(appearance) {
-    const normalized = normalizePlayerAppearance(appearance);
-    window.localStorage.setItem(playerAppearanceKey, JSON.stringify(normalized));
-    return normalized;
-}
-
-function applyPlayerAppearance(shell, appearance, controls = {}) {
-    if (!(shell instanceof HTMLElement)) {
-        return appearance;
-    }
-
-    const normalized = normalizePlayerAppearance(appearance);
-    shell.style.setProperty("--player-panel-opacity", `${normalized.opacity / 100}`);
-
-    if (controls.opacityInput instanceof HTMLInputElement) {
-        controls.opacityInput.value = String(normalized.opacity);
-    }
-    return normalized;
-}
-
-function getPlayerSizeBounds() {
-    return {
-        minWidth: 320,
-        minHeight: 250,
-        maxWidth: Math.max(320, window.innerWidth - 24),
-        maxHeight: Math.max(250, window.innerHeight - 24),
-    };
-}
-
-function normalizePlayerSize(rawSize) {
-    const width = Number(rawSize?.width);
-    const height = Number(rawSize?.height);
-    const bounds = getPlayerSizeBounds();
-    return {
-        width: Number.isFinite(width)
-            ? Math.min(Math.max(Math.round(width), bounds.minWidth), bounds.maxWidth)
-            : Math.min(392, bounds.maxWidth),
-        height: Number.isFinite(height)
-            ? Math.min(Math.max(Math.round(height), bounds.minHeight), bounds.maxHeight)
-            : Math.min(332, bounds.maxHeight),
-    };
-}
-
-function readPlayerSize() {
-    return normalizePlayerSize(readStoredJson(playerSizeKey));
-}
-
-function writePlayerSize(size) {
-    const normalized = normalizePlayerSize(size);
-    window.localStorage.setItem(playerSizeKey, JSON.stringify(normalized));
-    return normalized;
-}
-
-function applyPlayerSize(shell, size) {
-    if (!(shell instanceof HTMLElement)) {
-        return size;
-    }
-
-    const normalized = normalizePlayerSize(size);
-    shell.style.setProperty("--player-panel-width", `${normalized.width}px`);
-    shell.style.setProperty("--player-panel-height", `${normalized.height}px`);
-    return normalized;
 }
 
 function getPlayerLabel(track) {
