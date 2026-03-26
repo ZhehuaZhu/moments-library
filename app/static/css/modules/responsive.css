@@ -143,8 +143,9 @@
         grid-template-columns: 1fr;
     }
 
-    .atlas-toolbar {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .atlas-toolbar__panel {
+        left: 0;
+        width: 100%;
     }
 
     .atlas-map {
@@ -620,7 +621,27 @@
         padding: 10px;
     }
 
-    .atlas-toolbar {
+    .atlas-map-card__hint {
+        padding: 9px 12px;
+        border-radius: 16px;
+    }
+
+    .atlas-toolbar__bar {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 14px;
+    }
+
+    .atlas-toolbar__toggle {
+        width: 100%;
+        min-width: 0;
+        justify-content: center;
+    }
+
+    .atlas-toolbar__panel {
+        position: static;
+        margin-top: 12px;
+        width: 100%;
         grid-template-columns: 1fr;
         padding: 14px;
     }

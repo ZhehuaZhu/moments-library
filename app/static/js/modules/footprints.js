@@ -337,6 +337,14 @@ function buildTooltip(place) {
     return `${place.name || t("footprints.unknown_place", {}, "Pinned Place")} | ${place.moment_count}`;
 }
 
+function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+}
+
+function getSelectedOptionLabel(select) {
+    return select.options[select.selectedIndex]?.textContent?.trim() || "";
+}
+
 async function loadCountryGeoJson(url) {
     if (!url) {
         return null;
@@ -401,6 +409,10 @@ export async function initFootprintsMap() {
     const sortSelect = document.querySelector("[data-footprints-sort]");
     const displaySelect = document.querySelector("[data-footprints-display-mode]");
     const openModeSelect = document.querySelector("[data-footprints-open-mode]");
+    const controlsShell = document.querySelector("[data-footprints-controls]");
+    const controlsSummaryElement = document.querySelector("[data-footprints-controls-summary]");
+    const menuToggle = document.querySelector("[data-footprints-menu-toggle]");
+    const menuPanel = document.querySelector("[data-footprints-menu-panel]");
 
     if (
         !panel ||
@@ -441,6 +453,10 @@ export async function initFootprintsMap() {
         zoomControl: false,
         attributionControl: false,
         worldCopyJump: true,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        zoomSnap: 0.5,
+        zoomDelta: 0.5,
     });
 
     L.control.zoom({ position: "topright" }).addTo(map);
@@ -455,6 +471,7 @@ export async function initFootprintsMap() {
     const markerLayer = L.layerGroup().addTo(map);
     const markers = new Map();
     let selectedPlaceId = null;
+    let isMenuOpen = false;
 
     const allCountryPlaces = Array.isArray(views.country?.places) ? views.country.places : [];
     const allCountryLookup = buildCountryLookup(allCountryPlaces);
@@ -479,6 +496,38 @@ export async function initFootprintsMap() {
         displayLabelElement.textContent = state.displayMode === "timeline"
             ? t("footprints.display_timeline", {}, "Timeline")
             : t("footprints.display_cards", {}, "Cards");
+    }
+
+    function setControlsSummary() {
+        if (!(controlsSummaryElement instanceof HTMLElement)) {
+            return;
+        }
+
+        const labels = [
+            getSelectedOptionLabel(viewSelect),
+            getSelectedOptionLabel(filterSelect),
+            state.view === "country" ? getSelectedOptionLabel(visitSelect) : "",
+            getSelectedOptionLabel(displaySelect),
+            getSelectedOptionLabel(openModeSelect),
+        ].filter(Boolean);
+
+        controlsSummaryElement.textContent = labels.join(" · ");
+    }
+
+    function setMenuOpen(nextOpen) {
+        isMenuOpen = Boolean(nextOpen);
+
+        if (controlsShell instanceof HTMLElement) {
+            controlsShell.classList.toggle("is-menu-open", isMenuOpen);
+        }
+
+        if (menuPanel instanceof HTMLElement) {
+            menuPanel.hidden = !isMenuOpen;
+        }
+
+        if (menuToggle instanceof HTMLButtonElement) {
+            menuToggle.setAttribute("aria-expanded", String(isMenuOpen));
+        }
     }
 
     function setHeaderTotals(places) {
@@ -537,6 +586,7 @@ export async function initFootprintsMap() {
         const countryOnly = state.view === "country";
         visitSelect.disabled = !countryOnly;
         visitSelect.closest(".atlas-control")?.classList.toggle("is-disabled", !countryOnly);
+        setControlsSummary();
     }
 
     function ensureCountryLayer() {
@@ -717,6 +767,49 @@ export async function initFootprintsMap() {
         requestAnimationFrame(() => map.invalidateSize());
     }
 
+    if (menuToggle instanceof HTMLButtonElement) {
+        menuToggle.addEventListener("click", () => {
+            setMenuOpen(!isMenuOpen);
+        });
+    }
+
+    document.addEventListener("click", (event) => {
+        if (!isMenuOpen || !(controlsShell instanceof HTMLElement)) {
+            return;
+        }
+
+        if (event.target instanceof Node && controlsShell.contains(event.target)) {
+            return;
+        }
+
+        setMenuOpen(false);
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && isMenuOpen) {
+            setMenuOpen(false);
+        }
+    });
+
+    mapElement.addEventListener("wheel", (event) => {
+        if (!event.ctrlKey && !event.metaKey) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const direction = event.deltaY < 0 ? 1 : -1;
+        const nextZoom = clamp(map.getZoom() + direction * 0.5, map.getMinZoom(), map.getMaxZoom());
+        if (nextZoom === map.getZoom()) {
+            return;
+        }
+
+        const point = map.mouseEventToContainerPoint(event);
+        map.setZoomAround(point, nextZoom, {
+            animate: false,
+        });
+    }, { passive: false });
+
     viewSelect.addEventListener("change", () => {
         state.view = viewSelect.value;
         refresh({ fit: true });
@@ -748,6 +841,7 @@ export async function initFootprintsMap() {
         refresh();
     });
 
+    setMenuOpen(false);
     refresh({ fit: true });
     window.addEventListener("resize", () => map.invalidateSize());
 }
