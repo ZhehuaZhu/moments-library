@@ -650,6 +650,10 @@
         padding: 18px 16px;
     }
 
+    .atlas-inspector__header h2 {
+        font-size: clamp(1.28rem, 1rem + 1vw, 1.72rem);
+    }
+
     .atlas-timeline {
         padding-left: 8px;
     }

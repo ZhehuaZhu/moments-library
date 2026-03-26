@@ -284,6 +284,7 @@ def _resolve_place_snapshot(moment: Moment) -> dict[str, str | None]:
             normalized_fields["country_name"],
             normalized_fields["admin_area"],
             normalized_fields["city_name"],
+            normalized_fields["district_name"],
         )
         or normalized_fields["district_name"]
         or normalized_fields["city_name"]
@@ -352,6 +353,10 @@ def _build_moment_entry(moment: Moment) -> dict[str, object]:
         "created_at": moment.created_at.strftime("%Y-%m-%d %H:%M"),
         "created_at_sort": moment.created_at.isoformat(timespec="seconds"),
         "location_label": _clean_text(moment.location_label),
+        "country_name": _clean_text(moment.country_name),
+        "admin_area": _clean_text(moment.admin_area),
+        "city_name": _clean_text(moment.city_name),
+        "district_name": _clean_text(moment.district_name),
         "excerpt": _build_moment_excerpt(moment),
         "content": _clean_text(moment.content),
         "href": url_for("main.index", _anchor=f"moment-{moment.id}"),
