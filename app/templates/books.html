@@ -3,59 +3,99 @@
 
 {% block content %}
 <section class="page-header page-header--shelf page-header--bookshelf">
-    <div class="bookshelf-toolbar">
-        <div class="bookshelf-toolbar__title">
-            <span class="bookshelf-toolbar__icon" aria-hidden="true">
-                <span class="nav-link__glyph nav-link__glyph--books"></span>
-            </span>
-            <div class="bookshelf-toolbar__copy">
-                <p class="eyebrow">{{ t('common.library') }}</p>
-                <h1>{{ module_labels.books }}</h1>
-            </div>
+    <div class="bookshelf-header-bar">
+        <div class="bookshelf-header-bar__title">
+            <p class="eyebrow">{{ t('common.library') }}</p>
+            <h1>{{ module_labels.books }}</h1>
         </div>
-
-        <div class="bookshelf-toolbar__stats">
-            <span class="stat-chip stat-chip--bookshelf stat-chip--books-total" aria-label="{{ t('counts.titles', count=result_count) }}">
-                <span class="bookshelf-toolbar__chip-value">{{ result_count }}</span>
-                <span class="bookshelf-toolbar__chip-label">{{ t('counts.titles', count=result_count) }}</span>
-            </span>
-            <span class="stat-chip stat-chip--bookshelf stat-chip--books-reading" aria-label="{{ t('book_status.reading') }} {{ reading_count }}">
-                <span class="bookshelf-toolbar__chip-value">{{ reading_count }}</span>
-                <span class="bookshelf-toolbar__chip-label">{{ t('book_status.reading') }}</span>
-            </span>
-            <span class="stat-chip stat-chip--accent stat-chip--bookshelf stat-chip--books-finished" aria-label="{{ t('book_status.finished') }} {{ finished_count }}">
-                <span class="bookshelf-toolbar__chip-value">{{ finished_count }}</span>
-                <span class="bookshelf-toolbar__chip-label">{{ t('book_status.finished') }}</span>
-            </span>
-        </div>
-
-        {% if can_manage %}
-            <div class="bookshelf-toolbar__actions">
+        <div class="bookshelf-header-bar__meta">
+            <span class="stat-chip">{{ t('counts.titles', count=result_count) }}</span>
+            <span class="stat-chip">{{ t('book_status.reading') }} {{ reading_count }}</span>
+            <span class="stat-chip stat-chip--accent">{{ t('book_status.finished') }} {{ finished_count }}</span>
+            {% if can_manage %}
                 <button
                     type="button"
-                    class="button button--subtle button--compact bookshelf-toolbar__action bookshelf-toolbar__action--collection"
-                    data-open-folder-panel="create"
-                    aria-haspopup="dialog"
-                    aria-controls="folder-create-panel"
-                    aria-expanded="false"
-                    aria-label="{{ t('books.new_collection') }}"
-                >
-                    <span class="bookshelf-toolbar__action-label">{{ t('books.new_collection') }}</span>
-                </button>
-                <button
-                    type="button"
-                    class="button button--ghost button--compact bookshelf-toolbar__action bookshelf-toolbar__action--add"
+                    class="button button--ghost button--compact bookshelf-header-bar__add"
                     data-open-folder-panel="book-create"
                     aria-haspopup="dialog"
                     aria-controls="book-create-panel"
                     aria-expanded="false"
                     aria-label="{{ t('books.add_book') }}"
                 >
-                    <span class="bookshelf-toolbar__action-label">{{ t('books.add_book') }}</span>
+                    +
                 </button>
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
     </div>
+
+    <details class="bookshelf-overview" {% if result_count <= 2 %}open{% endif %}>
+        <summary class="bookshelf-overview__summary">
+            <div class="bookshelf-overview__thumb">
+                {% if snapshot_book and snapshot_book.cover_relative_path %}
+                    <img src="{{ url_for('static', filename=snapshot_book.cover_relative_path) }}" alt="{{ snapshot_book.title }} cover">
+                {% elif snapshot_book %}
+                    <div class="bookshelf-overview__thumb-fallback">{{ snapshot_book.cover_seed }}</div>
+                {% else %}
+                    <div class="bookshelf-overview__thumb-fallback">BK</div>
+                {% endif %}
+            </div>
+            <div class="bookshelf-overview__copy">
+                <strong>{{ module_labels.books }} {{ t('common.library') }}</strong>
+                <span>
+                    {{ result_count }} {{ t('counts.titles', count=result_count) }} ·
+                    {{ reading_count }} {{ t('book_status.reading') }} ·
+                    {{ want_to_read_count }} {{ t('book_status.want_to_read') }}
+                </span>
+            </div>
+            <span class="bookshelf-overview__toggle">{{ t('common.details') }}</span>
+        </summary>
+
+        <div class="bookshelf-overview__panel">
+            <div class="bookshelf-overview__stats">
+                <article class="bookshelf-overview__stat">
+                    <span>{{ t('counts.titles', count=result_count) }}</span>
+                    <strong>{{ result_count }}</strong>
+                </article>
+                <article class="bookshelf-overview__stat">
+                    <span>{{ t('book_status.reading') }}</span>
+                    <strong>{{ reading_count }}</strong>
+                </article>
+                <article class="bookshelf-overview__stat">
+                    <span>{{ t('book_status.finished') }}</span>
+                    <strong>{{ finished_count }}</strong>
+                </article>
+                <article class="bookshelf-overview__stat">
+                    <span>{{ t('book_status.want_to_read') }}</span>
+                    <strong>{{ want_to_read_count }}</strong>
+                </article>
+                <article class="bookshelf-overview__stat">
+                    <span>{{ t('common.collection') }}</span>
+                    <strong>{{ collection_count }}</strong>
+                </article>
+            </div>
+
+            <div class="bookshelf-overview__insights">
+                {% if latest_read_book %}
+                    <p>
+                        <strong>{{ t('common.read') }}</strong>
+                        {{ latest_read_book.title }} · {{ latest_read_book.last_read_at|datetimeformat }}
+                    </p>
+                {% endif %}
+                {% if latest_finished_book %}
+                    <p>
+                        <strong>{{ t('common.finished') }}</strong>
+                        {{ latest_finished_book.title }} · {{ latest_finished_book.finished_at|dateformat }}
+                    </p>
+                {% endif %}
+                {% if latest_added_book %}
+                    <p>
+                        <strong>{{ t('common.imported') }}</strong>
+                        {{ latest_added_book.title }} · {{ latest_added_book.created_at|datetimeformat }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </details>
 </section>
 
 {% if can_manage %}
