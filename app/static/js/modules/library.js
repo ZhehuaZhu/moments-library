@@ -7,6 +7,24 @@ const playerDockPositionKey = "moments-global-player-dock-position";
 const playerAppearanceKey = "moments-global-player-appearance";
 const playerSizeKey = "moments-global-player-size";
 const readerUiTimers = new WeakMap();
+let timestampHelpersInitialized = false;
+let libraryPageController = null;
+let immersiveReaderGlobalsBound = false;
+let sectionReaderGlobalsBound = false;
+
+function getLibraryPageSignal() {
+    if (!(libraryPageController instanceof AbortController) || libraryPageController.signal.aborted) {
+        libraryPageController = new AbortController();
+    }
+    return libraryPageController.signal;
+}
+
+document.addEventListener("app:before-swap", () => {
+    libraryPageController?.abort();
+    libraryPageController = null;
+    immersiveReaderGlobalsBound = false;
+    sectionReaderGlobalsBound = false;
+});
 
 function getReaderShell(scope) {
     if (scope instanceof Element) {
@@ -131,6 +149,10 @@ function initBookReaderSelection() {
     }
 
     sources.forEach((source) => {
+        if (!(source instanceof HTMLElement) || source.dataset.selectionBound === "true") {
+            return;
+        }
+        source.dataset.selectionBound = "true";
         const scope = source.closest(".reader-layout") || document;
         const quoteField = scope.querySelector("[data-book-quote]");
         const chapterField = scope.querySelector("[data-book-chapter-field]");
@@ -217,6 +239,12 @@ async function initDocxReaders() {
     }
 
     for (const reader of readers) {
+        if (reader instanceof HTMLElement && reader.dataset.docxBound === "true") {
+            continue;
+        }
+        if (reader instanceof HTMLElement) {
+            reader.dataset.docxBound = "true";
+        }
         const src = reader.getAttribute("data-docx-src");
         if (!src) {
             continue;
@@ -349,10 +377,13 @@ function initImmersiveReaderShells() {
         return;
     }
 
+    const signal = getLibraryPageSignal();
+
     shells.forEach((shell) => {
-        if (!(shell instanceof HTMLElement)) {
+        if (!(shell instanceof HTMLElement) || shell.dataset.readerShellBound === "true") {
             return;
         }
+        shell.dataset.readerShellBound = "true";
 
         const stage = shell.querySelector("[data-reader-stage]");
         const topToggle = shell.querySelector("[data-reader-toggle-top]");
@@ -362,30 +393,30 @@ function initImmersiveReaderShells() {
         topToggle?.addEventListener("click", (event) => {
             event.preventDefault();
             toggleReaderPanel(shell, "top");
-        });
+        }, { signal });
 
         bottomToggle?.addEventListener("click", (event) => {
             event.preventDefault();
             toggleReaderPanel(shell, "bottom");
-        });
+        }, { signal });
 
         shell.querySelectorAll("[data-reader-open-notes]").forEach((button) => {
             button.addEventListener("click", (event) => {
                 event.preventDefault();
                 openReaderNotesDrawer(shell);
-            });
+            }, { signal });
         });
 
         shell.querySelectorAll("[data-reader-close-notes]").forEach((button) => {
             button.addEventListener("click", (event) => {
                 event.preventDefault();
                 closeReaderNotesDrawer(shell);
-            });
+            }, { signal });
         });
 
         notesBackdrop?.addEventListener("click", () => {
             closeReaderNotesDrawer(shell);
-        });
+        }, { signal });
 
         stage?.addEventListener("click", (event) => {
             if (!(event.target instanceof Element)) {
@@ -416,32 +447,35 @@ function initImmersiveReaderShells() {
             ) {
                 closeReaderPanels(shell);
             }
-        });
+        }, { signal });
     });
 
-    document.addEventListener("keydown", (event) => {
-        if (event.key !== "Escape") {
-            return;
-        }
-
-        document.querySelectorAll("[data-reader-shell]").forEach((shell) => {
-            if (!(shell instanceof HTMLElement)) {
+    if (!immersiveReaderGlobalsBound) {
+        immersiveReaderGlobalsBound = true;
+        document.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape") {
                 return;
             }
 
-            if (shell.classList.contains("is-reader-notes-visible")) {
-                closeReaderNotesDrawer(shell);
-                return;
-            }
+            document.querySelectorAll("[data-reader-shell]").forEach((shell) => {
+                if (!(shell instanceof HTMLElement)) {
+                    return;
+                }
 
-            if (
-                shell.classList.contains("is-reader-top-visible") ||
-                shell.classList.contains("is-reader-bottom-visible")
-            ) {
-                closeReaderPanels(shell);
-            }
-        });
-    });
+                if (shell.classList.contains("is-reader-notes-visible")) {
+                    closeReaderNotesDrawer(shell);
+                    return;
+                }
+
+                if (
+                    shell.classList.contains("is-reader-top-visible") ||
+                    shell.classList.contains("is-reader-bottom-visible")
+                ) {
+                    closeReaderPanels(shell);
+                }
+            });
+        }, { signal });
+    }
 }
 
 function getClosestElement(node) {
@@ -529,7 +563,13 @@ function initSectionReaders() {
         return;
     }
 
+    const signal = getLibraryPageSignal();
+
     shells.forEach((shell) => {
+        if (!(shell instanceof HTMLElement) || shell.dataset.sectionReaderBound === "true") {
+            return;
+        }
+        shell.dataset.sectionReaderBound = "true";
         const reader = shell.querySelector("[data-section-reader]");
         const previous = shell.querySelector("[data-section-prev]");
         const next = shell.querySelector("[data-section-next]");
@@ -955,23 +995,23 @@ function initSectionReaders() {
             if (activeIndex > 0) {
                 void loadSection(activeIndex - 1);
             }
-        });
+        }, { signal });
 
         next.addEventListener("click", () => {
             if (activeIndex < manifest.length - 1) {
                 void loadSection(activeIndex + 1);
             }
-        });
+        }, { signal });
 
         toc.addEventListener("change", () => {
             const nextIndex = Number.parseInt(toc.value, 10);
             if (Number.isInteger(nextIndex)) {
                 void loadSection(nextIndex);
             }
-        });
+        }, { signal });
 
-        reader.addEventListener("mouseup", syncSelection);
-        reader.addEventListener("touchend", syncSelection);
+        reader.addEventListener("mouseup", syncSelection, { signal });
+        reader.addEventListener("touchend", syncSelection, { signal });
         reader.addEventListener("click", (event) => {
             if (!(event.target instanceof Element)) {
                 return;
@@ -991,7 +1031,7 @@ function initSectionReaders() {
             if (annotation) {
                 focusAnnotation(annotation, { scrollCard: true });
             }
-        });
+        }, { signal });
 
         annotationCards.forEach((card) => {
             const openCardAnnotation = () => {
@@ -1015,34 +1055,42 @@ function initSectionReaders() {
                 focusAnnotation(annotation, { scrollReader: true });
             };
 
-            card.addEventListener("click", openCardAnnotation);
+            card.addEventListener("click", openCardAnnotation, { signal });
             card.addEventListener("keydown", (event) => {
                 if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
                     openCardAnnotation();
                 }
-            });
+            }, { signal });
         });
 
         sync(activeIndex);
         writeLocation();
         renderHighlights();
 
-        document.addEventListener("keydown", (event) => {
-            const activeTag = document.activeElement?.tagName || "";
-            if (["INPUT", "TEXTAREA", "SELECT"].includes(activeTag)) {
-                return;
-            }
+        if (!sectionReaderGlobalsBound) {
+            sectionReaderGlobalsBound = true;
+            document.addEventListener("keydown", (event) => {
+                const activeShell = document.querySelector("[data-section-shell]");
+                if (!(activeShell instanceof HTMLElement) || !activeShell.contains(reader)) {
+                    return;
+                }
 
-            if (event.key === "ArrowLeft" && activeIndex > 0) {
-                event.preventDefault();
-                void loadSection(activeIndex - 1);
-            }
-            if (event.key === "ArrowRight" && activeIndex < manifest.length - 1) {
-                event.preventDefault();
-                void loadSection(activeIndex + 1);
-            }
-        });
+                const activeTag = document.activeElement?.tagName || "";
+                if (["INPUT", "TEXTAREA", "SELECT"].includes(activeTag)) {
+                    return;
+                }
+
+                if (event.key === "ArrowLeft" && activeIndex > 0) {
+                    event.preventDefault();
+                    void loadSection(activeIndex - 1);
+                }
+                if (event.key === "ArrowRight" && activeIndex < manifest.length - 1) {
+                    event.preventDefault();
+                    void loadSection(activeIndex + 1);
+                }
+            }, { signal });
+        }
     });
 }
 
@@ -1093,6 +1141,8 @@ async function initEpubReaders() {
         return;
     }
 
+    const signal = getLibraryPageSignal();
+
     let ePubFactory;
     try {
         ePubFactory = await ensureEpubJs();
@@ -1111,6 +1161,12 @@ async function initEpubReaders() {
     }
 
     for (const shell of shells) {
+        if (shell instanceof HTMLElement && shell.dataset.epubBound === "true") {
+            continue;
+        }
+        if (shell instanceof HTMLElement) {
+            shell.dataset.epubBound = "true";
+        }
         const mount = shell.querySelector("[data-epub-reader]");
         const previous = shell.querySelector("[data-epub-prev]");
         const next = shell.querySelector("[data-epub-next]");
@@ -1211,17 +1267,17 @@ async function initEpubReaders() {
 
             previous.addEventListener("click", () => {
                 rendition.prev();
-            });
+            }, { signal });
 
             next.addEventListener("click", () => {
                 rendition.next();
-            });
+            }, { signal });
 
             toc.addEventListener("change", () => {
                 if (toc.value) {
                     rendition.display(toc.value);
                 }
-            });
+            }, { signal });
 
             await rendition.display();
 
@@ -1314,6 +1370,10 @@ async function initEpubReaders() {
 }
 
 function initTimestampHelpers() {
+    if (timestampHelpersInitialized) {
+        return;
+    }
+    timestampHelpersInitialized = true;
     document.addEventListener("click", (event) => {
         if (!(event.target instanceof Element)) {
             return;
@@ -1358,9 +1418,10 @@ function initTrackLyrics() {
     }
 
     shells.forEach((shell) => {
-        if (!(shell instanceof HTMLElement)) {
+        if (!(shell instanceof HTMLElement) || shell.dataset.lyricsBound === "true") {
             return;
         }
+        shell.dataset.lyricsBound = "true";
 
         const scope = shell.closest(".library-detail-grid") || shell;
         const media = scope.querySelector("[data-timestamp-media]");
@@ -1712,6 +1773,11 @@ function initRemotePlayerShell(shell, elements) {
     ) {
         return;
     }
+
+    if (shell.dataset.playerInitialized === "true") {
+        return;
+    }
+    shell.dataset.playerInitialized = "true";
 
     const pageCatalog = readTrackCatalog();
     let playerState = readStoredPlayerState(pageCatalog);

@@ -1,6 +1,20 @@
 import { bindLocationResolver } from "./geolocation.js";
 import { t } from "./i18n.js";
 
+let composerController = null;
+
+function getComposerSignal() {
+    if (!(composerController instanceof AbortController) || composerController.signal.aborted) {
+        composerController = new AbortController();
+    }
+    return composerController.signal;
+}
+
+document.addEventListener("app:before-swap", () => {
+    composerController?.abort();
+    composerController = null;
+});
+
 const previewableExtensions = {
     image: new Set(["jpg", "jpeg", "png", "gif", "webp"]),
     video: new Set(["mp4", "mov", "webm"]),
@@ -97,9 +111,11 @@ function buildCitationCover(item, className) {
 
 export function initComposerModal() {
     const modal = document.querySelector('[data-modal="composer"]');
-    if (!modal) {
+    if (!modal || modal.dataset.composerInitialized === "true") {
         return;
     }
+    modal.dataset.composerInitialized = "true";
+    const signal = getComposerSignal();
 
     const openButtons = document.querySelectorAll("[data-open-composer]");
     const closeButtons = modal.querySelectorAll("[data-close-composer]");
@@ -547,12 +563,12 @@ export function initComposerModal() {
         document.body.classList.remove("is-modal-open");
     };
 
-    openButtons.forEach((button) => button.addEventListener("click", openModal));
-    closeButtons.forEach((button) => button.addEventListener("click", closeModal));
+    openButtons.forEach((button) => button.addEventListener("click", openModal, { signal }));
+    closeButtons.forEach((button) => button.addEventListener("click", closeModal, { signal }));
 
     citationToggle?.addEventListener("click", () => {
         setCitationPanelOpen(citationPanel?.hidden === true);
-    });
+    }, { signal });
 
     citationScopeButtons.forEach((button) => {
         button.addEventListener("click", () => {
@@ -561,7 +577,7 @@ export function initComposerModal() {
                 entry.classList.toggle("is-active", entry === button),
             );
             loadCitationResults();
-        });
+        }, { signal });
     });
 
     citationSearch?.addEventListener("input", () => {
@@ -571,7 +587,7 @@ export function initComposerModal() {
         citationSearchTimer = window.setTimeout(() => {
             loadCitationResults();
         }, 180);
-    });
+    }, { signal });
 
     if (fileInput) {
         fileInput.addEventListener("change", () => {
@@ -598,14 +614,14 @@ export function initComposerModal() {
 
             syncInputFiles();
             renderPreviewList();
-        });
+        }, { signal });
         updateFileSummary(modal);
     }
 
     form?.addEventListener("submit", () => {
         syncInputFiles();
         syncCitationFields();
-    });
+    }, { signal });
 
     bindLocationResolver(modal);
     renderSelectedCitation();
@@ -614,5 +630,5 @@ export function initComposerModal() {
         if (event.key === "Escape" && !modal.hidden) {
             closeModal();
         }
-    });
+    }, { signal });
 }

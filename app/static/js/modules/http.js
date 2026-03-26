@@ -1,4 +1,11 @@
-const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
+let csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
+
+export function refreshCsrfToken(root = document) {
+    csrfToken =
+        root.querySelector?.('meta[name="csrf-token"]')?.content ||
+        document.querySelector('meta[name="csrf-token"]')?.content ||
+        "";
+}
 
 function withCsrf(headers = {}) {
     return csrfToken ? { "X-CSRFToken": csrfToken, ...headers } : headers;

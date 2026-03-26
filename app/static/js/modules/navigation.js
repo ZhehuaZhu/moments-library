@@ -1,5 +1,6 @@
 const mobileQuery = window.matchMedia("(max-width: 1080px)");
 const collapsedKey = "moments-sidebar-collapsed";
+let navigationGlobalsBound = false;
 
 function closeLanguageSwitches(except = null) {
     document.querySelectorAll("[data-language-switch]").forEach((switcher) => {
@@ -144,20 +145,36 @@ export function initNavigation() {
     syncToggleState();
 
     toggleButtons.forEach((button) => {
+        if (button.dataset.navigationBound === "true") {
+            return;
+        }
+        button.dataset.navigationBound = "true";
         button.addEventListener("click", toggleSidebar);
     });
 
     document.querySelectorAll("[data-close-sidebar]").forEach((button) => {
+        if (button.dataset.navigationBound === "true") {
+            return;
+        }
+        button.dataset.navigationBound = "true";
         button.addEventListener("click", closeMobileSidebar);
     });
 
     document.querySelectorAll("[data-history-back]").forEach((button) => {
+        if (button.dataset.navigationBound === "true") {
+            return;
+        }
+        button.dataset.navigationBound = "true";
         button.addEventListener("click", () => {
             goBack(button);
         });
     });
 
     document.querySelectorAll(".sidebar a").forEach((link) => {
+        if (link.dataset.navigationBound === "true") {
+            return;
+        }
+        link.dataset.navigationBound = "true";
         link.addEventListener("click", () => {
             if (mobileQuery.matches) {
                 closeMobileSidebar();
@@ -166,36 +183,58 @@ export function initNavigation() {
     });
 
     const overlay = document.querySelector("[data-sidebar-overlay]");
-    if (overlay) {
+    if (overlay && overlay.dataset.navigationBound !== "true") {
+        overlay.dataset.navigationBound = "true";
         overlay.addEventListener("click", closeMobileSidebar);
     }
 
     document.querySelectorAll("[data-open-folder-panel]").forEach((button) => {
+        if (button.dataset.navigationBound === "true") {
+            return;
+        }
+        button.dataset.navigationBound = "true";
         button.addEventListener("click", () => {
             openFolderPanel(button.dataset.openFolderPanel);
         });
     });
 
     document.querySelectorAll("[data-close-folder-panel]").forEach((button) => {
+        if (button.dataset.navigationBound === "true") {
+            return;
+        }
+        button.dataset.navigationBound = "true";
         button.addEventListener("click", closeFolderPanels);
     });
 
     const folderBackdrop = document.querySelector("[data-folder-panel-backdrop]");
-    if (folderBackdrop) {
+    if (folderBackdrop && folderBackdrop.dataset.navigationBound !== "true") {
+        folderBackdrop.dataset.navigationBound = "true";
         folderBackdrop.addEventListener("click", closeFolderPanels);
     }
 
     document.querySelectorAll("[data-folder-jump]").forEach((link) => {
+        if (link.dataset.navigationBound === "true") {
+            return;
+        }
+        link.dataset.navigationBound = "true";
         link.addEventListener("click", closeFolderPanels);
     });
 
     document.querySelectorAll("[data-folder-parent-mode]").forEach((input) => {
+        if (input.dataset.navigationBound === "true") {
+            return;
+        }
+        input.dataset.navigationBound = "true";
         input.addEventListener("change", syncFolderParentField);
     });
     syncFolderParentField();
     syncFolderPanelState();
 
     document.querySelectorAll("[data-language-switch]").forEach((switcher) => {
+        if (switcher.dataset.navigationBound === "true") {
+            return;
+        }
+        switcher.dataset.navigationBound = "true";
         const trigger = switcher.querySelector(".language-switch__trigger");
         if (!trigger) {
             return;
@@ -208,42 +247,46 @@ export function initNavigation() {
         });
     });
 
-    document.addEventListener("click", (event) => {
-        if (!(event.target instanceof Element) || event.target.closest("[data-language-switch]")) {
-            return;
-        }
-        closeLanguageSwitches();
-    });
+    if (!navigationGlobalsBound) {
+        navigationGlobalsBound = true;
 
-    document.addEventListener("keydown", (event) => {
-        if (event.key !== "Escape") {
-            return;
-        }
-
-        const hasOpenLanguageSwitch = Array.from(document.querySelectorAll("[data-language-switch]")).some((switcher) =>
-            switcher.hasAttribute("open"),
-        );
-        if (hasOpenLanguageSwitch) {
+        document.addEventListener("click", (event) => {
+            if (!(event.target instanceof Element) || event.target.closest("[data-language-switch]")) {
+                return;
+            }
             closeLanguageSwitches();
-            return;
-        }
+        });
 
-        if (document.body.classList.contains("has-folder-panel-open")) {
-            closeFolderPanels();
-            return;
-        }
+        document.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape") {
+                return;
+            }
 
-        if (document.body.classList.contains("is-sidebar-open")) {
-            closeMobileSidebar();
-        }
-    });
+            const hasOpenLanguageSwitch = Array.from(document.querySelectorAll("[data-language-switch]")).some((switcher) =>
+                switcher.hasAttribute("open"),
+            );
+            if (hasOpenLanguageSwitch) {
+                closeLanguageSwitches();
+                return;
+            }
 
-    mobileQuery.addEventListener("change", () => {
-        if (!mobileQuery.matches) {
-            document.body.classList.remove("is-sidebar-open");
-        }
-        restoreDesktopState();
-        syncToggleState();
-        syncFolderPanelState();
-    });
+            if (document.body.classList.contains("has-folder-panel-open")) {
+                closeFolderPanels();
+                return;
+            }
+
+            if (document.body.classList.contains("is-sidebar-open")) {
+                closeMobileSidebar();
+            }
+        });
+
+        mobileQuery.addEventListener("change", () => {
+            if (!mobileQuery.matches) {
+                document.body.classList.remove("is-sidebar-open");
+            }
+            restoreDesktopState();
+            syncToggleState();
+            syncFolderPanelState();
+        });
+    }
 }
