@@ -32,6 +32,7 @@ systemctl restart moments
 systemctl status moments --no-pager
 
 echo "Health check..."
+sleep 2
 for attempt in 1 2 3 4 5; do
   if curl -I http://127.0.0.1:8000; then
     exit 0
