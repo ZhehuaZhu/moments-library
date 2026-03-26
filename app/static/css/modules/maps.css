@@ -304,6 +304,8 @@
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(120, 133, 144, 0.22) transparent;
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 248, 0.96));
 }
@@ -376,7 +378,7 @@
 }
 
 .atlas-inspector::-webkit-scrollbar {
-    width: 10px;
+    width: 6px;
 }
 
 .atlas-inspector::-webkit-scrollbar-track {
@@ -385,8 +387,11 @@
 
 .atlas-inspector::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background: rgba(120, 133, 144, 0.42);
-    border: 2px solid rgba(255, 255, 255, 0.96);
+    background: rgba(120, 133, 144, 0.2);
+}
+
+.atlas-inspector:hover::-webkit-scrollbar-thumb {
+    background: rgba(120, 133, 144, 0.34);
 }
 
 .atlas-inspector__note {
