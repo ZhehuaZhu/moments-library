@@ -9,38 +9,29 @@
 <section class="music-library-page">
     <section class="page-header page-header--music-library">
         <div class="music-library-page__hero">
-            <div class="music-library-page__badge-row">
-                <p class="eyebrow">{{ t('common.library') }}</p>
-                <span class="music-library-page__spotlight">{{ t('counts.tracks', count=result_count) }}</span>
-            </div>
-            <div class="music-library-page__title-row">
-                <h1>{{ module_labels.music }}</h1>
-                <div class="page-header__stats music-library-page__stats">
-                    <span class="stat-chip">{{ t('counts.tracks', count=result_count) }}</span>
-                    <span class="stat-chip stat-chip--accent">{{ t('counts.notes', count=music_stats.notes) }}</span>
-                </div>
-            </div>
+            <p class="eyebrow">{{ t('common.library') }}</p>
+            <h1>{{ module_labels.music }}</h1>
         </div>
-        {% if can_manage %}
-            <div class="music-library-page__toolbar">
+        <div class="music-library-page__toolbar">
+            <div class="page-header__stats music-library-page__stats">
+                <span class="stat-chip">{{ t('counts.tracks', count=result_count) }}</span>
+                <span class="stat-chip stat-chip--accent">{{ t('counts.notes', count=music_stats.notes) }}</span>
+            </div>
+            {% if can_manage %}
                 <button
                     type="button"
-                    class="button button--ghost button--compact"
+                    class="icon-button icon-button--ghost music-library-page__create-button"
                     data-open-folder-panel="track-create"
                     aria-haspopup="dialog"
                     aria-controls="track-create-panel"
                     aria-expanded="false"
+                    aria-label="{{ t('music.add_track') }}"
+                    title="{{ t('music.add_track') }}"
                 >
-                    {{ t('music.add_track') }}
+                    <span aria-hidden="true">+</span>
                 </button>
-            </div>
-        {% else %}
-            <div class="music-library-page__toolbar">
-                <div class="page-header__stats music-library-page__stats music-library-page__stats--compact">
-                    <span class="stat-chip stat-chip--accent">{{ t('counts.notes', count=music_stats.notes) }}</span>
-                </div>
-            </div>
-        {% endif %}
+            {% endif %}
+        </div>
     </section>
 
     <section class="music-library-list">
