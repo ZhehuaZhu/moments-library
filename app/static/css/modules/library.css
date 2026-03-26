@@ -44,6 +44,7 @@
 
 .music-library-page__stats {
     justify-content: flex-start;
+    gap: 6px;
 }
 
 .music-library-page__toolbar {
@@ -2562,12 +2563,13 @@
 
 @media (max-width: 960px) {
     .page-header.page-header--music-library {
-        flex-direction: column;
-        align-items: stretch;
+        flex-wrap: wrap;
+        align-items: center;
     }
 
     .music-library-page__toolbar {
-        justify-content: space-between;
+        justify-content: flex-end;
+        margin-left: auto;
     }
 
     .music-library-list {
@@ -2582,140 +2584,185 @@
 
 @media (max-width: 720px) {
     .page-header.page-header--music-library {
-        gap: 10px;
-        padding: 12px 14px;
-        border-radius: 20px;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 18px;
     }
 
     .page-header.page-header--music-library h1 {
-        font-size: clamp(1.3rem, 5vw, 1.7rem);
+        font-size: clamp(1.12rem, 4.8vw, 1.4rem);
     }
 
     .music-library-list {
-        padding: 4px 5px;
-        border-radius: 20px;
+        padding: 2px 4px;
+        border-radius: 16px;
+    }
+
+    .music-library-page__hero {
+        gap: 1px;
+    }
+
+    .music-library-page__hero .eyebrow {
+        font-size: 0.6rem;
+        letter-spacing: 0.08em;
+    }
+
+    .music-library-page__toolbar {
+        gap: 6px;
+    }
+
+    .music-library-page__stats {
+        gap: 4px;
+    }
+
+    .music-library-page__stats .stat-chip {
+        padding: 4px 7px;
+        font-size: 0.66rem;
+    }
+
+    .music-library-page__create-button {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+    }
+
+    .music-library-page__create-button span {
+        font-size: 1.02rem;
     }
 
     .track-row {
-        padding: 9px 10px;
+        padding: 7px 8px;
         border-radius: 0;
     }
 
     .track-row__primary {
-        grid-template-columns: 52px minmax(0, 1fr) auto;
-        gap: 8px;
-        align-items: flex-start;
+        grid-template-columns: 44px minmax(0, 1fr) auto;
+        gap: 7px;
+        align-items: center;
     }
 
     .track-row__cover {
-        width: 52px;
-        height: 52px;
-        border-radius: 14px;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
     }
 
     .track-row__title {
-        font-size: 0.9rem;
-    }
-
-    .track-row__title-row {
-        display: grid;
-        gap: 6px;
-    }
-
-    .track-row__artist {
-        font-size: 0.8rem;
-    }
-
-    .track-row__summary {
         font-size: 0.82rem;
     }
 
-    .track-row__meta .badge {
-        padding: 4px 7px;
+    .track-row__title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .track-row__artist {
         font-size: 0.68rem;
     }
 
+    .track-row__title-group {
+        gap: 1px;
+    }
+
+    .track-row__meta .badge {
+        padding: 2px 5px;
+        font-size: 0.58rem;
+    }
+
+    .track-row__tag--collection,
+    .track-row__tag--mood {
+        display: none;
+    }
+
     .track-row__action {
-        width: 34px;
-        height: 34px;
-        border-radius: 11px;
+        width: 28px;
+        height: 28px;
+        border-radius: 9px;
+    }
+
+    .track-row__action span {
+        font-size: 0.72rem;
     }
 }
 
 @media (max-width: 540px) {
     .music-library-page {
-        gap: 10px;
+        gap: 8px;
     }
 
     .page-header.page-header--music-library {
-        padding: 12px 12px;
-        border-radius: 18px;
-        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 16px;
+        gap: 6px;
     }
 
     .page-header.page-header--music-library h1 {
-        font-size: clamp(1.18rem, 6vw, 1.45rem);
+        font-size: clamp(1rem, 5.5vw, 1.24rem);
     }
 
     .music-library-list {
-        padding: 3px 4px;
-        border-radius: 18px;
+        padding: 1px 3px;
+        border-radius: 14px;
     }
 
     .music-library-page__hero .eyebrow {
-        font-size: 0.66rem;
+        display: none;
     }
 
     .music-library-page__stats .stat-chip {
-        padding: 5px 8px;
-        font-size: 0.72rem;
+        padding: 3px 6px;
+        font-size: 0.62rem;
     }
 
     .music-library-page__toolbar {
-        gap: 8px;
+        gap: 4px;
     }
 
     .music-library-page__create-button {
-        width: 34px;
-        height: 34px;
-        border-radius: 10px;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
     }
 
     .music-library-page__create-button span {
-        font-size: 1.2rem;
+        font-size: 0.96rem;
     }
 
     .track-row {
-        padding: 8px 8px;
+        padding: 6px 6px;
         border-radius: 0;
     }
 
     .track-row__primary {
-        grid-template-columns: 46px minmax(0, 1fr) auto;
-        gap: 7px;
+        grid-template-columns: 40px minmax(0, 1fr) auto;
+        gap: 6px;
     }
 
     .track-row__cover {
-        width: 46px;
-        height: 46px;
-        border-radius: 12px;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
     }
 
     .track-row__main {
-        gap: 2px;
+        gap: 1px;
     }
 
     .track-row__title-row {
-        display: grid;
-        gap: 3px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
     }
 
     .track-row__title {
-        font-size: 0.84rem;
+        font-size: 0.78rem;
     }
 
     .track-row__artist {
-        font-size: 0.72rem;
+        font-size: 0.64rem;
     }
 
     .track-row__summary {
@@ -2723,26 +2770,26 @@
     }
 
     .track-row__meta {
-        gap: 4px;
-        justify-content: flex-start;
+        gap: 3px;
+        justify-content: flex-end;
     }
 
     .track-row__meta .badge {
-        padding: 3px 6px;
-        font-size: 0.64rem;
+        padding: 2px 5px;
+        font-size: 0.56rem;
     }
 
     .track-row__actions {
-        gap: 4px;
+        gap: 3px;
     }
 
     .track-row__action {
-        width: 30px;
-        height: 30px;
-        border-radius: 9px;
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
     }
 
     .track-row__action span {
-        font-size: 0.76rem;
+        font-size: 0.64rem;
     }
 }
