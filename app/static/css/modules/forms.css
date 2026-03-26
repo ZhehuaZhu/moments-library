@@ -21,6 +21,15 @@
     background: rgba(244, 247, 248, 0.88);
 }
 
+.composer-cross-post {
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+    border: 1px solid rgba(34, 48, 60, 0.08);
+    border-radius: var(--radius-lg);
+    background: rgba(244, 247, 248, 0.88);
+}
+
 .composer-file-list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -115,6 +124,87 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.cross-post-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.cross-post-option {
+    display: grid;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid rgba(34, 48, 60, 0.08);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.94);
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+    cursor: pointer;
+}
+
+.cross-post-option:hover,
+.cross-post-option.is-ready {
+    border-color: rgba(63, 111, 100, 0.2);
+    box-shadow: 0 12px 24px rgba(21, 33, 42, 0.08);
+}
+
+.cross-post-option.is-selected {
+    border-color: rgba(63, 111, 100, 0.34);
+    box-shadow: 0 14px 28px rgba(21, 33, 42, 0.1);
+}
+
+.cross-post-option.is-disabled {
+    opacity: 0.82;
+}
+
+.cross-post-option__top,
+.cross-post-option__check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cross-post-option__top {
+    justify-content: space-between;
+}
+
+.cross-post-option__check input {
+    margin: 0;
+}
+
+.cross-post-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: rgba(34, 48, 60, 0.08);
+    color: var(--muted);
+}
+
+.cross-post-status--waiting {
+    background: rgba(34, 48, 60, 0.08);
+    color: var(--muted);
+}
+
+.cross-post-status--ready {
+    background: rgba(63, 111, 100, 0.12);
+    color: var(--accent-strong);
+}
+
+.cross-post-status--blocked {
+    background: rgba(176, 87, 87, 0.1);
+    color: var(--danger);
+}
+
+.cross-post-status--published {
+    background: rgba(78, 122, 85, 0.14);
+    color: #365a3d;
 }
 
 .field {

@@ -22,7 +22,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         tasks.push(import("./modules/moment-menu.js").then(({ initMomentMenus }) => initMomentMenus()));
     }
 
-    if (has("[data-action='delete-moment'], [data-action='restore-moment'], [data-folder-moment-count], [data-folder-moment-list]")) {
+    if (
+        has(
+            "[data-action='delete-moment'], [data-action='restore-moment'], [data-folder-moment-count], [data-folder-moment-list], [data-cross-post-action], [data-copy-cross-post-caption]",
+        )
+    ) {
         tasks.push(import("./modules/feed.js").then(({ initFeedInteractions }) => initFeedInteractions()));
     }
 

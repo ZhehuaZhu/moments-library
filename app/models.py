@@ -97,6 +97,7 @@ class Moment(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=True)
+    cross_post_targets = db.Column(db.Text, nullable=True)
     location_label = db.Column(db.String(255), nullable=True)
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)

@@ -8,6 +8,11 @@ from ..extensions import db
 from ..models import Category, Moment
 from ..permissions import admin_required
 from ..services.citations import normalize_citation_scope, search_citation_payloads
+from ..services.cross_post import (
+    evaluate_cross_post_platform,
+    mark_cross_post_published,
+    reset_cross_post_publication,
+)
 from ..services.folders import resolve_folders
 from ..services.footprints import normalize_reverse_geocode_result
 from ..services.geocoding import GeocodingError, reverse_geocode
@@ -126,3 +131,39 @@ def restore_moment(moment_id: int):
     db.session.commit()
 
     return jsonify({"success": True, "moment_id": moment.id})
+
+
+@api_bp.route("/api/moments/<int:moment_id>/cross-post/<platform>", methods=["POST"])
+@admin_required
+def update_cross_post_status(moment_id: int, platform: str):
+    moment = db.session.get(Moment, moment_id)
+    if moment is None or moment.is_deleted:
+        return jsonify({"error": "Moment not found."}), 404
+
+    payload = request.get_json(silent=True) or {}
+    action = (payload.get("action") or "").strip()
+
+    try:
+        evaluation = evaluate_cross_post_platform(moment, platform)
+    except ValueError:
+        return jsonify({"error": "Unsupported platform."}), 400
+
+    if action == "publish":
+        if not evaluation["eligible"]:
+            return jsonify({"error": "This platform is not ready for the current draft."}), 400
+        mark_cross_post_published(moment, platform)
+    elif action == "reset":
+        reset_cross_post_publication(moment, platform)
+    else:
+        return jsonify({"error": "Unsupported action."}), 400
+
+    db.session.commit()
+
+    return jsonify(
+        {
+            "success": True,
+            "moment_id": moment.id,
+            "platform": platform,
+            "published": action == "publish",
+        }
+    )

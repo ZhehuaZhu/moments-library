@@ -93,6 +93,51 @@
                 <div class="composer-file-list" data-composer-file-list></div>
             </section>
 
+            <section
+                class="composer-cross-post"
+                data-cross-post-shell
+                data-waiting-label="{{ t('cross_post.status.waiting') }}"
+                data-ready-label="{{ t('cross_post.status.ready') }}"
+                data-blocked-label="{{ t('cross_post.status.blocked') }}"
+                data-waiting-hint="{{ t('cross_post.waiting_hint') }}"
+                data-reason-documents="{{ t('cross_post.reason.documents') }}"
+                data-reason-mixed-media="{{ t('cross_post.reason.mixed_media') }}"
+                data-reason-wechat-image-limit="{{ t('cross_post.reason.wechat_image_limit') }}"
+                data-reason-single-video-only="{{ t('cross_post.reason.single_video_only') }}"
+                data-reason-need-text-or-supported-media="{{ t('cross_post.reason.need_text_or_supported_media') }}"
+                data-reason-need-media="{{ t('cross_post.reason.need_media') }}"
+                data-reason-instagram-limit="{{ t('cross_post.reason.instagram_limit') }}"
+                data-reason-xiaohongshu-image-limit="{{ t('cross_post.reason.xiaohongshu_image_limit') }}"
+            >
+                <div class="section-title-row section-title-row--compact">
+                    <div>
+                        <h3>{{ t('cross_post.title') }}</h3>
+                        <p>{{ t('cross_post.description') }}</p>
+                    </div>
+                </div>
+                <p class="helper-text">{{ t('cross_post.select_targets') }}</p>
+                <div class="cross-post-grid">
+                    {% for platform in cross_post_platforms %}
+                        <label class="cross-post-option" data-cross-post-option data-platform="{{ platform.key }}">
+                            <div class="cross-post-option__top">
+                                <span class="cross-post-option__check">
+                                    <input
+                                        type="checkbox"
+                                        name="cross_post_targets"
+                                        value="{{ platform.key }}"
+                                        data-cross-post-checkbox
+                                    >
+                                    <strong>{{ t(platform.label_key) }}</strong>
+                                </span>
+                                <span class="cross-post-status" data-cross-post-status>{{ t('cross_post.status.waiting') }}</span>
+                            </div>
+                            <small class="helper-text" data-cross-post-requirement>{{ t(platform.requirements_key) }}</small>
+                            <p class="helper-text" data-cross-post-hint>{{ t('cross_post.waiting_hint') }}</p>
+                        </label>
+                    {% endfor %}
+                </div>
+            </section>
+
             <div class="location-card">
                 <div>
                     <strong>{{ t('common.current_location') }}</strong>
