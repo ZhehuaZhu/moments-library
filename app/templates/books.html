@@ -13,38 +13,42 @@
         </div>
     </div>
     <div class="page-header__stats page-header__stats--bookshelf">
-        <span class="stat-chip stat-chip--bookshelf stat-chip--books-total" data-count="{{ result_count }}" aria-label="{{ t('counts.titles', count=result_count) }}">
-            {{ t('counts.titles', count=result_count) }}
-        </span>
-        <span class="stat-chip stat-chip--bookshelf stat-chip--books-reading" data-count="{{ reading_count }}" aria-label="{{ t('book_status.reading') }} {{ reading_count }}">
-            {{ t('book_status.reading') }} {{ reading_count }}
-        </span>
-        <span class="stat-chip stat-chip--accent stat-chip--bookshelf stat-chip--books-finished" data-count="{{ finished_count }}" aria-label="{{ t('book_status.finished') }} {{ finished_count }}">
-            {{ t('book_status.finished') }} {{ finished_count }}
-        </span>
+        <div class="bookshelf-header__metrics">
+            <span class="stat-chip stat-chip--bookshelf stat-chip--books-total" data-count="{{ result_count }}" aria-label="{{ t('counts.titles', count=result_count) }}">
+                <span class="bookshelf-header__metric-label">{{ t('counts.titles', count=result_count) }}</span>
+            </span>
+            <span class="stat-chip stat-chip--bookshelf stat-chip--books-reading" data-count="{{ reading_count }}" aria-label="{{ t('book_status.reading') }} {{ reading_count }}">
+                <span class="bookshelf-header__metric-label">{{ t('book_status.reading') }} {{ reading_count }}</span>
+            </span>
+            <span class="stat-chip stat-chip--accent stat-chip--bookshelf stat-chip--books-finished" data-count="{{ finished_count }}" aria-label="{{ t('book_status.finished') }} {{ finished_count }}">
+                <span class="bookshelf-header__metric-label">{{ t('book_status.finished') }} {{ finished_count }}</span>
+            </span>
+        </div>
         {% if can_manage %}
-            <button
-                type="button"
-                class="button button--subtle button--compact bookshelf-header__action bookshelf-header__action--collection"
-                data-open-folder-panel="create"
-                aria-haspopup="dialog"
-                aria-controls="folder-create-panel"
-                aria-expanded="false"
-                aria-label="{{ t('books.new_collection') }}"
-            >
-                {{ t('books.new_collection') }}
-            </button>
-            <button
-                type="button"
-                class="button button--ghost button--compact bookshelf-header__action bookshelf-header__action--add"
-                data-open-folder-panel="book-create"
-                aria-haspopup="dialog"
-                aria-controls="book-create-panel"
-                aria-expanded="false"
-                aria-label="{{ t('books.add_book') }}"
-            >
-                {{ t('books.add_book') }}
-            </button>
+            <div class="bookshelf-header__actions">
+                <button
+                    type="button"
+                    class="button button--subtle button--compact bookshelf-header__action bookshelf-header__action--collection"
+                    data-open-folder-panel="create"
+                    aria-haspopup="dialog"
+                    aria-controls="folder-create-panel"
+                    aria-expanded="false"
+                    aria-label="{{ t('books.new_collection') }}"
+                >
+                    <span class="bookshelf-header__action-label">{{ t('books.new_collection') }}</span>
+                </button>
+                <button
+                    type="button"
+                    class="button button--ghost button--compact bookshelf-header__action bookshelf-header__action--add"
+                    data-open-folder-panel="book-create"
+                    aria-haspopup="dialog"
+                    aria-controls="book-create-panel"
+                    aria-expanded="false"
+                    aria-label="{{ t('books.add_book') }}"
+                >
+                    <span class="bookshelf-header__action-label">{{ t('books.add_book') }}</span>
+                </button>
+            </div>
         {% endif %}
     </div>
 </section>
