@@ -468,14 +468,27 @@
     }
 
     .composer-citation-card__body,
-    .moment-citation {
+    .moment-citation:not(.moment-citation--music) {
         grid-template-columns: 1fr;
     }
 
     .composer-citation-card__cover,
-    .moment-citation__cover {
+    .moment-citation__cover:not(.moment-citation__cover--music) {
         width: 48px;
         height: 48px;
+    }
+
+    .moment-citation--music {
+        grid-template-columns: 72px minmax(0, 1fr);
+        gap: 14px;
+        padding: 14px;
+        border-radius: 22px;
+    }
+
+    .moment-citation__cover--music {
+        width: 72px;
+        height: 72px;
+        border-radius: 20px;
     }
 
     .book-detail-overview {
@@ -984,7 +997,8 @@
     }
 
     .media-cluster--grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: min(100%, 304px);
     }
 
     .media-cluster--single .media-tile {

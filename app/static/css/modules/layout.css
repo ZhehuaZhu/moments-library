@@ -180,9 +180,9 @@ body.is-sidebar-open .sidebar-overlay {
     position: sticky;
     top: 26px;
     z-index: 12;
-    align-self: flex-start;
-    width: min(100%, 980px);
-    max-width: 100%;
+    align-self: stretch;
+    width: 100%;
+    max-width: none;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -245,6 +245,7 @@ body.is-sidebar-open .sidebar-overlay {
     gap: 8px;
     flex-wrap: wrap;
     justify-content: flex-end;
+    min-width: 0;
 }
 
 .language-switch {
