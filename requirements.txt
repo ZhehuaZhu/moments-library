@@ -8,3 +8,4 @@ ebooklib>=0.20,<1.0
 mobi>=0.4,<1.0
 pytest>=8.0,<9.0
 imageio-ffmpeg>=0.6,<1.0
+Pillow>=12.0,<13.0

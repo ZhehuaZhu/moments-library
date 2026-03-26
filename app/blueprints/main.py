@@ -37,6 +37,7 @@ from ..services.footprints import (
     ensure_moment_place_metadata,
     parse_place_form_data,
 )
+from ..services.image_previews import ensure_attachment_image_preview
 from ..services.i18n import LANGUAGE_COOKIE_NAME, normalize_language, translate
 from ..services.storage import UploadValidationError, cleanup_files, save_upload
 from ..services.video_previews import ensure_attachment_video_preview
@@ -166,12 +167,15 @@ def redirect_back(default_endpoint: str = "main.index"):
     return redirect(target or url_for(default_endpoint))
 
 
-def ensure_feed_video_previews(moments: list[Moment]) -> None:
+def ensure_feed_media_previews(moments: list[Moment]) -> None:
     changed = False
     upload_root = current_app.config["UPLOAD_FOLDER"]
 
     for moment in moments:
         for attachment in moment.attachments:
+            image_paths = ensure_attachment_image_preview(attachment, upload_root)
+            if image_paths:
+                changed = True
             created_paths = ensure_attachment_video_preview(attachment, upload_root)
             if created_paths:
                 changed = True
@@ -328,7 +332,7 @@ def index():
                 filter_key = str(selected_folder.id)
 
     moments = moments_query.all()
-    ensure_feed_video_previews(moments)
+    ensure_feed_media_previews(moments)
     context = build_sidebar_context(
         active_nav="feed",
         selected_folder_key=selected_folder_key,
@@ -533,6 +537,9 @@ def create_moment():
                 size_bytes=metadata["size_bytes"],
             )
             saved_paths.extend(
+                ensure_attachment_image_preview(attachment, current_app.config["UPLOAD_FOLDER"])
+            )
+            saved_paths.extend(
                 ensure_attachment_video_preview(attachment, current_app.config["UPLOAD_FOLDER"])
             )
             db.session.add(attachment)
@@ -658,7 +665,7 @@ def moment_history(moment_id: int):
 def recycle_bin():
     search_query = (request.args.get("q") or "").strip()
     moments = apply_search_filter(load_feed_query(include_deleted=True), search_query).all()
-    ensure_feed_video_previews(moments)
+    ensure_feed_media_previews(moments)
     context = build_sidebar_context(
         active_nav="recycle",
         selected_folder_key="all",
@@ -686,7 +693,7 @@ def footprints():
         )
         .all()
     )
-    ensure_feed_video_previews(moments)
+    ensure_feed_media_previews(moments)
     if not current_app.config.get("TESTING"):
         metadata_changed = ensure_moment_place_metadata(
             moments,

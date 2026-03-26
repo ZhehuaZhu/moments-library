@@ -5,6 +5,7 @@ from datetime import date, datetime, timedelta
 from io import BytesIO
 
 from ebooklib import epub
+from PIL import Image
 
 from app.extensions import db
 from app.models import (
@@ -21,6 +22,7 @@ from app.models import (
     VideoEntry,
 )
 from app.services.folders import serialize_folder_snapshot
+from app.services.storage import resolve_storage_path
 
 
 def build_epub_bytes(title: str, chapter_title: str, body_text: str) -> bytes:
@@ -72,6 +74,13 @@ def build_epub_with_front_matter_bytes(title: str) -> bytes:
 
     output = BytesIO()
     epub.write_epub(output, book)
+    return output.getvalue()
+
+
+def build_photo_bytes(size: tuple[int, int] = (2400, 1600)) -> bytes:
+    image = Image.effect_noise(size, 96).convert("RGB")
+    output = BytesIO()
+    image.save(output, format="JPEG", quality=96)
     return output.getvalue()
 
 
@@ -798,6 +807,74 @@ def test_admin_can_create_moment_with_multiple_folders_and_uploads(admin_client,
         assert len(moment.attachments) == 2
         assert all(attachment.stored_name != attachment.original_name for attachment in moment.attachments)
         assert {attachment.media_kind for attachment in moment.attachments} == {"document", "image"}
+
+
+def test_moment_image_upload_generates_compressed_preview(admin_client, app):
+    response = admin_client.post(
+        "/moments",
+        data={
+            "content": "Compressed image upload",
+            "files": [(BytesIO(build_photo_bytes()), "photo.jpg")],
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Moment published." in response.data
+
+    with app.app_context():
+        attachment = Attachment.query.one()
+        assert attachment.media_kind == "image"
+        assert attachment.preview_relative_path is not None
+        assert attachment.preview_relative_path != attachment.relative_path
+        assert attachment.preview_mime_type == "image/jpeg"
+
+        source_path = resolve_storage_path(app.config["UPLOAD_FOLDER"], attachment.relative_path)
+        preview_path = resolve_storage_path(
+            app.config["UPLOAD_FOLDER"], attachment.preview_relative_path
+        )
+        assert source_path.exists()
+        assert preview_path.exists()
+        assert attachment.size_bytes == source_path.stat().st_size
+
+
+def test_feed_request_backfills_preview_for_existing_image_attachment(client, app):
+    with app.app_context():
+        relative_path = "uploads/2026/03/backfill-photo.jpg"
+        source_path = resolve_storage_path(app.config["UPLOAD_FOLDER"], relative_path)
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_bytes(build_photo_bytes())
+
+        moment = Moment(content="Backfill photo", author_id=1)
+        db.session.add(moment)
+        db.session.flush()
+
+        attachment = Attachment(
+            moment_id=moment.id,
+            original_name="backfill-photo.jpg",
+            stored_name="backfill-photo.jpg",
+            relative_path=relative_path,
+            mime_type="image/jpeg",
+            media_kind="image",
+            size_bytes=source_path.stat().st_size,
+        )
+        db.session.add(attachment)
+        db.session.commit()
+        attachment_id = attachment.id
+
+    response = client.get("/")
+    assert response.status_code == 200
+
+    with app.app_context():
+        attachment = db.session.get(Attachment, attachment_id)
+        assert attachment is not None
+        assert attachment.preview_relative_path is not None
+        preview_path = resolve_storage_path(
+            app.config["UPLOAD_FOLDER"], attachment.preview_relative_path
+        )
+        assert preview_path.exists()
+        assert attachment.preview_relative_path.encode() in response.data
 
 
 def test_admin_can_publish_citation_only_moment(admin_client, app):
