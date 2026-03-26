@@ -78,10 +78,26 @@
                             {{ track_preview or t('music.no_review') }}
                         </p>
                     </div>
-                </div>
-                <div class="track-row__actions">
-                    <button type="button" class="button button--ghost" data-track-play data-track-id="{{ track.id }}">{{ t('music.play') }}</button>
-                    <a class="button button--subtle" href="{{ url_for('library.track_detail', track_id=track.id) }}">{{ t('common.details') }}</a>
+                    <div class="track-row__actions">
+                        <button
+                            type="button"
+                            class="icon-button icon-button--ghost track-row__action"
+                            data-track-play
+                            data-track-id="{{ track.id }}"
+                            aria-label="{{ t('music.play') }} {{ track.title }}"
+                            title="{{ t('music.play') }}"
+                        >
+                            <span aria-hidden="true">&#9654;</span>
+                        </button>
+                        <a
+                            class="icon-button icon-button--ghost track-row__action"
+                            href="{{ url_for('library.track_detail', track_id=track.id) }}"
+                            aria-label="{{ t('common.details') }} {{ track.title }}"
+                            title="{{ t('common.details') }}"
+                        >
+                            <span aria-hidden="true">&#9432;</span>
+                        </a>
+                    </div>
                 </div>
             </article>
         {% else %}

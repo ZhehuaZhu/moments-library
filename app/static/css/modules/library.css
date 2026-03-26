@@ -11,7 +11,7 @@
 
 .music-library-page {
     display: grid;
-    gap: 18px;
+    gap: 16px;
 }
 
 .page-header.page-header--music-library {
@@ -55,17 +55,16 @@
 
 .music-library-list {
     display: grid;
-    gap: 14px;
+    gap: 12px;
 }
 
 .track-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 18px;
+    gap: 12px;
     align-items: center;
-    padding: 20px 22px;
+    padding: 18px 20px;
     border: 1px solid rgba(34, 48, 60, 0.08);
-    border-radius: 30px;
+    border-radius: 26px;
     background: rgba(255, 255, 255, 0.96);
     box-shadow: 0 16px 30px rgba(21, 33, 42, 0.08);
     transition:
@@ -83,8 +82,8 @@
 .track-row__primary {
     min-width: 0;
     display: grid;
-    grid-template-columns: 96px minmax(0, 1fr);
-    gap: 18px;
+    grid-template-columns: 88px minmax(0, 1fr) auto;
+    gap: 16px;
     align-items: center;
 }
 
@@ -98,10 +97,10 @@
 }
 
 .track-row__cover {
-    width: 96px;
-    height: 96px;
+    width: 88px;
+    height: 88px;
     display: block;
-    border-radius: 26px;
+    border-radius: 24px;
     object-fit: cover;
     box-shadow: 0 18px 32px rgba(21, 33, 42, 0.12);
     transition: transform var(--transition), box-shadow var(--transition);
@@ -129,14 +128,12 @@
 .track-row__main {
     min-width: 0;
     display: grid;
-    gap: 12px;
+    gap: 8px;
 }
 
 .track-row__title-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
+    display: grid;
+    gap: 8px;
 }
 
 .track-row__title-group {
@@ -147,7 +144,7 @@
 
 .track-row__title {
     margin: 0;
-    font-size: 1.24rem;
+    font-size: 1.16rem;
     line-height: 1.2;
     letter-spacing: -0.04em;
 }
@@ -171,21 +168,23 @@
 .track-row__artist {
     color: var(--muted);
     font-weight: 600;
+    font-size: 0.94rem;
 }
 
 .track-row__meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
 }
 
 .track-row__summary {
     color: var(--text);
-    line-height: 1.7;
+    font-size: 0.92rem;
+    line-height: 1.5;
     display: -webkit-box;
     overflow: hidden;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
 }
 
 .track-row__summary--placeholder {
@@ -193,15 +192,21 @@
 }
 
 .track-row__actions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    align-self: start;
 }
 
-.track-row__actions .button {
-    min-width: 96px;
-    justify-content: center;
+.track-row__action {
+    width: 40px;
+    height: 40px;
+    text-decoration: none;
+    box-shadow: none;
+}
+
+.track-row__action span {
+    font-size: 1rem;
 }
 
 .bookshelf-grid {
@@ -1821,8 +1826,8 @@
 }
 
 .audio-player {
-    --player-panel-width: 392px;
-    --player-panel-height: 332px;
+    --player-panel-width: 360px;
+    --player-panel-height: 300px;
     --player-bubble-size: 72px;
     --player-panel-opacity: 0.92;
     --player-ui-scale: 1;
@@ -1999,10 +2004,10 @@
 }
 
 .audio-player__artwork--panel {
-    width: 58px;
-    height: 58px;
-    flex: 0 0 58px;
-    border-radius: 18px;
+    width: 54px;
+    height: 54px;
+    flex: 0 0 54px;
+    border-radius: 16px;
 }
 
 .audio-player__artwork-label {
@@ -2050,10 +2055,10 @@
 .audio-player__summary {
     min-width: 0;
     display: grid;
-    grid-template-columns: calc(72px * var(--player-ui-scale)) minmax(0, 1fr);
+    grid-template-columns: calc(64px * var(--player-ui-scale)) minmax(0, 1fr);
     align-items: center;
-    gap: calc(14px * var(--player-ui-scale));
-    padding: calc(14px * var(--player-ui-scale));
+    gap: calc(12px * var(--player-ui-scale));
+    padding: calc(12px * var(--player-ui-scale));
     border: 1px solid rgba(63, 111, 100, 0.1);
     border-radius: calc(24px * var(--player-ui-scale));
     background:
@@ -2186,8 +2191,8 @@
     z-index: 6;
     display: grid;
     gap: 8px;
-    width: min(320px, calc(100vw - 24px));
-    max-height: min(320px, calc(100vh - 24px));
+    width: min(280px, calc(100vw - 24px));
+    max-height: min(260px, calc(100vh - 24px));
     overflow: auto;
     padding: 12px;
     border: 1px solid rgba(34, 48, 60, 0.08);
@@ -2342,66 +2347,135 @@
     }
 
     .track-row {
-        grid-template-columns: 1fr;
         align-items: stretch;
-    }
-
-    .track-row__actions {
-        justify-content: flex-start;
     }
 }
 
 @media (max-width: 720px) {
     .page-header.page-header--music-library {
-        padding: 22px 18px;
-        border-radius: 26px;
+        padding: 18px 16px;
+        border-radius: 22px;
+    }
+
+    .page-header.page-header--music-library h1 {
+        font-size: clamp(2rem, 8vw, 2.7rem);
     }
 
     .track-row {
-        padding: 18px;
-        border-radius: 24px;
+        padding: 14px 16px;
+        border-radius: 22px;
     }
 
     .track-row__primary {
-        grid-template-columns: 80px minmax(0, 1fr);
-        gap: 14px;
+        grid-template-columns: 68px minmax(0, 1fr) auto;
+        gap: 12px;
         align-items: flex-start;
     }
 
     .track-row__cover {
-        width: 80px;
-        height: 80px;
-        border-radius: 22px;
+        width: 68px;
+        height: 68px;
+        border-radius: 18px;
     }
 
-    .track-row__title-row {
-        flex-direction: column;
-        gap: 10px;
+    .track-row__title {
+        font-size: 1.02rem;
+    }
+
+    .track-row__artist {
+        font-size: 0.86rem;
+    }
+
+    .track-row__summary {
+        font-size: 0.86rem;
+    }
+
+    .track-row__meta .badge {
+        padding: 6px 9px;
+        font-size: 0.75rem;
+    }
+
+    .track-row__action {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
     }
 }
 
 @media (max-width: 540px) {
-    .track-row__primary {
-        grid-template-columns: 1fr;
+    .music-library-page {
+        gap: 12px;
     }
 
-    .track-row__artwork-link {
-        width: fit-content;
-    }
-
-    .track-row__cover {
-        width: 72px;
-        height: 72px;
+    .page-header.page-header--music-library {
+        padding: 16px 14px;
         border-radius: 20px;
     }
 
-    .track-row__actions {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+    .page-header.page-header--music-library h1 {
+        font-size: clamp(1.85rem, 10vw, 2.25rem);
     }
 
-    .track-row__actions .button {
-        width: 100%;
-        min-width: 0;
+    .music-library-page__headline .eyebrow {
+        margin-bottom: 6px;
+    }
+
+    .track-row {
+        padding: 12px 14px;
+        border-radius: 20px;
+    }
+
+    .track-row__primary {
+        grid-template-columns: 58px minmax(0, 1fr) auto;
+        gap: 10px;
+    }
+
+    .track-row__cover {
+        width: 58px;
+        height: 58px;
+        border-radius: 16px;
+    }
+
+    .track-row__main {
+        gap: 5px;
+    }
+
+    .track-row__title-row {
+        gap: 6px;
+    }
+
+    .track-row__title {
+        font-size: 0.98rem;
+    }
+
+    .track-row__artist {
+        font-size: 0.8rem;
+    }
+
+    .track-row__summary {
+        display: none;
+    }
+
+    .track-row__meta {
+        gap: 5px;
+    }
+
+    .track-row__meta .badge {
+        padding: 5px 8px;
+        font-size: 0.72rem;
+    }
+
+    .track-row__actions {
+        gap: 6px;
+    }
+
+    .track-row__action {
+        width: 34px;
+        height: 34px;
+        border-radius: 11px;
+    }
+
+    .track-row__action span {
+        font-size: 0.9rem;
     }
 }

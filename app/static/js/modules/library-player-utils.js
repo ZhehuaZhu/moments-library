@@ -111,10 +111,10 @@ export function applyPlayerAppearance(shell, appearance, controls = {}) {
 
 function getPlayerSizeBounds() {
     return {
-        minWidth: 320,
-        minHeight: 250,
-        maxWidth: Math.max(320, window.innerWidth - 24),
-        maxHeight: Math.max(250, window.innerHeight - 24),
+        minWidth: 280,
+        minHeight: 220,
+        maxWidth: Math.max(280, window.innerWidth - 24),
+        maxHeight: Math.max(220, window.innerHeight - 24),
     };
 }
 
@@ -125,10 +125,10 @@ function normalizePlayerSize(rawSize) {
     return {
         width: Number.isFinite(width)
             ? Math.min(Math.max(Math.round(width), bounds.minWidth), bounds.maxWidth)
-            : Math.min(392, bounds.maxWidth),
+            : Math.min(360, bounds.maxWidth),
         height: Number.isFinite(height)
             ? Math.min(Math.max(Math.round(height), bounds.minHeight), bounds.maxHeight)
-            : Math.min(332, bounds.maxHeight),
+            : Math.min(300, bounds.maxHeight),
     };
 }
 
@@ -152,7 +152,7 @@ export function applyPlayerSize(shell, size) {
     shell.style.setProperty("--player-panel-height", `${normalized.height}px`);
     shell.style.setProperty(
         "--player-ui-scale",
-        `${Math.min(normalized.width / 392, normalized.height / 332).toFixed(3)}`
+        `${Math.min(normalized.width / 360, normalized.height / 300).toFixed(3)}`
     );
     return normalized;
 }
