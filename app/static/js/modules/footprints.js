@@ -146,19 +146,20 @@ function buildCountryStyle({ visited, selected, contrastEnabled }) {
     };
 }
 
-function buildMarkerIcon(L, place, selected = false) {
-    const momentCount = Math.max(1, Number(place.moment_count || 0));
-    const countDigits = String(momentCount).length;
-    const hasCount = momentCount > 1;
-    const markerSize = hasCount
-        ? Math.min(42, (selected ? 32 : 28) + countDigits * 4)
-        : (selected ? 24 : 18);
+function buildMarkerIcon(L, { count = 1, selected = false, cluster = false } = {}) {
+    const markerCount = Math.max(1, Number(count || 0));
+    const countDigits = String(markerCount).length;
+    const hasCount = cluster || markerCount > 1;
+    const markerSize = cluster
+        ? Math.min(50, (selected ? 38 : 34) + countDigits * 4)
+        : (hasCount ? Math.min(42, (selected ? 32 : 28) + countDigits * 4) : (selected ? 24 : 18));
     const markerClass = [
         "atlas-marker",
         selected ? "is-selected" : "",
         hasCount ? "has-count" : "",
+        cluster ? "is-cluster" : "",
     ].filter(Boolean).join(" ");
-    const countMarkup = hasCount ? `<strong class="atlas-marker__count">${momentCount}</strong>` : "";
+    const countMarkup = hasCount ? `<strong class="atlas-marker__count">${markerCount}</strong>` : "";
 
     return L.divIcon({
         className: "atlas-marker-wrap",
@@ -204,11 +205,100 @@ function truncateText(value = "", maxLength = 96) {
     return `${normalized.slice(0, maxLength - 3).trimEnd()}...`;
 }
 
-function renderMomentPeek(moment) {
+function escapeRegExp(value = "") {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function compactLocationText(value = "") {
+    return String(value || "")
+        .replace(/[|;,]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function splitLocationParts(value = "") {
+    return String(value || "")
+        .split(/[|;,]+/g)
+        .map((part) => compactLocationText(part))
+        .filter(Boolean);
+}
+
+function dedupeLocationParts(parts = []) {
+    const unique = [];
+    const seen = new Set();
+
+    parts.forEach((part) => {
+        const normalized = normalizeLookupValue(part);
+        if (!normalized || seen.has(normalized)) {
+            return;
+        }
+        seen.add(normalized);
+        unique.push(part);
+    });
+
+    return unique;
+}
+
+function formatSharedLocation(place) {
+    const sharedParts = dedupeLocationParts([
+        ...splitLocationParts(place.subtitle),
+        place.city_name,
+        place.admin_area,
+        place.country_name,
+    ]);
+
+    return sharedParts.slice(0, 3).join(" / ");
+}
+
+function buildMomentLocationDetail(moment, place) {
+    const rawLabel = compactLocationText(moment.location_label || "");
+    if (!rawLabel) {
+        return "";
+    }
+
+    const sharedParts = [
+        place.name,
+        ...splitLocationParts(place.subtitle),
+        place.district_name,
+        place.city_name,
+        place.admin_area,
+        place.country_name,
+        moment.district_name,
+        moment.city_name,
+        moment.admin_area,
+        moment.country_name,
+    ]
+        .flatMap((value) => String(value || "").split("|"))
+        .map((value) => compactLocationText(value))
+        .filter(Boolean);
+
+    let detail = rawLabel;
+
+    sharedParts.forEach((part) => {
+        detail = detail.replace(new RegExp(escapeRegExp(part), "ig"), " ");
+    });
+
+    detail = compactLocationText(detail);
+
+    if (!detail) {
+        return "";
+    }
+
+    const normalizedDetail = detail.toLowerCase();
+    const normalizedPlaceName = compactLocationText(place.name || "").toLowerCase();
+    if (!normalizedDetail || normalizedDetail === normalizedPlaceName) {
+        return "";
+    }
+
+    return detail;
+}
+
+function renderMomentPeek(moment, place) {
     const excerpt = truncateText(moment.excerpt || "", 120);
     const excerptMarkup = excerpt ? `<p class="atlas-peek__excerpt">${escapeHtml(excerpt)}</p>` : "";
-    const locationMarkup = moment.location_label
-        ? `<span class="atlas-peek__location">${escapeHtml(moment.location_label)}</span>`
+    const detailLocation = buildMomentLocationDetail(moment, place);
+    const locationMarkup = detailLocation
+        ? `<span class="atlas-peek__location">${escapeHtml(detailLocation)}</span>`
         : "";
 
     return `
@@ -380,6 +470,10 @@ function localizeUiText(english, chinese) {
     return language.startsWith("zh") ? chinese : english;
 }
 
+function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
+}
+
 async function loadCountryGeoJson(url) {
     if (!url) {
         return null;
@@ -503,6 +597,7 @@ export async function initFootprintsMap() {
     const markers = new Map();
     let selectedPlaceId = null;
     let isMenuOpen = false;
+    const cityClusterBaseRadius = 72;
 
     const allCountryPlaces = Array.isArray(views.country?.places) ? views.country.places : [];
     const allCountryLookup = buildCountryLookup(allCountryPlaces);
@@ -517,6 +612,82 @@ export async function initFootprintsMap() {
     function getActiveCountryPlaces() {
         const rawPlaces = Array.isArray(views.country?.places) ? views.country.places : [];
         return sortPlaces(filterPlaces(rawPlaces, state.filter), state.sort);
+    }
+
+    function getCityClusterRadiusPx() {
+        const zoom = map.getZoom();
+        return clamp(cityClusterBaseRadius - Math.max(0, zoom - 11) * 8, 24, cityClusterBaseRadius);
+    }
+
+    function buildVisibleMarkerEntries(places) {
+        if (state.view !== "city" || places.length <= 1) {
+            return places.map((place) => ({
+                id: `place:${place.id}`,
+                places: [place],
+                latitude: place.latitude,
+                longitude: place.longitude,
+                markerCount: Math.max(1, Number(place.moment_count || 0)),
+                title: place.name || t("footprints.unknown_place", {}, "Pinned Place"),
+                selected: place.id === selectedPlaceId,
+            }));
+        }
+
+        const radiusPx = getCityClusterRadiusPx();
+        const zoom = map.getZoom();
+        const pending = places.map((place) => ({
+            place,
+            point: map.project([place.latitude, place.longitude], zoom),
+        }));
+        const entries = [];
+
+        while (pending.length) {
+            const seed = pending.shift();
+            if (!seed) {
+                continue;
+            }
+
+            const members = [seed];
+            let expanded = true;
+
+            while (expanded) {
+                expanded = false;
+
+                for (let index = pending.length - 1; index >= 0; index -= 1) {
+                    const candidate = pending[index];
+                    const isNearExistingMember = members.some((member) => member.point.distanceTo(candidate.point) <= radiusPx);
+
+                    if (!isNearExistingMember) {
+                        continue;
+                    }
+
+                    members.push(candidate);
+                    pending.splice(index, 1);
+                    expanded = true;
+                }
+            }
+
+            const memberPlaces = members.map((member) => member.place);
+            const averageLatitude = memberPlaces.reduce((sum, place) => sum + Number(place.latitude || 0), 0) / memberPlaces.length;
+            const averageLongitude = memberPlaces.reduce((sum, place) => sum + Number(place.longitude || 0), 0) / memberPlaces.length;
+            const markerCount = memberPlaces.reduce((sum, place) => sum + Math.max(1, Number(place.moment_count || 0)), 0);
+            const isCluster = memberPlaces.length > 1;
+            const clusterIds = memberPlaces.map((place) => place.id).sort((left, right) => left - right).join("-");
+            const selected = memberPlaces.some((place) => place.id === selectedPlaceId);
+
+            entries.push({
+                id: isCluster ? `cluster:${clusterIds}` : `place:${memberPlaces[0].id}`,
+                places: memberPlaces,
+                latitude: averageLatitude,
+                longitude: averageLongitude,
+                markerCount,
+                title: isCluster
+                    ? t("footprints.mapped_moments", { count: markerCount }, `${markerCount}`)
+                    : (memberPlaces[0].name || t("footprints.unknown_place", {}, "Pinned Place")),
+                selected,
+            });
+        }
+
+        return entries;
     }
 
     function findSelectedPlace(places) {
@@ -598,9 +769,15 @@ export async function initFootprintsMap() {
         panel.classList.remove("is-empty");
         nameElement.textContent = place.name || t("footprints.unknown_place", {}, "Pinned Place");
         countElement.hidden = false;
-        countElement.textContent = t("footprints.mapped_moments", { count: place.moment_count }, `${place.moment_count}`);
-        subtitleElement.hidden = !place.subtitle;
-        subtitleElement.textContent = place.subtitle || "";
+        countElement.textContent = t(
+            "footprints.panel_count_short",
+            { count: place.moment_count },
+            localizeUiText(`${place.moment_count} moments`, `${place.moment_count} \u6761`)
+        );
+        countElement.title = t("footprints.mapped_moments", { count: place.moment_count }, `${place.moment_count}`);
+        const sharedLocation = formatSharedLocation(place);
+        subtitleElement.hidden = !sharedLocation;
+        subtitleElement.textContent = sharedLocation;
         panelHintElement.textContent = t(
             "footprints.panel_recent_label",
             {},
@@ -631,7 +808,7 @@ export async function initFootprintsMap() {
 
         momentsElement.innerHTML = `
             <div class="atlas-inspector__quicklist">
-                ${previewMoments.map((moment) => renderMomentPeek(moment)).join("")}
+                ${previewMoments.map((moment) => renderMomentPeek(moment, place)).join("")}
             </div>
             ${moreNote}
         `;
@@ -740,6 +917,7 @@ export async function initFootprintsMap() {
         const place = findSelectedPlace(places);
         if (!place) {
             selectedPlaceId = null;
+            renderMarkers(places);
             renderInspector(null, { hasVisiblePlaces: places.length > 0 });
             closeAllPopups();
             syncCountryLayer(getActiveCountryPlaces());
@@ -747,14 +925,7 @@ export async function initFootprintsMap() {
         }
 
         selectedPlaceId = place.id;
-        markers.forEach((marker, markerId) => {
-            const markerPlace = places.find((item) => item.id === markerId);
-            if (!markerPlace) {
-                return;
-            }
-            marker.setIcon(buildMarkerIcon(L, markerPlace, markerId === selectedPlaceId));
-        });
-
+        renderMarkers(places);
         renderInspector(place);
         syncCountryLayer(getActiveCountryPlaces());
 
@@ -770,26 +941,54 @@ export async function initFootprintsMap() {
 
         const contrastEnabled = state.view === "country" && state.visitMode === "contrast";
         const bounds = [];
+        const visibleEntries = buildVisibleMarkerEntries(places);
 
-        places.forEach((place) => {
-            const marker = L.marker([place.latitude, place.longitude], {
-                icon: buildMarkerIcon(L, place, place.id === selectedPlaceId),
+        visibleEntries.forEach((entry) => {
+            const isCluster = entry.places.length > 1;
+            const primaryPlace = entry.places[0];
+            const marker = L.marker([entry.latitude, entry.longitude], {
+                icon: buildMarkerIcon(L, {
+                    count: entry.markerCount,
+                    selected: entry.selected,
+                    cluster: isCluster,
+                }),
                 keyboard: true,
-                title: place.name || t("footprints.unknown_place", {}, "Pinned Place"),
+                title: entry.title,
             });
 
             marker.on("click", () => {
-                selectedPlaceId = place.id;
+                if (isCluster) {
+                    const clusterBounds = L.latLngBounds(
+                        entry.places.map((place) => [place.latitude, place.longitude])
+                    );
+
+                    if (clusterBounds.isValid()) {
+                        map.fitBounds(clusterBounds, {
+                            padding: [72, 72],
+                            maxZoom: Math.min(18, map.getZoom() + 3),
+                        });
+                    } else {
+                        map.setView([entry.latitude, entry.longitude], Math.min(18, map.getZoom() + 2));
+                    }
+                    return;
+                }
+
+                selectedPlaceId = primaryPlace.id;
                 syncSelection(places, { pan: true });
             });
-            marker.bindTooltip(buildTooltip(place), {
+
+            marker.bindTooltip(isCluster
+                ? t("footprints.mapped_moments", { count: entry.markerCount }, `${entry.markerCount}`)
+                : buildTooltip(primaryPlace), {
                 direction: "top",
                 offset: [0, -12],
             });
 
             marker.addTo(markerLayer);
-            markers.set(place.id, marker);
-            bounds.push([place.latitude, place.longitude]);
+            markers.set(entry.id, marker);
+            entry.places.forEach((place) => {
+                bounds.push([place.latitude, place.longitude]);
+            });
         });
 
         if (!fit) {
@@ -886,5 +1085,6 @@ export async function initFootprintsMap() {
 
     setMenuOpen(false);
     refresh({ fit: true });
+    map.on("zoomend", () => refresh());
     window.addEventListener("resize", () => map.invalidateSize());
 }
