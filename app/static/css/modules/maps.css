@@ -4,6 +4,8 @@
 
 .atlas-toolbar {
     position: relative;
+    display: grid;
+    gap: 12px;
     z-index: 8;
 }
 
@@ -53,10 +55,9 @@
 }
 
 .atlas-toolbar__panel {
-    position: absolute;
-    top: calc(100% + 12px);
-    right: 0;
+    position: static;
     width: min(100%, 760px);
+    margin-left: auto;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
@@ -131,20 +132,8 @@
     position: relative;
     z-index: 0;
     isolation: isolate;
-    display: grid;
-    gap: 12px;
     padding: 12px;
     overflow: hidden;
-}
-
-.atlas-map-card__hint {
-    margin: 0;
-    padding: 10px 14px;
-    border-radius: 18px;
-    background: rgba(63, 111, 100, 0.08);
-    color: var(--muted);
-    font-size: 0.88rem;
-    line-height: 1.5;
 }
 
 .atlas-map {
@@ -160,6 +149,43 @@
 
 .atlas-map.leaflet-container {
     font: inherit;
+}
+
+.atlas-map .leaflet-pane {
+    z-index: 1;
+}
+
+.atlas-map .leaflet-tile-pane {
+    z-index: 1;
+}
+
+.atlas-map .leaflet-overlay-pane {
+    z-index: 2;
+}
+
+.atlas-map .leaflet-shadow-pane {
+    z-index: 3;
+}
+
+.atlas-map .leaflet-marker-pane {
+    z-index: 4;
+}
+
+.atlas-map .leaflet-tooltip-pane {
+    z-index: 5;
+}
+
+.atlas-map .leaflet-popup-pane {
+    z-index: 6;
+}
+
+.atlas-map .leaflet-control {
+    z-index: 7;
+}
+
+.atlas-map .leaflet-top,
+.atlas-map .leaflet-bottom {
+    z-index: 8;
 }
 
 .atlas-map .leaflet-control-zoom a {

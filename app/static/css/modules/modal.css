@@ -4,7 +4,7 @@
     display: grid;
     place-items: center;
     padding: 24px;
-    z-index: 60;
+    z-index: 1600;
 }
 
 .media-viewer {
@@ -25,6 +25,7 @@
 
 .modal-card {
     position: relative;
+    z-index: 1;
     width: min(760px, calc(100vw - 48px));
     max-height: calc(100vh - 48px);
     overflow: auto;

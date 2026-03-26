@@ -337,10 +337,6 @@ function buildTooltip(place) {
     return `${place.name || t("footprints.unknown_place", {}, "Pinned Place")} | ${place.moment_count}`;
 }
 
-function clamp(value, min, max) {
-    return Math.min(max, Math.max(min, value));
-}
-
 function getSelectedOptionLabel(select) {
     return select.options[select.selectedIndex]?.textContent?.trim() || "";
 }
@@ -458,6 +454,10 @@ export async function initFootprintsMap() {
         zoomSnap: 0.5,
         zoomDelta: 0.5,
     });
+
+    if (map.scrollWheelZoom) {
+        map.scrollWheelZoom.disable();
+    }
 
     L.control.zoom({ position: "topright" }).addTo(map);
     const attribution = L.control.attribution({ position: "bottomright", prefix: false });
@@ -768,8 +768,16 @@ export async function initFootprintsMap() {
     }
 
     if (menuToggle instanceof HTMLButtonElement) {
-        menuToggle.addEventListener("click", () => {
+        menuToggle.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
             setMenuOpen(!isMenuOpen);
+        });
+    }
+
+    if (menuPanel instanceof HTMLElement) {
+        menuPanel.addEventListener("click", (event) => {
+            event.stopPropagation();
         });
     }
 
@@ -790,25 +798,6 @@ export async function initFootprintsMap() {
             setMenuOpen(false);
         }
     });
-
-    mapElement.addEventListener("wheel", (event) => {
-        if (!event.ctrlKey && !event.metaKey) {
-            return;
-        }
-
-        event.preventDefault();
-
-        const direction = event.deltaY < 0 ? 1 : -1;
-        const nextZoom = clamp(map.getZoom() + direction * 0.5, map.getMinZoom(), map.getMaxZoom());
-        if (nextZoom === map.getZoom()) {
-            return;
-        }
-
-        const point = map.mouseEventToContainerPoint(event);
-        map.setZoomAround(point, nextZoom, {
-            animate: false,
-        });
-    }, { passive: false });
 
     viewSelect.addEventListener("change", () => {
         state.view = viewSelect.value;

@@ -621,11 +621,6 @@
         padding: 10px;
     }
 
-    .atlas-map-card__hint {
-        padding: 9px 12px;
-        border-radius: 16px;
-    }
-
     .atlas-toolbar__bar {
         flex-direction: column;
         align-items: flex-start;
