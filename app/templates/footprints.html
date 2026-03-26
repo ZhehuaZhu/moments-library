@@ -21,72 +21,60 @@
 </section>
 
 {% if place_count %}
-    <section class="atlas-toolbar atlas-toolbar--compact" data-footprints-controls>
-        <div class="atlas-toolbar__bar">
-            <div class="atlas-toolbar__intro">
-                <span class="atlas-toolbar__label">{{ t('footprints.filter_label') }}</span>
-                <p class="atlas-toolbar__summary" data-footprints-controls-summary></p>
-            </div>
-            <button
-                class="button button--ghost atlas-toolbar__toggle"
-                type="button"
-                data-footprints-menu-toggle
-                aria-expanded="false"
-                aria-controls="footprints-filter-panel"
-            >
-                {{ t('footprints.controls_menu') }}
-            </button>
-        </div>
-        <div class="atlas-toolbar__panel" id="footprints-filter-panel" data-footprints-menu-panel hidden>
-            <label class="atlas-control">
-                <span class="atlas-control__label">{{ t('footprints.scope_label') }}</span>
-                <select class="input atlas-control__select" data-footprints-view>
-                    <option value="city">{{ t('footprints.scope_city') }}</option>
-                    <option value="country">{{ t('footprints.scope_country') }}</option>
-                </select>
-            </label>
-            <label class="atlas-control">
-                <span class="atlas-control__label">{{ t('footprints.filter_label') }}</span>
-                <select class="input atlas-control__select" data-footprints-filter>
-                    <option value="all">{{ t('footprints.filter_all') }}</option>
-                    <option value="multiple">{{ t('footprints.filter_multiple') }}</option>
-                    <option value="media">{{ t('footprints.filter_media') }}</option>
-                </select>
-            </label>
-            <label class="atlas-control">
-                <span class="atlas-control__label">{{ t('footprints.visit_label') }}</span>
-                <select class="input atlas-control__select" data-footprints-visit-mode>
-                    <option value="visited">{{ t('footprints.visit_visited_only') }}</option>
-                    <option value="contrast">{{ t('footprints.visit_contrast') }}</option>
-                </select>
-            </label>
-            <label class="atlas-control">
-                <span class="atlas-control__label">{{ t('footprints.sort_label') }}</span>
-                <select class="input atlas-control__select" data-footprints-sort>
-                    <option value="latest">{{ t('footprints.sort_latest') }}</option>
-                    <option value="count">{{ t('footprints.sort_count') }}</option>
-                    <option value="name">{{ t('footprints.sort_name') }}</option>
-                </select>
-            </label>
-            <label class="atlas-control">
-                <span class="atlas-control__label">{{ t('footprints.display_label') }}</span>
-                <select class="input atlas-control__select" data-footprints-display-mode>
-                    <option value="timeline">{{ t('footprints.display_timeline') }}</option>
-                    <option value="cards">{{ t('footprints.display_cards') }}</option>
-                </select>
-            </label>
-            <label class="atlas-control">
-                <span class="atlas-control__label">{{ t('footprints.open_label') }}</span>
-                <select class="input atlas-control__select" data-footprints-open-mode>
-                    <option value="panel">{{ t('footprints.open_panel') }}</option>
-                    <option value="popup">{{ t('footprints.open_popup') }}</option>
-                </select>
-            </label>
-        </div>
-    </section>
-
     <section class="atlas-layout" data-footprints-shell data-footprints-country-data-url="{{ url_for('static', filename='data/world-countries.geojson') }}">
         <div class="atlas-map-card">
+            <div class="atlas-toolbar atlas-toolbar--compact" data-footprints-controls>
+                <button
+                    class="atlas-toolbar__trigger"
+                    type="button"
+                    data-footprints-menu-toggle
+                    aria-expanded="false"
+                    aria-controls="footprints-filter-panel"
+                >
+                    <span class="atlas-toolbar__thumb" aria-hidden="true">
+                        <span class="atlas-toolbar__thumb-line"></span>
+                        <span class="atlas-toolbar__thumb-line atlas-toolbar__thumb-line--short"></span>
+                    </span>
+                    <span class="atlas-toolbar__copy">
+                        <span class="atlas-toolbar__label">{{ t('footprints.filter_label') }}</span>
+                        <span class="atlas-toolbar__title">{{ t('footprints.controls_menu') }}</span>
+                        <span class="atlas-toolbar__summary" data-footprints-controls-summary></span>
+                    </span>
+                    <span class="atlas-toolbar__chevron" aria-hidden="true"></span>
+                </button>
+                <div class="atlas-toolbar__panel" id="footprints-filter-panel" data-footprints-menu-panel hidden>
+                    <label class="atlas-control">
+                        <span class="atlas-control__label">{{ t('footprints.scope_label') }}</span>
+                        <select class="input atlas-control__select" data-footprints-view>
+                            <option value="city">{{ t('footprints.scope_city') }}</option>
+                            <option value="country">{{ t('footprints.scope_country') }}</option>
+                        </select>
+                    </label>
+                    <label class="atlas-control">
+                        <span class="atlas-control__label">{{ t('footprints.filter_label') }}</span>
+                        <select class="input atlas-control__select" data-footprints-filter>
+                            <option value="all">{{ t('footprints.filter_all') }}</option>
+                            <option value="multiple">{{ t('footprints.filter_multiple') }}</option>
+                            <option value="media">{{ t('footprints.filter_media') }}</option>
+                        </select>
+                    </label>
+                    <label class="atlas-control">
+                        <span class="atlas-control__label">{{ t('footprints.visit_label') }}</span>
+                        <select class="input atlas-control__select" data-footprints-visit-mode>
+                            <option value="visited">{{ t('footprints.visit_visited_only') }}</option>
+                            <option value="contrast">{{ t('footprints.visit_contrast') }}</option>
+                        </select>
+                    </label>
+                    <label class="atlas-control">
+                        <span class="atlas-control__label">{{ t('footprints.sort_label') }}</span>
+                        <select class="input atlas-control__select" data-footprints-sort>
+                            <option value="latest">{{ t('footprints.sort_latest') }}</option>
+                            <option value="count">{{ t('footprints.sort_count') }}</option>
+                            <option value="name">{{ t('footprints.sort_name') }}</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
             <div class="atlas-map" data-footprints-map aria-label="{{ t('footprints.title') }}"></div>
         </div>
 
@@ -96,10 +84,10 @@
                     <p class="eyebrow">{{ t('nav.footprints') }}</p>
                     <h2 data-footprints-place-name></h2>
                 </div>
-                <span class="stat-chip" data-footprints-place-count></span>
+                <span class="stat-chip" data-footprints-place-count hidden></span>
             </div>
             <p class="atlas-inspector__subtitle" data-footprints-place-subtitle hidden></p>
-            <div class="atlas-inspector__mode" data-footprints-display-label></div>
+            <p class="atlas-inspector__hint" data-footprints-panel-hint></p>
             <div class="atlas-moment-list" data-footprints-moments></div>
         </aside>
     </section>

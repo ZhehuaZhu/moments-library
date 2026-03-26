@@ -20,6 +20,8 @@ PLACE_FIELD_NAMES = (
     "location_source",
 )
 
+CITY_SPOT_PRECISION = 4
+
 
 def _clean_text(value: object) -> str | None:
     cleaned = str(value or "").strip()
@@ -227,6 +229,36 @@ def _build_moment_excerpt(moment: Moment) -> str:
     return f"{compact[:137]}..."
 
 
+def _build_city_spot_key(moment: Moment) -> str | None:
+    if not moment.has_coordinates:
+        return None
+
+    latitude = float(moment.latitude)
+    longitude = float(moment.longitude)
+    return f"spot:{latitude:.{CITY_SPOT_PRECISION}f}:{longitude:.{CITY_SPOT_PRECISION}f}"
+
+
+def _simplify_location_label(
+    label: str | None,
+    *known_parts: str | None,
+) -> str | None:
+    simplified = _clean_text(label)
+    if not simplified:
+        return None
+
+    simplified = re.sub(r"[|;,]+", " ", simplified)
+    simplified = re.sub(r"\s+", " ", simplified).strip()
+
+    for part in known_parts:
+        token = _clean_text(part)
+        if not token:
+            continue
+        simplified = re.sub(re.escape(token), " ", simplified, flags=re.IGNORECASE)
+
+    simplified = re.sub(r"\s+", " ", simplified).strip(" |,;/")
+    return simplified or _clean_text(label)
+
+
 def _resolve_place_snapshot(moment: Moment) -> dict[str, str | None]:
     normalized_fields = normalize_place_fields(
         country_code=moment.country_code,
@@ -240,15 +272,45 @@ def _resolve_place_snapshot(moment: Moment) -> dict[str, str | None]:
     if not normalized_fields["place_key"]:
         normalized_fields = _infer_place_fields_from_label(moment)
 
+    location_label = _clean_text(moment.location_label)
     place_key = normalized_fields["place_key"]
     if not place_key and moment.has_coordinates:
         place_key = f"coord:{float(moment.latitude):.2f}:{float(moment.longitude):.2f}"
+
+    spot_key = _build_city_spot_key(moment) or place_key
+    spot_display_name = (
+        _simplify_location_label(
+            location_label,
+            normalized_fields["country_name"],
+            normalized_fields["admin_area"],
+            normalized_fields["city_name"],
+        )
+        or normalized_fields["district_name"]
+        or normalized_fields["city_name"]
+        or normalized_fields["admin_area"]
+        or location_label
+        or translate("footprints.unknown_place")
+    )
+
+    spot_subtitle_parts: list[str] = []
+    for value in (
+        normalized_fields["district_name"],
+        normalized_fields["city_name"],
+        normalized_fields["admin_area"],
+        normalized_fields["country_name"],
+    ):
+        if value and value != spot_display_name and value not in spot_subtitle_parts:
+            spot_subtitle_parts.append(value)
+
+    spot_subtitle = " | ".join(spot_subtitle_parts)
+    if not spot_subtitle and location_label and location_label != spot_display_name:
+        spot_subtitle = location_label
 
     city_display_name = (
         normalized_fields["city_name"]
         or normalized_fields["admin_area"]
         or normalized_fields["district_name"]
-        or _clean_text(moment.location_label)
+        or location_label
         or translate("footprints.unknown_place")
     )
 
@@ -274,6 +336,9 @@ def _resolve_place_snapshot(moment: Moment) -> dict[str, str | None]:
     return {
         **normalized_fields,
         "place_key": place_key,
+        "spot_key": spot_key,
+        "spot_display_name": spot_display_name,
+        "spot_subtitle": spot_subtitle,
         "city_display_name": city_display_name,
         "city_subtitle": city_subtitle,
         "country_display_name": country_display_name,
@@ -311,9 +376,9 @@ def _group_config(snapshot: dict[str, str | None], level: str, moment: Moment) -
         }
 
     return {
-        "id": snapshot["place_key"] or f"city:{moment.id}",
-        "name": snapshot["city_display_name"],
-        "subtitle": snapshot["city_subtitle"],
+        "id": snapshot["spot_key"] or f"city:{moment.id}",
+        "name": snapshot["spot_display_name"] or snapshot["city_display_name"],
+        "subtitle": snapshot["spot_subtitle"] or snapshot["city_subtitle"],
         "city_name": snapshot["city_name"],
         "admin_area": snapshot["admin_area"],
         "country_name": snapshot["country_name"],
@@ -330,6 +395,8 @@ def _serialize_group(
 ) -> dict[str, object]:
     latitude_values = group.pop("latitude_values")
     longitude_values = group.pop("longitude_values")
+    reference_latitude = group.pop("reference_latitude")
+    reference_longitude = group.pop("reference_longitude")
     latest_created_at = group.pop("latest_created_at")
     earliest_created_at = group.pop("earliest_created_at")
     child_names = sorted(group.pop("child_names"))
@@ -348,12 +415,15 @@ def _serialize_group(
 
     media_moment_count = sum(1 for moment in ordered_moments if moment.get("has_media"))
 
+    latitude = reference_latitude if level == "city" else round(sum(latitude_values) / len(latitude_values), 6)
+    longitude = reference_longitude if level == "city" else round(sum(longitude_values) / len(longitude_values), 6)
+
     return {
         **group,
         "scope": level,
         "subtitle": subtitle,
-        "latitude": round(sum(latitude_values) / len(latitude_values), 6),
-        "longitude": round(sum(longitude_values) / len(longitude_values), 6),
+        "latitude": latitude,
+        "longitude": longitude,
         "moment_count": len(ordered_moments),
         "media_moment_count": media_moment_count,
         "child_count": len(child_names),
@@ -386,6 +456,8 @@ def _aggregate_places(moments: list[Moment], level: str) -> dict[str, object]:
                 "country_code": config["country_code"],
                 "latitude_values": [],
                 "longitude_values": [],
+                "reference_latitude": float(moment.latitude),
+                "reference_longitude": float(moment.longitude),
                 "moments": [],
                 "latest_created_at": moment.created_at,
                 "earliest_created_at": moment.created_at,
@@ -401,6 +473,9 @@ def _aggregate_places(moments: list[Moment], level: str) -> dict[str, object]:
         group["country_code"] = group["country_code"] or config["country_code"]
         group["latitude_values"].append(float(moment.latitude))
         group["longitude_values"].append(float(moment.longitude))
+        if moment.created_at >= group["latest_created_at"]:
+            group["reference_latitude"] = float(moment.latitude)
+            group["reference_longitude"] = float(moment.longitude)
         group["latest_created_at"] = max(group["latest_created_at"], moment.created_at)
         group["earliest_created_at"] = min(group["earliest_created_at"], moment.created_at)
         if config["child_name"]:

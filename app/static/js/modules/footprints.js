@@ -147,8 +147,18 @@ function buildCountryStyle({ visited, selected, contrastEnabled }) {
 }
 
 function buildMarkerIcon(L, place, selected = false) {
-    const markerSize = Math.max(42, Math.min(66, 40 + Math.max(0, place.moment_count - 1) * 4));
-    const markerClass = selected ? "atlas-marker is-selected" : "atlas-marker";
+    const momentCount = Math.max(1, Number(place.moment_count || 0));
+    const countDigits = String(momentCount).length;
+    const hasCount = momentCount > 1;
+    const markerSize = hasCount
+        ? Math.min(42, (selected ? 32 : 28) + countDigits * 4)
+        : (selected ? 24 : 18);
+    const markerClass = [
+        "atlas-marker",
+        selected ? "is-selected" : "",
+        hasCount ? "has-count" : "",
+    ].filter(Boolean).join(" ");
+    const countMarkup = hasCount ? `<strong class="atlas-marker__count">${momentCount}</strong>` : "";
 
     return L.divIcon({
         className: "atlas-marker-wrap",
@@ -156,7 +166,7 @@ function buildMarkerIcon(L, place, selected = false) {
             <span class="${markerClass}" style="--atlas-marker-size:${markerSize}px">
                 <span class="atlas-marker__pulse"></span>
                 <span class="atlas-marker__dot"></span>
-                <strong class="atlas-marker__count">${place.moment_count}</strong>
+                ${countMarkup}
             </span>
         `,
         iconSize: [markerSize, markerSize],
@@ -183,6 +193,37 @@ function renderMomentMedia(moment, className) {
         <div class="${className}">
             <img src="${escapeHtml(moment.media.src)}" alt="${escapeHtml(moment.media.alt || "")}" loading="lazy">
         </div>
+    `;
+}
+
+function truncateText(value = "", maxLength = 96) {
+    const normalized = String(value || "").replace(/\s+/g, " ").trim();
+    if (normalized.length <= maxLength) {
+        return normalized;
+    }
+    return `${normalized.slice(0, maxLength - 3).trimEnd()}...`;
+}
+
+function renderMomentPeek(moment) {
+    const excerpt = truncateText(moment.excerpt || "", 120);
+    const excerptMarkup = excerpt ? `<p class="atlas-peek__excerpt">${escapeHtml(excerpt)}</p>` : "";
+    const locationMarkup = moment.location_label
+        ? `<span class="atlas-peek__location">${escapeHtml(moment.location_label)}</span>`
+        : "";
+
+    return `
+        <article class="atlas-peek">
+            <div class="atlas-peek__meta">
+                <span>${escapeHtml(moment.created_at || "")}</span>
+                ${locationMarkup}
+            </div>
+            ${excerptMarkup}
+            <div class="atlas-peek__actions">
+                <a class="button button--subtle button--compact" href="${escapeHtml(moment.href || "#")}">
+                    ${escapeHtml(t("footprints.view_feed", {}, "View In Feed"))}
+                </a>
+            </div>
+        </article>
     `;
 }
 
@@ -303,16 +344,9 @@ function sortPlaces(places, sortKey) {
     return sorted;
 }
 
-function sortMoments(moments, displayMode) {
+function sortMoments(moments) {
     const sorted = [...moments];
     sorted.sort((left, right) => {
-        if (displayMode === "timeline") {
-            return (
-                String(left.created_at_sort || "").localeCompare(String(right.created_at_sort || "")) ||
-                Number(left.id || 0) - Number(right.id || 0)
-            );
-        }
-
         return (
             String(right.created_at_sort || "").localeCompare(String(left.created_at_sort || "")) ||
             Number(right.id || 0) - Number(left.id || 0)
@@ -339,6 +373,11 @@ function buildTooltip(place) {
 
 function getSelectedOptionLabel(select) {
     return select.options[select.selectedIndex]?.textContent?.trim() || "";
+}
+
+function localizeUiText(english, chinese) {
+    const language = (document.documentElement.lang || "").toLowerCase();
+    return language.startsWith("zh") ? chinese : english;
 }
 
 async function loadCountryGeoJson(url) {
@@ -394,17 +433,15 @@ export async function initFootprintsMap() {
     const panel = document.querySelector("[data-footprints-panel]");
     const nameElement = document.querySelector("[data-footprints-place-name]");
     const subtitleElement = document.querySelector("[data-footprints-place-subtitle]");
+    const panelHintElement = document.querySelector("[data-footprints-panel-hint]");
     const countElement = document.querySelector("[data-footprints-place-count]");
     const momentsElement = document.querySelector("[data-footprints-moments]");
-    const displayLabelElement = document.querySelector("[data-footprints-display-label]");
     const totalPlacesElement = document.querySelector("[data-footprints-total-places]");
     const totalMomentsElement = document.querySelector("[data-footprints-total-moments]");
     const viewSelect = document.querySelector("[data-footprints-view]");
     const filterSelect = document.querySelector("[data-footprints-filter]");
     const visitSelect = document.querySelector("[data-footprints-visit-mode]");
     const sortSelect = document.querySelector("[data-footprints-sort]");
-    const displaySelect = document.querySelector("[data-footprints-display-mode]");
-    const openModeSelect = document.querySelector("[data-footprints-open-mode]");
     const controlsShell = document.querySelector("[data-footprints-controls]");
     const controlsSummaryElement = document.querySelector("[data-footprints-controls-summary]");
     const menuToggle = document.querySelector("[data-footprints-menu-toggle]");
@@ -414,17 +451,15 @@ export async function initFootprintsMap() {
         !panel ||
         !nameElement ||
         !subtitleElement ||
+        !panelHintElement ||
         !countElement ||
         !momentsElement ||
-        !displayLabelElement ||
         !totalPlacesElement ||
         !totalMomentsElement ||
         !(viewSelect instanceof HTMLSelectElement) ||
         !(filterSelect instanceof HTMLSelectElement) ||
         !(visitSelect instanceof HTMLSelectElement) ||
-        !(sortSelect instanceof HTMLSelectElement) ||
-        !(displaySelect instanceof HTMLSelectElement) ||
-        !(openModeSelect instanceof HTMLSelectElement)
+        !(sortSelect instanceof HTMLSelectElement)
     ) {
         return;
     }
@@ -434,16 +469,12 @@ export async function initFootprintsMap() {
         filter: "all",
         visitMode: "visited",
         sort: "latest",
-        displayMode: "timeline",
-        openMode: "panel",
     };
 
     viewSelect.value = state.view;
     filterSelect.value = state.filter;
     visitSelect.value = state.visitMode;
     sortSelect.value = state.sort;
-    displaySelect.value = state.displayMode;
-    openModeSelect.value = state.openMode;
 
     const map = L.map(mapElement, {
         zoomControl: false,
@@ -489,13 +520,7 @@ export async function initFootprintsMap() {
     }
 
     function findSelectedPlace(places) {
-        return places.find((place) => place.id === selectedPlaceId) || places[0] || null;
-    }
-
-    function setDisplayLabel() {
-        displayLabelElement.textContent = state.displayMode === "timeline"
-            ? t("footprints.display_timeline", {}, "Timeline")
-            : t("footprints.display_cards", {}, "Cards");
+        return places.find((place) => place.id === selectedPlaceId) || null;
     }
 
     function setControlsSummary() {
@@ -506,12 +531,19 @@ export async function initFootprintsMap() {
         const labels = [
             getSelectedOptionLabel(viewSelect),
             getSelectedOptionLabel(filterSelect),
-            state.view === "country" ? getSelectedOptionLabel(visitSelect) : "",
-            getSelectedOptionLabel(displaySelect),
-            getSelectedOptionLabel(openModeSelect),
+            getSelectedOptionLabel(sortSelect),
         ].filter(Boolean);
 
-        controlsSummaryElement.textContent = labels.join(" · ");
+        if (state.view === "country") {
+            labels.push(getSelectedOptionLabel(visitSelect));
+        }
+
+        const preview = labels.slice(0, 3);
+        const extraCount = labels.length - preview.length;
+        const summary = extraCount > 0 ? `${preview.join(" / ")} +${extraCount}` : preview.join(" / ");
+
+        controlsSummaryElement.textContent = summary;
+        controlsSummaryElement.title = labels.join(" / ");
     }
 
     function setMenuOpen(nextOpen) {
@@ -536,32 +568,73 @@ export async function initFootprintsMap() {
         totalMomentsElement.textContent = t("footprints.mapped_moments", { count: visibleMomentCount }, `${visibleMomentCount}`);
     }
 
-    function renderInspector(place) {
+    function renderInspector(place, { hasVisiblePlaces = true } = {}) {
         if (!place) {
-            nameElement.textContent = t("footprints.no_visible_places", {}, "No places matched the current filter.");
+            panel.classList.add("is-empty");
+            nameElement.textContent = hasVisiblePlaces
+                ? t(
+                    "footprints.panel_idle_title",
+                    {},
+                    localizeUiText("Select a footprint", "\u70b9\u51fb\u5730\u56fe\u4e0a\u7684\u8db3\u8ff9")
+                )
+                : t("footprints.no_visible_places", {}, "No places matched the current filter.");
+            countElement.hidden = true;
             countElement.textContent = "";
             subtitleElement.hidden = true;
-            momentsElement.innerHTML = renderEmptyState(t("footprints.no_visible_places", {}, "No places matched the current filter."));
+            panelHintElement.textContent = hasVisiblePlaces
+                ? t(
+                    "footprints.panel_idle_text",
+                    {},
+                    localizeUiText(
+                        "Tap a marker on the map to open a quick place summary.",
+                        "\u70b9\u5f00\u5730\u56fe\u4e0a\u7684\u6807\u8bb0\u540e\uff0c\u518d\u67e5\u770b\u8fd9\u4e2a\u5730\u70b9\u7684\u7b80\u8981\u5185\u5bb9\u3002"
+                    )
+                )
+                : t("footprints.no_visible_places", {}, "No places matched the current filter.");
+            momentsElement.innerHTML = "";
             return;
         }
 
+        panel.classList.remove("is-empty");
         nameElement.textContent = place.name || t("footprints.unknown_place", {}, "Pinned Place");
+        countElement.hidden = false;
         countElement.textContent = t("footprints.mapped_moments", { count: place.moment_count }, `${place.moment_count}`);
         subtitleElement.hidden = !place.subtitle;
         subtitleElement.textContent = place.subtitle || "";
+        panelHintElement.textContent = t(
+            "footprints.panel_recent_label",
+            {},
+            localizeUiText("Recent mapped moments", "\u6700\u8fd1\u5b9a\u4f4d\u52a8\u6001")
+        );
 
-        const orderedMoments = sortMoments(place.moments || [], state.displayMode);
+        const orderedMoments = sortMoments(place.moments || []);
         if (!orderedMoments.length) {
             momentsElement.innerHTML = renderEmptyState(t("footprints.no_visible_places", {}, "No places matched the current filter."));
             return;
         }
 
-        if (state.displayMode === "timeline") {
-            momentsElement.innerHTML = `<div class="atlas-timeline">${orderedMoments.map((moment) => renderTimelineItem(moment)).join("")}</div>`;
-            return;
-        }
+        const previewLimit = 3;
+        const previewMoments = orderedMoments.slice(0, previewLimit);
+        const hiddenCount = Math.max(0, orderedMoments.length - previewMoments.length);
+        const moreNote = hiddenCount > 0
+            ? `<p class="atlas-inspector__note">${escapeHtml(
+                t(
+                    "footprints.panel_preview_more",
+                    { count: previewMoments.length, total: orderedMoments.length },
+                    localizeUiText(
+                        `Showing latest ${previewMoments.length} of ${orderedMoments.length} mapped moments.`,
+                        `\u8fd9\u91cc\u53ea\u663e\u793a\u6700\u8fd1 ${previewMoments.length} \u6761\uff0c\u5171 ${orderedMoments.length} \u6761\u5b9a\u4f4d\u52a8\u6001\u3002`
+                    )
+                )
+            )}</p>`
+            : "";
 
-        momentsElement.innerHTML = orderedMoments.map((moment) => renderMomentCard(moment)).join("");
+        momentsElement.innerHTML = `
+            <div class="atlas-inspector__quicklist">
+                ${previewMoments.map((moment) => renderMomentPeek(moment)).join("")}
+            </div>
+            ${moreNote}
+        `;
     }
 
     function closeAllPopups() {
@@ -616,7 +689,7 @@ export async function initFootprintsMap() {
                     }
 
                     selectedPlaceId = place.id;
-                    syncSelection(getActivePlaces(), { pan: state.openMode === "panel" });
+                    syncSelection(getActivePlaces(), { pan: true });
                 });
             },
         });
@@ -667,7 +740,7 @@ export async function initFootprintsMap() {
         const place = findSelectedPlace(places);
         if (!place) {
             selectedPlaceId = null;
-            renderInspector(null);
+            renderInspector(null, { hasVisiblePlaces: places.length > 0 });
             closeAllPopups();
             syncCountryLayer(getActiveCountryPlaces());
             return;
@@ -682,20 +755,13 @@ export async function initFootprintsMap() {
             marker.setIcon(buildMarkerIcon(L, markerPlace, markerId === selectedPlaceId));
         });
 
-        setDisplayLabel();
         renderInspector(place);
         syncCountryLayer(getActiveCountryPlaces());
 
         if (pan) {
             map.panTo([place.latitude, place.longitude], { animate: true, duration: 0.45 });
         }
-
-        if (state.openMode === "popup") {
-            closeAllPopups();
-            openPopupForPlace(place);
-        } else {
-            closeAllPopups();
-        }
+        closeAllPopups();
     }
 
     function renderMarkers(places, { fit = false } = {}) {
@@ -714,7 +780,7 @@ export async function initFootprintsMap() {
 
             marker.on("click", () => {
                 selectedPlaceId = place.id;
-                syncSelection(places, { pan: state.openMode === "panel" });
+                syncSelection(places, { pan: true });
             });
             marker.bindTooltip(buildTooltip(place), {
                 direction: "top",
@@ -751,9 +817,8 @@ export async function initFootprintsMap() {
     }
 
     function syncLayout() {
-        const popupMode = state.openMode === "popup";
-        shell.classList.toggle("atlas-layout--popup", popupMode);
-        panel.hidden = popupMode;
+        shell.classList.remove("atlas-layout--popup");
+        panel.hidden = false;
     }
 
     function refresh({ fit = false } = {}) {
@@ -816,17 +881,6 @@ export async function initFootprintsMap() {
 
     sortSelect.addEventListener("change", () => {
         state.sort = sortSelect.value;
-        refresh();
-    });
-
-    displaySelect.addEventListener("change", () => {
-        state.displayMode = displaySelect.value;
-        const places = getActivePlaces();
-        syncSelection(places, { pan: false });
-    });
-
-    openModeSelect.addEventListener("change", () => {
-        state.openMode = openModeSelect.value;
         refresh();
     });
 
