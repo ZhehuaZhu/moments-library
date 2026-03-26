@@ -1,9 +1,20 @@
 {
     "python.defaultInterpreterPath": "C:\\Users\\Zhehua\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\python.exe",
     "python.terminal.activateEnvironment": false,
+    "python.terminal.executeInFileDir": true,
     "git.path": "C:\\Program Files\\Git\\cmd\\git.exe",
     "python.testing.pytestEnabled": true,
     "python.testing.pytestArgs": [
         "tests"
-    ]
+    ],
+    "terminal.integrated.profiles.windows": {
+        "Project Cmd": {
+            "path": "${env:windir}\\System32\\cmd.exe"
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "Project Cmd",
+    "terminal.integrated.automationProfile.windows": {
+        "path": "${env:windir}\\System32\\cmd.exe"
+    },
+    "terminal.integrated.shellIntegration.enabled": false
 }

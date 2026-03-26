@@ -1,0 +1,116 @@
+{% set visual_attachments = moment.attachments | rejectattr('media_kind', 'equalto', 'document') | list %}
+{% set document_attachments = moment.attachments | selectattr('media_kind', 'equalto', 'document') | list %}
+{% set visual_count = visual_attachments | length %}
+
+{% if visual_count %}
+    <div
+        class="media-cluster {% if visual_count == 1 %}media-cluster--single{% elif visual_count == 2 %}media-cluster--duo{% elif visual_count <= 4 %}media-cluster--quad{% else %}media-cluster--grid{% endif %}"
+        data-media-cluster
+    >
+        {% for attachment in visual_attachments[:9] %}
+            {% set file_url = url_for('static', filename=attachment.preview_asset_path) %}
+            {% set poster_url = url_for('static', filename=attachment.poster_asset_path) if attachment.poster_asset_path else None %}
+            {% set is_overflow_tile = loop.index0 == 8 and visual_count > 9 %}
+            {% if attachment.media_kind == 'video' and not is_overflow_tile %}
+                <div
+                    class="media-tile media-tile--video media-tile--video-inline"
+                    title="{{ attachment.original_name }}"
+                    data-inline-video-tile
+                >
+                    <video
+                        muted
+                        loop
+                        playsinline
+                        preload="auto"
+                        {% if poster_url %}poster="{{ poster_url }}"{% endif %}
+                        aria-label="{{ attachment.original_name }}"
+                        data-inline-video
+                    >
+                        <source src="{{ file_url }}" type="{{ attachment.preview_asset_mime_type }}">
+                    </video>
+                    <button
+                        type="button"
+                        class="media-tile__video-toggle"
+                        data-inline-video-toggle
+                        data-play-label="{{ t('player.play') }}"
+                        data-pause-label="{{ t('player.pause') }}"
+                        aria-label="{{ t('player.play') }} {{ attachment.original_name }}"
+                        aria-pressed="false"
+                    >
+                        <span class="media-tile__play" data-inline-video-label>{{ t('player.play') }}</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="icon-button icon-button--ghost media-tile__video-expand"
+                        data-media-preview
+                        data-preview-kind="video"
+                        data-preview-src="{{ file_url }}"
+                        data-preview-title="{{ attachment.original_name }}"
+                        data-preview-mime="{{ attachment.preview_asset_mime_type }}"
+                        data-preview-group="moment-{{ moment.id }}"
+                        aria-label="{{ t('common.open_video') }}"
+                        title="{{ t('common.open_video') }}"
+                    >
+                        &#10529;
+                    </button>
+                </div>
+            {% else %}
+                <button
+                    type="button"
+                    class="media-tile media-tile--{{ attachment.media_kind }} {% if is_overflow_tile %}media-tile--overflow{% endif %}"
+                    title="{{ attachment.original_name }}"
+                    data-media-preview
+                    data-preview-kind="{{ attachment.media_kind }}"
+                    data-preview-src="{{ file_url }}"
+                    data-preview-title="{{ attachment.original_name }}"
+                    data-preview-mime="{{ attachment.mime_type }}"
+                    data-preview-group="moment-{{ moment.id }}"
+                    aria-label="Preview {{ attachment.original_name }}"
+                >
+                    {% if attachment.media_kind == 'image' %}
+                        <img src="{{ file_url }}" alt="{{ attachment.original_name }}" loading="lazy">
+                    {% elif attachment.media_kind == 'video' %}
+                        <video muted playsinline preload="auto" {% if poster_url %}poster="{{ poster_url }}"{% endif %} aria-label="{{ attachment.original_name }}">
+                            <source src="{{ file_url }}" type="{{ attachment.preview_asset_mime_type }}">
+                        </video>
+                        <span class="media-tile__play">Video</span>
+                    {% endif %}
+
+                    {% if is_overflow_tile %}
+                        <span class="media-tile__overflow-indicator">+{{ visual_count - 9 }}</span>
+                    {% endif %}
+                </button>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}
+
+{% if document_attachments %}
+    <div class="attachment-grid attachment-grid--documents">
+        {% for attachment in document_attachments %}
+            {% set file_url = url_for('static', filename=attachment.relative_path) %}
+            {% if attachment.is_pdf %}
+                <button
+                    type="button"
+                    class="media-card media-card--pdf media-card--preview"
+                    data-media-preview
+                    data-preview-kind="pdf"
+                    data-preview-src="{{ file_url }}"
+                    data-preview-title="{{ attachment.original_name }}"
+                    data-preview-mime="{{ attachment.mime_type }}"
+                    data-preview-group="moment-{{ moment.id }}"
+                    aria-label="Preview {{ attachment.original_name }}"
+                >
+                    <embed src="{{ file_url }}" type="application/pdf">
+                    <span class="media-card__preview-link">Preview {{ attachment.original_name }}</span>
+                </button>
+            {% else %}
+                <a class="media-card media-card--document" href="{{ file_url }}" target="_blank" rel="noopener">
+                    <span>Document</span>
+                    <strong>{{ attachment.original_name }}</strong>
+                    <small>Open or download</small>
+                </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}

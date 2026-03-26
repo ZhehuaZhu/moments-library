@@ -1,5 +1,6 @@
 <article
     class="moment-card"
+    id="moment-{{ moment.id }}"
     data-moment-card
     data-moment-id="{{ moment.id }}"
     data-folder-ids="{{ moment.category_ids_list|join(',') }}"
@@ -12,23 +13,28 @@
                         <span class="badge badge--category">{{ folder.name }}</span>
                     {% endfor %}
                 {% else %}
-                    <span class="badge badge--category">Uncategorized</span>
-                {% endif %}
-                {% if moment.location_label %}
-                    <span class="badge badge--location">{{ moment.location_label }}</span>
+                    <span class="badge badge--category">{{ t('feed.uncategorized') }}</span>
                 {% endif %}
                 {% if moment.is_edited and not recycle_view %}
-                    <span class="badge badge--edit">Edited</span>
+                    <span class="badge badge--edit">{{ t('feed.edited') }}</span>
                 {% endif %}
                 {% if recycle_view %}
-                    <span class="badge badge--muted">Deleted {{ moment.deleted_at|datetimeformat }}</span>
+                    <span class="badge badge--muted">{{ t('feed.deleted', time=moment.deleted_at|datetimeformat) }}</span>
                 {% endif %}
             </div>
 
+            {% if moment.location_label %}
+                <div class="moment-card__location">
+                    <span class="moment-card__location-label">{{ t('feed.location') }}</span>
+                    <span class="moment-card__location-value">{{ moment.location_label }}</span>
+                </div>
+            {% endif %}
+
             <div class="moment-card__meta">
-                <span class="moment-card__time">Published {{ moment.created_at|datetimeformat }}</span>
+                <span class="moment-card__time">{{ t('feed.published', time=moment.created_at|datetimeformat) }}</span>
                 {% if moment.is_edited and not recycle_view %}
-                    <span class="moment-card__time">Updated {{ moment.updated_at|datetimeformat }}</span>
+                    <span class="moment-card__meta-separator">&middot;</span>
+                    <span class="moment-card__time">{{ t('feed.updated', time=moment.updated_at|datetimeformat) }}</span>
                 {% endif %}
             </div>
         </div>
@@ -42,35 +48,40 @@
         <div class="moment-card__content">{{ moment.content|e|replace('\n', '<br>')|safe }}</div>
     {% endif %}
 
-    {% if moment.attachments %}
-        <div class="attachment-grid">
-            {% for attachment in moment.attachments %}
-                {% set file_url = url_for('static', filename=attachment.relative_path) %}
-                {% if attachment.media_kind == 'image' %}
-                    <figure class="media-card media-card--image">
-                        <img src="{{ file_url }}" alt="{{ attachment.original_name }}" loading="lazy">
-                        <figcaption>{{ attachment.original_name }}</figcaption>
-                    </figure>
-                {% elif attachment.media_kind == 'video' %}
-                    <div class="media-card media-card--video">
-                        <video controls preload="metadata">
-                            <source src="{{ file_url }}" type="{{ attachment.mime_type }}">
-                        </video>
-                        <p>{{ attachment.original_name }}</p>
-                    </div>
-                {% elif attachment.is_pdf %}
-                    <div class="media-card media-card--pdf">
-                        <embed src="{{ file_url }}" type="application/pdf">
-                        <a href="{{ file_url }}" target="_blank" rel="noopener">Open {{ attachment.original_name }}</a>
-                    </div>
+    {% if moment.citation_card %}
+        {% set citation = moment.citation_card %}
+        {% if citation.href %}
+            <a class="moment-citation" href="{{ citation.href }}">
+        {% else %}
+            <div class="moment-citation">
+        {% endif %}
+            <span class="moment-citation__cover">
+                {% if citation.cover_path %}
+                    <img src="{{ citation.cover_path }}" alt="{{ citation.title }}">
                 {% else %}
-                    <a class="media-card media-card--document" href="{{ file_url }}" target="_blank" rel="noopener">
-                        <span>Document</span>
-                        <strong>{{ attachment.original_name }}</strong>
-                        <small>Open or download</small>
-                    </a>
+                    <span>{{ (citation.label or t('composer.citation_default'))[:2] }}</span>
                 {% endif %}
-            {% endfor %}
-        </div>
+            </span>
+            <span class="moment-citation__body">
+                {% if citation.label %}
+                    <span class="moment-citation__label">{{ citation.label }}</span>
+                {% endif %}
+                <strong>{{ citation.title }}</strong>
+                {% if citation.subtitle %}
+                    <span class="moment-citation__subtitle">{{ citation.subtitle }}</span>
+                {% endif %}
+                {% if citation.excerpt %}
+                    <span class="moment-citation__excerpt">{{ citation.excerpt }}</span>
+                {% endif %}
+            </span>
+        {% if citation.href %}
+            </a>
+        {% else %}
+            </div>
+        {% endif %}
+    {% endif %}
+
+    {% if moment.attachments %}
+        {% include "includes/moment_media_cluster.html" %}
     {% endif %}
 </article>

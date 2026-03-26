@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">{{ module_labels.music }}</p>
+        <h1>{{ track.title }}</h1>
+    </div>
+    <div class="page-header__stats">
+        {% if track.category %}
+            <span class="stat-chip">{{ t('common.collection') }} · {{ track.category.name }}</span>
+        {% endif %}
+        {% if track.mood %}
+            <span class="stat-chip">{{ track.mood }}</span>
+        {% endif %}
+        <span class="stat-chip stat-chip--accent">{{ t('counts.notes', count=track.comments|length) }}</span>
+        {% if can_manage %}
+            <button
+                type="button"
+                class="button button--ghost button--compact"
+                data-open-folder-panel="track-edit"
+                aria-haspopup="dialog"
+                aria-controls="track-edit-panel"
+                aria-expanded="false"
+            >
+                {{ t('common.edit') }}
+            </button>
+        {% endif %}
+    </div>
+</section>
+
+<section class="library-detail-grid">
+    <article class="detail-card">
+        <div class="section-title-row section-title-row--compact">
+            <div><h2>{{ t('common.player') }}</h2></div>
+            <button type="button" class="button button--ghost" data-track-play data-track-id="{{ track.id }}">{{ t('music.play') }}</button>
+        </div>
+        <div class="track-detail-cover">
+            {% if track.cover_asset_path %}
+                <img src="{{ url_for('static', filename=track.cover_asset_path) }}" alt="{{ track.title }} cover" class="track-detail-cover__image">
+            {% else %}
+                <div class="track-detail-cover__placeholder">{{ track.cover_seed }}</div>
+            {% endif %}
+            <div class="track-detail-cover__meta">
+                <strong>{{ track.title }}</strong>
+                <span>{{ track.artist_name or t('music.personal_library') }}</span>
+            </div>
+        </div>
+        <audio class="media-player" controls preload="metadata" data-timestamp-media>
+            <source src="{{ url_for('static', filename=track.relative_path) }}" type="{{ track.mime_type }}">
+        </audio>
+        {% if lyrics_lines %}
+            <section class="readonly-card lyrics-card" data-lyrics-shell>
+                <div class="section-title-row section-title-row--compact">
+                    <div><strong>{{ t('music.lyrics') }}</strong></div>
+                    <span class="badge">LRC</span>
+                </div>
+                <div class="lyrics-list">
+                    {% for line in lyrics_lines %}
+                        <button
+                            type="button"
+                            class="lyrics-line"
+                            data-lyrics-line
+                            data-seek-to="{{ '%.3f'|format(line.seconds) }}"
+                            data-lyrics-start="{{ '%.3f'|format(line.seconds) }}"
+                            {% if not loop.last %}data-lyrics-next="{{ '%.3f'|format(lyrics_lines[loop.index0 + 1].seconds) }}"{% endif %}
+                        >
+                            <span class="lyrics-line__time">{{ line.timestamp_label }}</span>
+                            <span class="lyrics-line__text">{{ line.text }}</span>
+                        </button>
+                    {% endfor %}
+                </div>
+            </section>
+        {% elif lyrics_text %}
+            <section class="readonly-card lyrics-card">
+                <div class="section-title-row section-title-row--compact">
+                    <div><strong>{{ t('music.lyrics') }}</strong></div>
+                    <span class="badge">LRC</span>
+                </div>
+                <pre class="lyrics-card__raw">{{ lyrics_text }}</pre>
+            </section>
+        {% endif %}
+        <div class="readonly-card">
+            <strong>{{ t('common.review') }}</strong>
+            <p>{{ track.overall_review or t('music.no_review') }}</p>
+        </div>
+    </article>
+
+    <aside class="detail-card">
+        <div class="section-title-row section-title-row--compact">
+            <div><h2>{{ t('common.notes') }}</h2></div>
+        </div>
+        {% if can_manage %}
+            <form action="{{ url_for('library.create_track_comment', track_id=track.id) }}" method="post" class="stack-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <label class="field">
+                    <span>{{ t('music.timestamp') }}</span>
+                    <div class="inline-field inline-field--actions">
+                        <input type="text" name="timestamp_seconds" class="input" placeholder="01:24" data-timestamp-input>
+                        <button type="button" class="button button--ghost button--compact" data-use-current-time>{{ t('music.use_current_time') }}</button>
+                    </div>
+                </label>
+                <label class="field">
+                    <span>{{ t('common.comment') }}</span>
+                    <textarea name="comment" class="input textarea" rows="5" required></textarea>
+                </label>
+                <button type="submit" class="button">{{ t('music.save_note') }}</button>
+            </form>
+        {% endif %}
+        <div class="note-list">
+            {% for note in track.comments %}
+                <article class="note-card" id="track-note-{{ note.id }}">
+                    <div class="note-card__meta">
+                        {% if note.timestamp_seconds is not none %}
+                            <button type="button" class="button button--ghost button--compact" data-seek-to="{{ note.timestamp_seconds }}">{{ note.timestamp_seconds|clockformat }}</button>
+                        {% endif %}
+                        <span class="badge">{{ note.created_at|datetimeformat }}</span>
+                    </div>
+                    <p>{{ note.comment }}</p>
+                </article>
+            {% else %}
+                <div class="empty-state empty-state--compact">
+                    <p>{{ t('music.no_timestamp_notes') }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </aside>
+</section>
+
+{% if can_manage %}
+    <section
+        class="folder-panel folder-panel--create"
+        id="track-edit-panel"
+        data-folder-panel="track-edit"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="track-edit-title"
+        hidden
+    >
+        <div class="folder-panel__header">
+            <div>
+                <p class="eyebrow">{{ module_labels.music }}</p>
+                <h2 id="track-edit-title">{{ t('music.edit_track') }}</h2>
+            </div>
+            <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('music.edit_track') }}">
+                &times;
+            </button>
+        </div>
+
+        <div class="folder-panel__body">
+            <form action="{{ url_for('library.update_track', track_id=track.id) }}" method="post" enctype="multipart/form-data" class="stack-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+                <div class="composer-grid">
+                    <label class="field">
+                        <span>{{ t('common.title') }}</span>
+                        <input type="text" name="title" class="input" value="{{ track.title }}" required>
+                    </label>
+                    <label class="field">
+                        <span>{{ t('music.artist') }}</span>
+                        <input type="text" name="artist_name" class="input" value="{{ track.artist_name or '' }}">
+                    </label>
+                    <label class="field">
+                        <span>{{ t('music.mood') }}</span>
+                        <input type="text" name="mood" class="input" value="{{ track.mood or '' }}">
+                    </label>
+                    <label class="field">
+                        <span>{{ t('common.collection') }}</span>
+                        <select name="category_id" class="input">
+                            <option value="">{{ t('common.no_collection') }}</option>
+                            {% for choice in sidebar_folder_choices %}
+                                <option value="{{ choice.id }}" {% if track.category and track.category.id == choice.id %}selected{% endif %}>
+                                    {{ "-- " * choice.depth }}{{ choice.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+                <label class="field">
+                    <span>{{ t('music.cover_optional') }}</span>
+                    <input type="file" name="cover_file" class="input input--file" accept=".jpg,.jpeg,.png,.gif,.webp">
+                </label>
+                <label class="field">
+                    <span>{{ t('music.lyrics_optional') }}</span>
+                    <input type="file" name="lyrics_file" class="input input--file" accept=".lrc">
+                </label>
+                <label class="field">
+                    <span>{{ t('common.description') }}</span>
+                    <textarea name="description" class="input textarea" rows="4">{{ track.description or '' }}</textarea>
+                </label>
+                <label class="field">
+                    <span>{{ t('music.overall_review') }}</span>
+                    <textarea name="overall_review" class="input textarea" rows="5">{{ track.overall_review or '' }}</textarea>
+                </label>
+                <div class="folder-panel__actions">
+                    <button type="button" class="button button--subtle" data-close-folder-panel>{{ t('common.cancel') }}</button>
+                    <button type="submit" class="button button--ghost">{{ t('common.save') }}</button>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endif %}
+{% endblock %}

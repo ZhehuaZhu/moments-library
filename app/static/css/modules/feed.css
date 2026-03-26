@@ -4,12 +4,23 @@
     gap: 18px;
 }
 
+.feed-section--stream {
+    gap: 0;
+}
+
+.feed-section--stream .feed-list {
+    gap: 16px;
+}
+
 .feed-list {
     display: grid;
     gap: 18px;
 }
 
 .moment-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(34, 48, 60, 0.08);
     transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
 }
 
@@ -22,35 +33,79 @@
 .moment-card__header,
 .moment-card__badges {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: flex-start;
     flex-wrap: wrap;
 }
 
 .moment-card__header {
     justify-content: space-between;
+    gap: 16px;
 }
 
 .moment-card__header-main {
     flex: 1;
     min-width: 0;
     display: grid;
-    gap: 10px;
+    gap: 8px;
 }
 
 .moment-card__meta,
 .history-card__meta,
 .history-card__coords {
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
     flex-wrap: wrap;
 }
 
+.moment-card__badges .badge {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+}
+
+.moment-card__location {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    max-width: min(100%, 760px);
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.moment-card__location-label {
+    color: var(--accent-strong);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.moment-card__location-value {
+    display: inline-block;
+}
+
+.moment-card__meta {
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.moment-card__meta-separator {
+    color: rgba(111, 126, 137, 0.8);
+}
+
+.moment-card__time {
+    white-space: nowrap;
+}
+
 .moment-card__content {
-    margin: 18px 0;
-    font-size: 1rem;
-    line-height: 1.8;
+    max-width: 42ch;
+    margin: 16px 0 0;
+    font-size: 1.08rem;
+    line-height: 1.78;
+    letter-spacing: -0.01em;
 }
 
 .detail-card,
@@ -93,11 +148,184 @@
     margin-top: 18px;
 }
 
+.attachment-grid--documents {
+    gap: 12px;
+}
+
+.media-cluster {
+    display: grid;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.media-cluster--single {
+    grid-template-columns: minmax(0, min(100%, 720px));
+}
+
+.media-cluster--duo {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.media-cluster--quad {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.media-cluster--grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.media-tile {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    padding: 0;
+    border-radius: 22px;
+    background: rgba(221, 228, 233, 0.88);
+    border: 1px solid rgba(34, 48, 60, 0.06);
+    cursor: pointer;
+    transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+}
+
+.media-cluster--single .media-tile {
+    aspect-ratio: 4 / 3;
+    border-radius: 26px;
+}
+
+.media-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 30px rgba(21, 33, 42, 0.12);
+    filter: saturate(1.02);
+}
+
+.media-tile img,
+.media-tile video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    background: #dde4e9;
+}
+
+.media-tile__play,
+.media-tile__overflow-indicator {
+    position: absolute;
+    z-index: 1;
+}
+
+.media-tile__play {
+    left: 12px;
+    bottom: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: rgba(21, 33, 42, 0.7);
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.media-tile--video-inline {
+    background:
+        linear-gradient(180deg, rgba(18, 26, 34, 0.08), rgba(18, 26, 34, 0.18)),
+        rgba(214, 221, 228, 0.96);
+}
+
+.media-tile--video-inline video {
+    background: #d6dde4;
+}
+
+.media-tile__video-toggle {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.media-tile__video-toggle::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(18, 26, 34, 0.08), rgba(18, 26, 34, 0.22));
+    transition: opacity var(--transition);
+}
+
+.media-tile__video-toggle:hover::before,
+.media-tile__video-toggle:focus-visible::before {
+    opacity: 0.84;
+}
+
+.media-tile__video-toggle:focus-visible {
+    outline: none;
+}
+
+.media-tile__video-toggle:focus-visible .media-tile__play {
+    box-shadow:
+        0 0 0 3px rgba(255, 255, 255, 0.16),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.media-tile--video-inline.is-playing .media-tile__video-toggle::before {
+    opacity: 0.12;
+}
+
+.media-tile--video-inline.is-playing .media-tile__play {
+    background: rgba(21, 33, 42, 0.56);
+}
+
+.media-tile__video-expand {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    width: 38px;
+    height: 38px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(8px);
+}
+
+.media-tile__video-expand:hover {
+    background: rgba(255, 255, 255, 0.94);
+}
+
+.media-tile--overflow::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(21, 33, 42, 0.34);
+}
+
+.media-tile__overflow-indicator {
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+}
+
 .media-card {
     border: 1px solid rgba(34, 48, 60, 0.08);
     border-radius: var(--radius-lg);
     background: rgba(244, 247, 248, 0.95);
     overflow: hidden;
+}
+
+.media-card--preview {
+    width: 100%;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
 }
 
 .media-card img,
@@ -126,6 +354,12 @@
 .media-card a {
     display: block;
     padding: 12px 14px 16px;
+}
+
+.media-card__preview-link {
+    display: block;
+    padding: 12px 14px 16px;
+    color: var(--accent-strong);
 }
 
 .media-card--document {

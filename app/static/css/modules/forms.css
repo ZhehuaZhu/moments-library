@@ -12,6 +12,111 @@
     gap: 14px;
 }
 
+.composer-preview {
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+    border: 1px solid rgba(34, 48, 60, 0.08);
+    border-radius: var(--radius-lg);
+    background: rgba(244, 247, 248, 0.88);
+}
+
+.composer-file-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.composer-file-card {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid rgba(34, 48, 60, 0.08);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.94);
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+
+.composer-file-card:hover,
+.composer-file-card.is-drop-target {
+    border-color: rgba(63, 111, 100, 0.24);
+    box-shadow: 0 16px 28px rgba(21, 33, 42, 0.08);
+}
+
+.composer-file-card.is-dragging {
+    opacity: 0.72;
+}
+
+.composer-file-card__preview {
+    position: relative;
+    width: 100%;
+    padding: 0;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border: 1px solid rgba(34, 48, 60, 0.06);
+    border-radius: 18px;
+    background: rgba(221, 228, 233, 0.92);
+    cursor: pointer;
+}
+
+.composer-file-card__preview img,
+.composer-file-card__preview video,
+.composer-file-card__preview embed {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    border: 0;
+    background: #dde4e9;
+}
+
+.composer-file-card__placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: var(--accent-strong);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-align: center;
+    padding: 18px;
+}
+
+.composer-file-card__badge {
+    position: absolute;
+    left: 10px;
+    bottom: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(21, 33, 42, 0.72);
+    color: #fff;
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.composer-file-card__meta {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.composer-file-card__meta strong,
+.composer-file-card__meta small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.composer-file-card__actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
 .field {
     display: flex;
     flex-direction: column;
@@ -135,6 +240,14 @@
 
 .helper-text {
     margin: 0;
+}
+
+.helper-text:empty,
+.page-description:empty,
+.section-title-row p:empty,
+.readonly-card p:empty,
+.empty-state p:empty {
+    display: none;
 }
 
 .text-link {

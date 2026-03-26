@@ -3,11 +3,10 @@
     <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="composer-modal-title">
         <div class="modal-card__header">
             <div>
-                <p class="eyebrow">New Moment</p>
-                <h2 id="composer-modal-title">Publish a New Moment</h2>
-                <p class="helper-text">Pick one or more folders, add media, and keep the main feed focused on reading.</p>
+                <p class="eyebrow">{{ t('composer.new_moment') }}</p>
+                <h2 id="composer-modal-title">{{ t('composer.publish_new_moment') }}</h2>
             </div>
-            <button type="button" class="icon-button icon-button--ghost" data-close-composer aria-label="Close composer">
+            <button type="button" class="icon-button icon-button--ghost" data-close-composer aria-label="{{ t('composer.close_composer') }}">
                 &#10005;
             </button>
         </div>
@@ -16,23 +15,63 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <label class="field">
-                <span>Text</span>
+                <span>{{ t('common.text') }}</span>
                 <textarea
                     name="content"
                     rows="6"
                     class="input textarea"
-                    placeholder="Write about your day, save a note, or share something worth remembering."
                 ></textarea>
             </label>
 
+            <section class="composer-citation" data-citation-shell>
+                <div class="section-title-row section-title-row--compact">
+                    <div><h3>{{ t('composer.cite') }}</h3></div>
+                    <button
+                        type="button"
+                        class="button button--ghost button--compact"
+                        data-citation-toggle
+                        aria-expanded="false"
+                    >
+                        {{ t('composer.add_citation') }}
+                    </button>
+                </div>
+
+                <input type="hidden" name="citation_kind" data-citation-kind>
+                <input type="hidden" name="citation_target_id" data-citation-target-id>
+
+                <div class="composer-citation__selected" data-selected-citation hidden></div>
+
+                <div class="composer-citation__panel" data-citation-panel hidden>
+                    <div class="composer-citation__scopes" role="tablist" aria-label="{{ t('composer.citation_scope') }}">
+                        <button type="button" class="composer-citation__scope is-active" data-citation-scope="all">{{ t('common.all') }}</button>
+                        <button type="button" class="composer-citation__scope" data-citation-scope="books">{{ module_labels.books }}</button>
+                        <button type="button" class="composer-citation__scope" data-citation-scope="quotes">{{ t('citation.book_quote') }}</button>
+                        <button type="button" class="composer-citation__scope" data-citation-scope="music">{{ module_labels.music }}</button>
+                        <button type="button" class="composer-citation__scope" data-citation-scope="videos">{{ module_labels.videos }}</button>
+                    </div>
+
+                    <label class="field">
+                        <span>{{ t('composer.search_library') }}</span>
+                        <input
+                            type="search"
+                            class="input"
+                            placeholder="{{ t('composer.search_placeholder') }}"
+                            data-citation-search
+                        >
+                    </label>
+
+                    <div class="composer-citation__results" data-citation-results></div>
+                </div>
+            </section>
+
             <div class="composer-grid">
                 <div class="field">
-                    <span>Folders</span>
+                    <span>{{ t('composer.collections') }}</span>
                     {% include "includes/folder_picker.html" %}
                 </div>
 
                 <label class="field">
-                    <span>Attachments</span>
+                    <span>{{ t('common.attachments') }}</span>
                     <input
                         type="file"
                         name="files"
@@ -41,25 +80,41 @@
                         multiple
                         accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
                     >
-                    <small class="helper-text" data-file-summary>Mixed uploads are supported for images, videos, PDFs, and documents.</small>
+                    <small class="helper-text" data-file-summary hidden></small>
                 </label>
             </div>
 
+            <section class="composer-preview" data-composer-preview hidden>
+                <div class="section-title-row section-title-row--compact">
+                    <div>
+                        <h3>{{ t('composer.attachment_order') }}</h3>
+                    </div>
+                </div>
+                <div class="composer-file-list" data-composer-file-list></div>
+            </section>
+
             <div class="location-card">
                 <div>
-                    <strong>Current Location</strong>
-                    <p class="helper-text" data-location-status>No location attached yet.</p>
+                    <strong>{{ t('common.current_location') }}</strong>
+                    <p class="helper-text" data-location-status hidden></p>
                 </div>
-                <button type="button" class="button button--ghost" data-action="resolve-location">Use My Current Location</button>
+                <button type="button" class="button button--ghost" data-action="resolve-location">{{ t('common.use_current_location') }}</button>
             </div>
 
             <input type="hidden" name="latitude" data-location-latitude>
             <input type="hidden" name="longitude" data-location-longitude>
             <input type="hidden" name="location_label" data-location-label>
+            <input type="hidden" name="location_country_code" data-location-country-code>
+            <input type="hidden" name="location_country_name" data-location-country-name>
+            <input type="hidden" name="location_admin_area" data-location-admin-area>
+            <input type="hidden" name="location_city_name" data-location-city-name>
+            <input type="hidden" name="location_district_name" data-location-district-name>
+            <input type="hidden" name="location_place_key" data-location-place-key>
+            <input type="hidden" name="location_source" data-location-source>
 
             <div class="composer-actions">
-                <button type="submit" class="button">Publish</button>
-                <button type="button" class="button button--subtle" data-close-composer>Cancel</button>
+                <button type="submit" class="button">{{ t('common.publish') }}</button>
+                <button type="button" class="button button--subtle" data-close-composer>{{ t('common.cancel') }}</button>
             </div>
         </form>
     </section>

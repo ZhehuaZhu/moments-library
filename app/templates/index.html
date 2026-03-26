@@ -1,30 +1,26 @@
-{% set header_eyebrow = "Personal Feed" %}
+{% set header_eyebrow = t('module.feed') %}
 {% set header_title = selected_folder_name %}
-{% set header_description = "Browse your private posts, media, and notes with a cleaner reading-first layout." %}
+{% set header_description = "" %}
 {% set recycle_view = false %}
-{% set feed_title = "Feed" %}
-{% set feed_description = "Cards stay focused on content, while folders now support nesting, descriptions, and multi-folder assignment." %}
-{% set empty_title = "Nothing here yet" %}
-{% set empty_description = "Create your first moment from the sidebar, or switch to another folder." %}
+{% set feed_title = t('feed.title') %}
+{% set feed_description = "" %}
+{% set show_feed_header = false %}
+{% set empty_title = t('home.nothing_here') %}
+{% set empty_description = "" %}
 {% extends "base.html" %}
 
 {% block content %}
-<section class="page-header">
+<section class="page-header page-header--home">
     <div>
-        <p class="eyebrow">Private Social Archive</p>
         <h1>{{ selected_folder_name }}</h1>
-        <p class="page-description">
-            {% if search_query %}
-                Showing {{ result_count }} result(s) for "{{ search_query }}".
-            {% else %}
-                A quieter homepage for reading first, with folders, search, and creation moved into dedicated controls.
-            {% endif %}
-        </p>
+        {% if search_query %}
+            <p class="page-description">{{ t('home.showing_results', count=result_count, query=search_query) }}</p>
+        {% endif %}
     </div>
     <div class="page-header__stats">
-        <span class="stat-chip">Public Reading</span>
+        <span class="stat-chip">{{ t('counts.items', count=total_count) }}</span>
         {% if can_manage %}
-            <span class="stat-chip stat-chip--accent">Admin Controls Enabled</span>
+            <span class="stat-chip stat-chip--accent">{{ t('common.administrator') }}</span>
         {% endif %}
     </div>
 </section>

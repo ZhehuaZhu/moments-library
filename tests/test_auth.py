@@ -1,7 +1,8 @@
 def test_public_feed_is_accessible(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert b"Moments Library" in response.data
+    assert b"Quiet Atlas" in response.data
+    assert b"Spaces" in response.data
 
 
 def test_login_success_redirects_to_feed(client):

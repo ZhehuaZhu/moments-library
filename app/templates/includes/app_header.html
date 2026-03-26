@@ -1,10 +1,21 @@
 <header class="app-header">
     <div class="app-header__main">
+        {% if request.endpoint != "main.index" %}
+            <button
+                type="button"
+                class="icon-button icon-button--ghost"
+                data-history-back
+                data-back-href="{{ request.referrer or url_for('main.index') }}"
+                aria-label="{{ t('common.go_back') }}"
+            >
+                &#8592;
+            </button>
+        {% endif %}
         <button
             type="button"
             class="icon-button"
             data-toggle-sidebar
-            aria-label="Toggle navigation"
+            aria-label="{{ t('common.toggle_navigation') }}"
         >
             &#9776;
         </button>
@@ -12,4 +23,40 @@
             <span class="app-header__label">{{ header_title or title or "Moments Library" }}</span>
         </div>
     </div>
+    {% if module_labels is defined %}
+        <nav class="app-header__quicknav" aria-label="{{ t('nav.quick_navigation') }}">
+            <a
+                class="app-header__quicklink {% if request.endpoint == 'main.index' %}is-active{% endif %}"
+                href="{{ url_for('main.index') }}"
+            >
+                {{ t('common.home') }}
+            </a>
+            <a
+                class="app-header__quicklink {% if request.endpoint == 'main.footprints' %}is-active{% endif %}"
+                href="{{ url_for('main.footprints') }}"
+            >
+                {{ t('nav.footprints') }}
+            </a>
+            <a
+                class="app-header__quicklink {% if active_nav == 'books' %}is-active{% endif %}"
+                href="{{ url_for('library.books') }}"
+            >
+                {{ module_labels.books }}
+            </a>
+            <a
+                class="app-header__quicklink {% if active_nav == 'music' %}is-active{% endif %}"
+                href="{{ url_for('library.tracks') }}"
+            >
+                {{ module_labels.music }}
+            </a>
+            <a
+                class="app-header__quicklink {% if active_nav == 'videos' %}is-active{% endif %}"
+                href="{{ url_for('library.videos') }}"
+            >
+                {{ module_labels.videos }}
+            </a>
+            {% set language_switcher_compact = true %}
+            {% include "includes/language_switcher.html" %}
+        </nav>
+    {% endif %}
 </header>

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">{{ t('videos.video_detail') }}</p>
+        <h1>{{ video.title }}</h1>
+        {% if video.description %}
+            <p class="page-description">{{ video.description }}</p>
+        {% endif %}
+    </div>
+    <div class="page-header__stats">
+        {% if video.category %}
+            <span class="stat-chip">{{ t('common.collection') }} · {{ video.category.name }}</span>
+        {% endif %}
+        <span class="stat-chip stat-chip--accent">{{ t('counts.notes', count=video.comments|length) }}</span>
+    </div>
+</section>
+
+<section class="library-detail-grid">
+    <article class="detail-card">
+        <div class="section-title-row section-title-row--compact">
+            <div>
+                <h2>{{ t('common.player') }}</h2>
+            </div>
+        </div>
+        <video
+            class="media-player"
+            controls
+            preload="metadata"
+            data-timestamp-media
+            {% if video.poster_asset_path %}poster="{{ url_for('static', filename=video.poster_asset_path) }}"{% endif %}
+        >
+            <source src="{{ url_for('static', filename=video.preview_asset_path) }}" type="{{ video.preview_asset_mime_type }}">
+        </video>
+        <div class="readonly-card">
+            <strong>{{ t('videos.overall_review') }}</strong>
+            <p>{{ video.overall_review or t('videos.no_review') }}</p>
+        </div>
+    </article>
+
+    <aside class="detail-card">
+        <div class="section-title-row section-title-row--compact">
+            <div>
+                <h2>{{ t('videos.timestamp_reactions') }}</h2>
+            </div>
+        </div>
+        {% if can_manage %}
+            <form action="{{ url_for('library.create_video_comment', video_id=video.id) }}" method="post" class="stack-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <label class="field">
+                    <span>{{ t('music.timestamp') }}</span>
+                    <div class="inline-field inline-field--actions">
+                        <input type="text" name="timestamp_seconds" class="input" placeholder="00:42" data-timestamp-input>
+                        <button type="button" class="button button--ghost button--compact" data-use-current-time>{{ t('music.use_current_time') }}</button>
+                    </div>
+                </label>
+                <label class="field">
+                    <span>{{ t('common.comment') }}</span>
+                    <textarea name="comment" class="input textarea" rows="5" required></textarea>
+                </label>
+                <button type="submit" class="button">{{ t('videos.save_video_note') }}</button>
+            </form>
+        {% endif %}
+        <div class="note-list">
+            {% for note in video.comments %}
+                <article class="note-card" id="video-note-{{ note.id }}">
+                    <div class="note-card__meta">
+                        {% if note.timestamp_seconds is not none %}
+                            <button type="button" class="button button--ghost button--compact" data-seek-to="{{ note.timestamp_seconds }}">{{ note.timestamp_seconds|clockformat }}</button>
+                        {% endif %}
+                        <span class="badge">{{ note.created_at|datetimeformat }}</span>
+                    </div>
+                    <p>{{ note.comment }}</p>
+                </article>
+            {% else %}
+                <div class="empty-state empty-state--compact">
+                    <p>{{ t('videos.no_timestamp_reactions') }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </aside>
+</section>
+{% endblock %}

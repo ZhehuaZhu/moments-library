@@ -1,0 +1,41 @@
+<div class="folder-map__branch {% if folder_node.children %}folder-map__branch--has-children{% endif %}">
+    <div class="folder-map__row">
+        <a
+            class="folder-map__node {% if active_nav == 'feed' and selected_folder_key == 'folder:' ~ folder_node.folder.id %}is-active{% endif %}"
+            href="{{ url_for('main.index', folder_id=folder_node.folder.id, q=search_query or None) }}"
+            title="{{ folder_node.folder.name }}"
+            data-folder-jump
+        >
+            <span class="folder-map__node-mark">{{ folder_node.folder.name[:1] }}</span>
+            <span class="folder-map__node-copy">
+                <strong>{{ folder_node.folder.name }}</strong>
+                {% if folder_node.folder.description %}
+                    <small>{{ folder_node.folder.description }}</small>
+                {% endif %}
+            </span>
+            <em>{{ folder_counts.get(folder_node.folder.id, 0) }}</em>
+        </a>
+
+        {% if can_manage %}
+            <form
+                action="{{ url_for('main.delete_category', category_id=folder_node.folder.id) }}"
+                method="post"
+                class="folder-map__delete"
+                onsubmit="return confirm('Delete this collection? Child collections will move up and assigned items will stay.')"
+            >
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="icon-button icon-button--ghost" aria-label="Delete collection">
+                    &times;
+                </button>
+            </form>
+        {% endif %}
+    </div>
+
+    {% if folder_node.children %}
+        <div class="folder-map__children">
+            {% for folder_node in folder_node.children %}
+                {% include "includes/folder_map_item.html" %}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

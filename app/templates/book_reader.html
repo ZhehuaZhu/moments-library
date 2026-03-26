@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section
+    class="reader-layout reader-layout--immersive"
+    data-reader-shell
+    {% if reader_focus_annotation_id %}
+        data-reader-focus-annotation-id="{{ reader_focus_annotation_id }}"
+    {% endif %}
+>
+    <article
+        class="detail-card reader-surface reader-surface--immersive{% if book.reader_kind == 'html' %} reader-surface--epub{% endif %}"
+        {% if book.reader_kind == "html" %}data-section-shell{% endif %}
+    >
+        <button
+            type="button"
+            class="reader-hotspot reader-hotspot--top"
+            data-reader-toggle-top
+            aria-label="{{ t('books.reader_info') }}"
+        ></button>
+        <button
+            type="button"
+            class="reader-hotspot reader-hotspot--bottom"
+            data-reader-toggle-bottom
+            aria-label="{{ t('books.reader_controls') }}"
+        ></button>
+
+        <header class="reader-overlay reader-overlay--top" data-reader-top-panel>
+            <div class="reader-overlay__edge">
+                <a class="button button--ghost button--compact" href="{{ url_for('library.books') }}">{{ t('common.back') }}</a>
+            </div>
+
+            <div class="reader-overlay__meta">
+                <p class="eyebrow">{{ t('books.reading') }}</p>
+                <strong>{{ book.title }}</strong>
+                {% if book.reader_kind == "html" %}
+                    <span data-section-title>{{ current_section_label }}</span>
+                {% else %}
+                    <span>{{ book.author_name or book.source_format|upper }}</span>
+                {% endif %}
+            </div>
+
+            <div class="reader-overlay__edge reader-overlay__edge--trailing">
+                {% if book.reader_kind == "html" %}
+                    <span class="reader-overlay__progress" data-section-progress>
+                        {% if section_manifest %}
+                            {{ active_section_index + 1 }} / {{ section_manifest|length }}
+                        {% else %}
+                            {{ t('books.preparing') }}
+                        {% endif %}
+                    </span>
+                {% else %}
+                    <span class="reader-overlay__progress">{{ book.author_name or book.source_format|upper }}</span>
+                {% endif %}
+                <button type="button" class="button button--ghost button--compact" data-reader-open-notes>
+                    {{ t('common.notes') }}
+                    <span class="reader-overlay__count">{{ book.annotations|length }}</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="reader-surface__stage" data-reader-stage>
+            {% if book.reader_kind == "pdf" %}
+                <embed class="reader-surface__embed" src="{{ url_for('static', filename=reader_source_path) }}" type="application/pdf">
+            {% elif book.reader_kind == "text" %}
+                <div class="reader-surface__content" data-book-selection-source>
+                    {% for paragraph in text_content.split('\n\n') if paragraph.strip() %}
+                        <p>{{ paragraph|e|replace('\n', '<br>')|safe }}</p>
+                    {% endfor %}
+                </div>
+            {% elif book.reader_kind == "docx" %}
+                <div
+                    class="reader-surface__content"
+                    data-book-selection-source
+                    data-docx-reader
+                    data-docx-src="{{ url_for('static', filename=reader_source_path) }}"
+                >
+                    <p class="helper-text">{{ t('books.preparing_docx') }}</p>
+                </div>
+            {% elif book.reader_kind == "html" %}
+                <script type="application/json" data-section-manifest>{{ section_manifest|tojson }}</script>
+                <script type="application/json" data-reader-annotations>{{ reader_annotations|tojson }}</script>
+                <div
+                    class="reader-surface__content reader-surface__content--book"
+                    data-book-selection-source
+                    data-section-reader
+                    data-section-endpoint="{{ url_for('library.book_reader_section', book_id=book.id) }}"
+                    data-section-initial-index="{{ active_section_index }}"
+                >
+                    {{ current_section_markup|safe if current_section_markup else (html_content|safe if html_content else '<p class="helper-text">' ~ t('books.reader_preparing') ~ '</p>') }}
+                </div>
+            {% elif book.reader_kind == "epub" %}
+                <div class="reader-surface__content">
+                    <p>{{ t('books.fast_reader_missing') }}</p>
+                    <a class="button button--ghost" href="{{ url_for('static', filename=book.relative_path) }}" target="_blank" rel="noopener">{{ t('books.open_epub_file') }}</a>
+                </div>
+            {% elif book.reader_kind == "mobi" %}
+                <div class="reader-surface__content">
+                    <p>{{ t('books.mobi_preserved') }}</p>
+                    <a class="button button--ghost" href="{{ url_for('static', filename=reader_source_path) }}" target="_blank" rel="noopener">{{ t('books.open_mobi_file') }}</a>
+                </div>
+            {% else %}
+                <div class="reader-surface__content">
+                    <p>{{ t('books.no_inline_reader') }}</p>
+                    <a class="button button--ghost" href="{{ url_for('static', filename=reader_source_path) }}" target="_blank" rel="noopener">{{ t('common.open_file') }}</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <footer class="reader-overlay reader-overlay--bottom" data-reader-bottom-panel>
+            {% if book.reader_kind == "html" %}
+                <div class="reader-bottom-bar">
+                    <button type="button" class="button button--ghost button--compact" data-section-prev>{{ t('common.previous') }}</button>
+                    <label class="reader-bottom-bar__toc">
+                        <span>{{ t('books.section') }}</span>
+                        <select class="input" data-section-toc>
+                            {% for section in section_manifest %}
+                                <option value="{{ section.index }}" {% if section.index == active_section_index %}selected{% endif %}>
+                                    {{ section.label }}{% if section.is_front_matter %} ({{ t('books.front_matter') }}){% endif %}
+                                </option>
+                            {% else %}
+                                <option value="0">{{ t('books.preparing_section') }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <button type="button" class="button button--ghost button--compact" data-section-next>{{ t('common.next') }}</button>
+                </div>
+            {% endif %}
+
+            <div class="reader-bottom-actions">
+                <button type="button" class="button button--ghost button--compact" data-reader-open-notes>
+                    {{ t('common.notes') }}
+                    <span class="reader-overlay__count">{{ book.annotations|length }}</span>
+                </button>
+                <a class="button button--ghost button--compact" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.info') }}</a>
+            </div>
+        </footer>
+    </article>
+
+    <div class="reader-notes-backdrop" data-reader-notes-backdrop></div>
+
+    <aside class="reader-notes-sheet" data-reader-notes-drawer aria-hidden="true">
+        <div class="reader-notes-sheet__header">
+            <div>
+                <p class="eyebrow">{{ t('books.reader_notes') }}</p>
+                <h2>{{ t('books.notes_and_highlights') }}</h2>
+                <p class="helper-text">
+                    {% if book.supports_precise_selection_notes %}
+                        {{ t('books.precise_instructions') }}
+                    {% else %}
+                        {{ t('books.selection_instructions') }}
+                    {% endif %}
+                </p>
+            </div>
+            <button type="button" class="icon-button icon-button--ghost" data-reader-close-notes aria-label="{{ t('books.close_notes') }}">
+                &times;
+            </button>
+        </div>
+
+        <div class="reader-notes-sheet__body">
+            {% if book.reader_kind == "html" %}
+                <section class="reader-annotation-peek" data-reader-annotation-peek hidden>
+                    <div class="reader-annotation-peek__meta">
+                        <strong data-reader-annotation-peek-title>{{ t('books.saved_highlight') }}</strong>
+                        <span data-reader-annotation-peek-meta></span>
+                    </div>
+                    <blockquote class="note-card__quote" data-reader-annotation-peek-quote hidden></blockquote>
+                    <p data-reader-annotation-peek-comment></p>
+                </section>
+            {% endif %}
+
+            <form
+                action="{{ url_for('library.create_book_annotation', book_id=book.id) }}"
+                method="post"
+                class="stack-form"
+                data-book-annotation-form
+            >
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ reader_return_target }}" data-book-next-field>
+                <input type="hidden" name="annotation_type" value="text_selection" data-book-annotation-type>
+                <input type="hidden" name="section_index" value="" data-book-section-index>
+                <input type="hidden" name="paragraph_id" value="" data-book-paragraph-id>
+                <input type="hidden" name="selection_start" value="" data-book-selection-start>
+                <input type="hidden" name="selection_end" value="" data-book-selection-end>
+                <label class="field">
+                    <span>{{ t('books.quoted_text') }}</span>
+                    <textarea name="quoted_text" rows="4" class="input textarea textarea--compact" data-book-quote placeholder="{{ t('books.quote_placeholder') }}"></textarea>
+                </label>
+                <p class="helper-text" data-book-anchor-status>
+                    {% if book.supports_precise_selection_notes %}
+                        {{ t('books.precise_anchor_hint') }}
+                    {% elif book.supports_selection_notes %}
+                        {{ t('books.selection_hint') }}
+                    {% else %}
+                        {{ t('books.manual_note_hint') }}
+                    {% endif %}
+                </p>
+                <label class="field">
+                    <span>{{ t('common.chapter_section') }}</span>
+                    <input type="text" name="chapter_label" class="input" placeholder="{{ t('common.optional') }}" data-book-chapter-field>
+                </label>
+                <label class="field">
+                    <span>{{ t('common.page') }}</span>
+                    <input type="text" name="page_label" class="input" placeholder="{{ t('common.optional') }}">
+                </label>
+                <label class="field">
+                    <span>{{ t('common.tag') }}</span>
+                    <select name="tag" class="input">
+                        <option value="">{{ t('common.no_tag') }}</option>
+                        {% for value, label in annotation_tag_choices %}
+                            <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="field">
+                    <span>{{ t('common.comment') }}</span>
+                    <textarea name="comment" rows="6" class="input textarea" required data-book-comment></textarea>
+                </label>
+                <button type="submit" class="button">{{ t('books.save_reading_note') }}</button>
+            </form>
+
+            <div class="note-list">
+                {% for note in book.annotations %}
+                    <article
+                        class="note-card{% if note.has_text_anchor %} note-card--anchored{% endif %}"
+                        {% if note.has_text_anchor %}
+                            data-annotation-card
+                            data-annotation-id="{{ note.id }}"
+                            data-annotation-section-index="{{ note.section_index }}"
+                            data-annotation-paragraph-id="{{ note.paragraph_id }}"
+                            role="button"
+                            tabindex="0"
+                        {% endif %}
+                    >
+                        <div class="note-card__meta">
+                            <span class="badge">{{ t('books.precise_highlight') if note.has_text_anchor else note.annotation_type.replace('_', ' ')|title }}</span>
+                            {% if note.tag %}
+                                <span class="badge badge--category">{{ annotation_tag_label(note.tag) }}</span>
+                            {% endif %}
+                            {% if note.chapter_label %}
+                                <span class="badge">{{ note.chapter_label }}</span>
+                            {% endif %}
+                            {% if note.page_label %}
+                                <span class="badge">{{ t('common.page') }} {{ note.page_label }}</span>
+                            {% endif %}
+                            <span class="badge">{{ note.created_at|datetimeformat }}</span>
+                        </div>
+                        {% if note.quoted_text %}
+                            <blockquote class="note-card__quote">{{ note.quoted_text }}</blockquote>
+                        {% endif %}
+                        <p>{{ note.comment }}</p>
+                    </article>
+                {% else %}
+                    <div class="empty-state empty-state--compact">
+                        <p>{{ t('books.no_notes') }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </aside>
+</section>
+{% endblock %}

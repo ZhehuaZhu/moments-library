@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-header">
+    <div>
+        <p class="eyebrow">{{ t('common.library') }}</p>
+        <h1>{{ module_labels.music }}</h1>
+    </div>
+    <div class="page-header__stats">
+        <span class="stat-chip">{{ t('counts.tracks', count=result_count) }}</span>
+        <span class="stat-chip stat-chip--accent">{{ t('common.queue') }}</span>
+        {% if can_manage %}
+            <button
+                type="button"
+                class="button button--ghost button--compact"
+                data-open-folder-panel="track-create"
+                aria-haspopup="dialog"
+                aria-controls="track-create-panel"
+                aria-expanded="false"
+            >
+                {{ t('music.add_track') }}
+            </button>
+        {% endif %}
+    </div>
+</section>
+
+<section class="library-grid">
+    {% for track in tracks %}
+        <article class="work-card work-card--track">
+            <div class="work-card__body">
+                <div class="work-card__hero">
+                    {% if track.cover_asset_path %}
+                        <img
+                            src="{{ url_for('static', filename=track.cover_asset_path) }}"
+                            alt="{{ track.title }} cover"
+                            class="work-card__cover"
+                            loading="lazy"
+                        >
+                    {% else %}
+                        <div class="work-card__cover work-card__cover--placeholder">{{ track.cover_seed }}</div>
+                    {% endif %}
+                    <div class="work-card__hero-copy">
+                        <div class="work-card__meta">
+                            {% if track.category %}
+                                <span class="badge badge--category">{{ t('common.collection') }} · {{ track.category.name }}</span>
+                            {% endif %}
+                            {% if track.mood %}
+                                <span class="badge">{{ track.mood }}</span>
+                            {% endif %}
+                            {% if track.has_lyrics %}
+                                <span class="badge">LRC</span>
+                            {% endif %}
+                            <span class="badge badge--edit">{{ t('counts.notes', count=track.comments|length) }}</span>
+                        </div>
+                        <h3>{{ track.title }}</h3>
+                        {% if track.artist_name %}
+                            <p class="work-card__subtitle">{{ track.artist_name }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <p class="work-card__summary">{{ track.overall_review or track.description or t('music.no_review') }}</p>
+                <div class="work-card__footer">
+                    <button type="button" class="button button--ghost" data-track-play data-track-id="{{ track.id }}">{{ t('music.play') }}</button>
+                    <a class="button button--subtle" href="{{ url_for('library.track_detail', track_id=track.id) }}">{{ t('common.details') }}</a>
+                </div>
+            </div>
+        </article>
+    {% else %}
+        <div class="empty-state">
+            <h3>{{ t('music.no_tracks') }}</h3>
+        </div>
+    {% endfor %}
+</section>
+
+{% if can_manage %}
+    <section
+        class="folder-panel folder-panel--create"
+        id="track-create-panel"
+        data-folder-panel="track-create"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="track-create-title"
+        hidden
+    >
+        <div class="folder-panel__header">
+            <div>
+                <p class="eyebrow">{{ module_labels.music }}</p>
+                <h2 id="track-create-title">{{ t('music.add_track') }}</h2>
+            </div>
+            <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('music.add_track') }}">
+                &times;
+            </button>
+        </div>
+
+        <div class="folder-panel__body">
+            <form action="{{ url_for('library.create_track') }}" method="post" enctype="multipart/form-data" class="stack-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+                <div class="composer-grid">
+                    <label class="field">
+                        <span>{{ t('common.title') }}</span>
+                        <input type="text" name="title" class="input" required>
+                    </label>
+                    <label class="field">
+                        <span>{{ t('music.artist_alias') }}</span>
+                        <input type="text" name="artist_name" class="input" placeholder="{{ t('common.optional') }}">
+                    </label>
+                    <label class="field">
+                        <span>{{ t('music.mood') }}</span>
+                        <input type="text" name="mood" class="input" placeholder="{{ t('music.mood_placeholder') }}">
+                    </label>
+                    <label class="field">
+                        <span>{{ t('common.collection') }}</span>
+                        <select name="category_id" class="input">
+                            <option value="">{{ t('common.no_collection') }}</option>
+                            {% for choice in sidebar_folder_choices %}
+                                <option value="{{ choice.id }}">{{ "-- " * choice.depth }}{{ choice.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+                <label class="field">
+                    <span>{{ t('music.audio_file') }}</span>
+                    <input type="file" name="audio_file" class="input input--file" accept=".mp3,.m4a,.wav,.ogg,.webm,.flac" required>
+                </label>
+                <label class="field">
+                    <span>{{ t('music.cover_optional') }}</span>
+                    <input type="file" name="cover_file" class="input input--file" accept=".jpg,.jpeg,.png,.gif,.webp">
+                </label>
+                <label class="field">
+                    <span>{{ t('music.lyrics_optional') }}</span>
+                    <input type="file" name="lyrics_file" class="input input--file" accept=".lrc">
+                </label>
+                <label class="field">
+                    <span>{{ t('common.description') }}</span>
+                    <textarea name="description" class="input textarea" rows="4"></textarea>
+                </label>
+                <label class="field">
+                    <span>{{ t('music.overall_review') }}</span>
+                    <textarea name="overall_review" class="input textarea" rows="5"></textarea>
+                </label>
+                <div class="folder-panel__actions">
+                    <button type="button" class="button button--subtle" data-close-folder-panel>{{ t('common.cancel') }}</button>
+                    <button type="submit" class="button button--ghost">{{ t('music.save_track') }}</button>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endif %}
+{% endblock %}

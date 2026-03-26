@@ -1,0 +1,32 @@
+{% set language_switcher_compact = language_switcher_compact | default(false, true) %}
+{% set current_language_option = (available_languages | selectattr("code", "equalto", current_lang) | list | first) %}
+<details
+    class="language-switch{% if language_switcher_compact %} language-switch--compact{% endif %}"
+    data-language-switch
+>
+    <summary class="language-switch__trigger" aria-label="{{ t('language.switcher_label') }}">
+        <span class="language-switch__current">{{ current_language_option.short_label if current_language_option else current_lang|upper }}</span>
+        <span class="language-switch__caret" aria-hidden="true">&#9662;</span>
+    </summary>
+
+    <form
+        action="{{ url_for('main.update_language_preference') }}"
+        method="post"
+        class="language-switch__menu"
+    >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+        {% for language in available_languages %}
+            <button
+                type="submit"
+                class="language-switch__option{% if current_lang == language.code %} is-active{% endif %}"
+                name="language"
+                value="{{ language.code }}"
+                title="{{ language.label }}"
+                aria-label="{{ language.label }}"
+            >
+                {{ language.short_label }}
+            </button>
+        {% endfor %}
+    </form>
+</details>

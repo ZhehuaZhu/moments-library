@@ -10,7 +10,8 @@
             "python": "C:\\Users\\Zhehua\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\python.exe",
             "jinja": true,
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": true,
+            "purpose": ["debug-in-terminal"]
         }
     ]
 }

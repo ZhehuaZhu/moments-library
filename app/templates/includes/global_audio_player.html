@@ -1,0 +1,111 @@
+<div
+    class="audio-player{% if player_variant == 'window' %} audio-player--window{% endif %}"
+    data-audio-player
+    data-player-window-url="{{ url_for('library.music_player_window') }}"
+    {% if player_variant == 'window' %}data-player-floating-window{% else %}hidden{% endif %}
+>
+    <audio data-player-audio preload="metadata"></audio>
+    {% if player_variant != 'window' %}
+        <button
+            type="button"
+            class="audio-player__bubble"
+            data-player-bubble
+            aria-label="{{ t('player.open_mini_player') }}"
+            aria-expanded="false"
+        >
+            <span class="audio-player__bubble-pulse" aria-hidden="true"></span>
+            <span class="audio-player__artwork audio-player__artwork--bubble" data-player-artwork>
+                <span class="audio-player__artwork-label" data-player-artwork-label>&#9835;</span>
+            </span>
+        </button>
+    {% endif %}
+    <div class="audio-player__panel" data-player-panel>
+        {% if player_variant != 'window' %}
+            <div class="audio-player__header">
+                <div class="audio-player__header-actions">
+                    <button
+                    type="button"
+                    class="audio-player__drag-handle"
+                    data-player-drag-handle
+                    aria-label="{{ t('player.drag_mini_player') }}"
+                >
+                        <span aria-hidden="true">&#8942;&#8942;</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="icon-button icon-button--ghost"
+                        data-player-settings-toggle
+                        aria-label="{{ t('player.mini_player_settings') }}"
+                        aria-expanded="false"
+                    >
+                        <span aria-hidden="true">&#9881;</span>
+                    </button>
+                </div>
+                <button
+                    type="button"
+                    class="icon-button icon-button--ghost"
+                    data-player-collapse-toggle
+                    aria-label="{{ t('player.collapse_mini_player') }}"
+                >
+                    <span aria-hidden="true">&#8722;</span>
+                </button>
+            </div>
+        {% endif %}
+        <div class="audio-player__summary">
+            <div class="audio-player__artwork audio-player__artwork--panel" data-player-artwork>
+                <span class="audio-player__artwork-label" data-player-artwork-label>&#9835;</span>
+            </div>
+            <div class="audio-player__meta">
+                <strong data-player-title>{{ t('player.ready') }}</strong>
+                <span data-player-artist>{{ t('player.choose_track') }}</span>
+            </div>
+        </div>
+        <div class="audio-player__controls">
+            <button type="button" class="icon-button icon-button--ghost" data-player-prev aria-label="{{ t('common.previous') }}">
+                <span aria-hidden="true">&#9198;</span>
+            </button>
+            <button type="button" class="icon-button audio-player__toggle" data-player-toggle aria-label="{{ t('player.play') }}">
+                <span aria-hidden="true">&#9654;</span>
+            </button>
+            <button type="button" class="icon-button icon-button--ghost" data-player-next aria-label="{{ t('common.next') }}">
+                <span aria-hidden="true">&#9197;</span>
+            </button>
+            <button
+                type="button"
+                class="icon-button icon-button--ghost"
+                data-player-queue-toggle
+                aria-label="{{ t('common.queue') }}"
+            >
+                <span aria-hidden="true">&#9776;</span>
+            </button>
+            {% if player_variant != 'window' %}
+                <button
+                    type="button"
+                    class="icon-button icon-button--ghost"
+                    data-player-popout
+                    aria-label="{{ t('player.open_mini_player') }}"
+                >
+                    <span aria-hidden="true">&#8599;</span>
+                </button>
+            {% endif %}
+        </div>
+        <div class="audio-player__progress">
+            <span data-player-current>00:00</span>
+            <input type="range" min="0" max="100" value="0" data-player-progress>
+            <span data-player-duration>00:00</span>
+        </div>
+        {% if player_variant != 'window' %}
+            <div class="audio-player__settings" data-player-settings hidden>
+                <label class="audio-player__setting">
+                    <span>{{ t('player.opacity') }}</span>
+                    <input type="range" min="70" max="100" step="1" value="92" data-player-opacity-input>
+                </label>
+                <label class="audio-player__setting">
+                    <span>{{ t('player.scale') }}</span>
+                    <input type="range" min="78" max="112" step="1" value="92" data-player-scale-input>
+                </label>
+            </div>
+        {% endif %}
+        <div class="audio-player__queue" data-player-queue hidden></div>
+    </div>
+</div>

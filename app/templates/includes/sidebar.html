@@ -1,22 +1,25 @@
 <aside class="sidebar" data-sidebar>
     <div class="sidebar__header">
         <div class="sidebar__brand">
-            <div class="sidebar__brand-mark">ML</div>
+            <div class="sidebar__brand-mark" aria-hidden="true">
+                <span class="sidebar__brand-orb"></span>
+                <span class="sidebar__brand-orb sidebar__brand-orb--small"></span>
+            </div>
             <div class="sidebar__brand-copy">
-                <p class="eyebrow">Moments Library</p>
-                <h2>Personal Feed Library</h2>
-                <p>Posts, files, locations, and private organization in one place.</p>
+                <h2 class="sidebar__brand-title">{{ workspace_name }}</h2>
             </div>
         </div>
 
-        <button
-            type="button"
-            class="icon-button icon-button--ghost sidebar__close"
-            data-close-sidebar
-            aria-label="Close navigation"
-        >
-            &#10005;
-        </button>
+        <div class="sidebar__header-actions">
+            <button
+                type="button"
+                class="icon-button icon-button--ghost sidebar__close"
+                data-close-sidebar
+                aria-label="{{ t('nav.close_navigation') }}"
+            >
+                &#10005;
+            </button>
+        </div>
     </div>
 
     {% if can_manage %}
@@ -24,17 +27,143 @@
             type="button"
             class="button button--full sidebar__compose"
             data-open-composer
-            title="Publish a new moment"
+            title="{{ t('nav.publish_new_moment') }}"
         >
             <span class="nav-link__icon">+</span>
-            <span class="nav-link__text">New Moment</span>
+            <span class="nav-link__text">{{ t('nav.new_moment') }}</span>
         </button>
     {% endif %}
+
+    {% set sidebar_primary_label = "分区" if current_lang == "zh" else t('nav.spaces') %}
+    <section class="sidebar-section">
+        <div class="section-title-row section-title-row--compact">
+            <div><h3>{{ sidebar_primary_label }}</h3></div>
+            {% if can_manage %}
+                <button
+                    type="button"
+                    class="button button--ghost button--compact"
+                    data-open-folder-panel="workspace"
+                    aria-haspopup="dialog"
+                    aria-controls="workspace-panel"
+                    aria-expanded="false"
+                >
+                    {{ t('nav.studio') }}
+                </button>
+            {% endif %}
+        </div>
+
+        <div class="sidebar-nav-group">
+            <nav class="sidebar-nav">
+                <a
+                    class="nav-link {% if active_nav == 'feed' and selected_folder_key == 'all' %}is-active{% endif %}"
+                    href="{{ url_for('main.index', q=search_query or None) }}"
+                    title="{{ module_labels.feed }}"
+                >
+                    <span class="nav-link__icon nav-link__icon--feed">
+                        <span class="nav-link__glyph nav-link__glyph--feed"></span>
+                    </span>
+                    <span class="nav-link__text">
+                        <span class="nav-link__label">{{ module_labels.feed }}</span>
+                    </span>
+                    <strong>{{ total_count }}</strong>
+                </a>
+
+                <a
+                    class="nav-link {% if active_nav == 'footprints' %}is-active{% endif %}"
+                    href="{{ url_for('main.footprints', q=search_query or None) }}"
+                    title="{{ t('nav.footprints') }}"
+                >
+                    <span class="nav-link__icon nav-link__icon--footprints">
+                        <span class="nav-link__glyph nav-link__glyph--footprints"></span>
+                    </span>
+                    <span class="nav-link__text">
+                        <span class="nav-link__label">{{ t('nav.footprints') }}</span>
+                    </span>
+                    <strong>{{ footprint_count }}</strong>
+                </a>
+
+                <a
+                    class="nav-link {% if active_nav == 'books' %}is-active{% endif %}"
+                    href="{{ url_for('library.books', q=search_query or None) }}"
+                    title="{{ module_labels.books }}"
+                >
+                    <span class="nav-link__icon nav-link__icon--books">
+                        <span class="nav-link__glyph nav-link__glyph--books"></span>
+                    </span>
+                    <span class="nav-link__text">
+                        <span class="nav-link__label">{{ module_labels.books }}</span>
+                    </span>
+                    <strong>{{ book_count }}</strong>
+                </a>
+
+                <a
+                    class="nav-link {% if active_nav == 'music' %}is-active{% endif %}"
+                    href="{{ url_for('library.tracks', q=search_query or None) }}"
+                    title="{{ module_labels.music }}"
+                >
+                    <span class="nav-link__icon nav-link__icon--music">
+                        <span class="nav-link__glyph nav-link__glyph--music"></span>
+                    </span>
+                    <span class="nav-link__text">
+                        <span class="nav-link__label">{{ module_labels.music }}</span>
+                    </span>
+                    <strong>{{ track_count }}</strong>
+                </a>
+
+                <a
+                    class="nav-link {% if active_nav == 'videos' %}is-active{% endif %}"
+                    href="{{ url_for('library.videos', q=search_query or None) }}"
+                    title="{{ module_labels.videos }}"
+                >
+                    <span class="nav-link__icon nav-link__icon--videos">
+                        <span class="nav-link__glyph nav-link__glyph--videos"></span>
+                    </span>
+                    <span class="nav-link__text">
+                        <span class="nav-link__label">{{ module_labels.videos }}</span>
+                    </span>
+                    <strong>{{ video_count }}</strong>
+                </a>
+            </nav>
+        </div>
+
+        <div class="sidebar-nav-group">
+            <p class="sidebar-nav-group__label">{{ t('nav.filters') }}</p>
+            <nav class="sidebar-nav">
+                <a
+                    class="nav-link {% if active_nav == 'feed' and selected_folder_key == 'uncategorized' %}is-active{% endif %}"
+                    href="{{ url_for('main.index', category='uncategorized', q=search_query or None) }}"
+                    title="{{ t('nav.no_folder') }}"
+                >
+                    <span class="nav-link__icon nav-link__icon--loose">
+                        <span class="nav-link__glyph nav-link__glyph--loose"></span>
+                    </span>
+                    <span class="nav-link__text">
+                        <span class="nav-link__label">{{ t('nav.no_folder') }}</span>
+                    </span>
+                    <strong>{{ uncategorized_count }}</strong>
+                </a>
+
+                <a
+                    class="nav-link nav-link--recycle {% if active_nav == 'recycle' %}is-active{% endif %}"
+                    href="{{ url_for('main.recycle_bin', q=search_query or None) }}"
+                    title="{{ t('nav.trash') }}"
+                >
+                    <span class="nav-link__icon nav-link__icon--trash">
+                        <span class="nav-link__glyph nav-link__glyph--trash"></span>
+                    </span>
+                    <span class="nav-link__text">
+                        <span class="nav-link__label">{{ t('nav.trash') }}</span>
+                    </span>
+                    <strong></strong>
+                </a>
+            </nav>
+        </div>
+    </section>
 
     <section class="sidebar-section">
         <div class="section-title-row section-title-row--compact">
             <div>
-                <h3>Search</h3>
+                <h3>{{ t('nav.search') }}</h3>
             </div>
         </div>
         <form action="{{ url_for(search_action) }}" method="get" class="stack-form">
@@ -43,109 +172,298 @@
             {% elif selected_filter_mode == 'uncategorized' %}
                 <input type="hidden" name="category" value="uncategorized">
             {% endif %}
-            <input type="search" name="q" class="input" value="{{ search_query }}" placeholder="Search posts, files, or folders">
-            <button type="submit" class="button button--ghost">Search</button>
+            <input type="search" name="q" class="input" value="{{ search_query }}" placeholder="{{ t('nav.search_placeholder') }}">
+            <button type="submit" class="button button--ghost">{{ t('common.search') }}</button>
         </form>
     </section>
 
-    <nav class="sidebar-nav">
-        <a
-            class="nav-link {% if active_nav == 'feed' and selected_folder_key == 'all' %}is-active{% endif %}"
-            href="{{ url_for('main.index', q=search_query or None) }}"
-            title="All Moments"
-        >
-            <span class="nav-link__icon">A</span>
-            <span class="nav-link__text">
-                <span class="nav-link__label">All Moments</span>
-            </span>
-            <strong>{{ total_count }}</strong>
-        </a>
-
-        <a
-            class="nav-link {% if active_nav == 'feed' and selected_folder_key == 'uncategorized' %}is-active{% endif %}"
-            href="{{ url_for('main.index', category='uncategorized', q=search_query or None) }}"
-            title="Uncategorized"
-        >
-            <span class="nav-link__icon">U</span>
-            <span class="nav-link__text">
-                <span class="nav-link__label">Uncategorized</span>
-            </span>
-            <strong>{{ uncategorized_count }}</strong>
-        </a>
-
-        <a
-            class="nav-link nav-link--recycle {% if active_nav == 'recycle' %}is-active{% endif %}"
-            href="{{ url_for('main.recycle_bin', q=search_query or None) }}"
-            title="Recycle Bin"
-        >
-            <span class="nav-link__icon">B</span>
-            <span class="nav-link__text">
-                <span class="nav-link__label">Recycle Bin</span>
-            </span>
-            <strong>Admin</strong>
-        </a>
-    </nav>
-
     <section class="sidebar-section">
         <div class="section-title-row section-title-row--compact">
-            <div>
-                <h3>Folders</h3>
-                <p class="helper-text">Use nested folders as a quick jump tree once the library starts growing.</p>
-            </div>
+            <div><h3>{{ t('nav.folders') }}</h3></div>
         </div>
 
-        <div class="folder-tree">
-            {% if sidebar_folder_tree %}
-                {% for folder_node in sidebar_folder_tree %}
-                    {% include "includes/folder_tree_item.html" %}
-                {% endfor %}
-            {% else %}
-                <p class="helper-text">No folders yet. Start with one root folder or keep posting uncategorized moments.</p>
-            {% endif %}
+        <div class="collection-hub">
+            <div class="collection-hub__actions">
+                <button
+                    type="button"
+                    class="collection-tool collection-tool--map"
+                    data-open-folder-panel="map"
+                    aria-haspopup="dialog"
+                        aria-controls="folder-map-panel"
+                        aria-expanded="false"
+                    >
+                        <span class="collection-tool__icon" aria-hidden="true"></span>
+                        <span class="collection-tool__copy">
+                            <strong>{{ t('nav.map') }}</strong>
+                        </span>
+                    </button>
+
+                {% if can_manage %}
+                    <button
+                        type="button"
+                        class="collection-tool collection-tool--create"
+                        data-open-folder-panel="create"
+                        aria-haspopup="dialog"
+                        aria-controls="folder-create-panel"
+                        aria-expanded="false"
+                    >
+                        <span class="collection-tool__icon" aria-hidden="true"></span>
+                        <span class="collection-tool__copy">
+                            <strong>{{ t('nav.new') }}</strong>
+                        </span>
+                    </button>
+                {% endif %}
+            </div>
+
+            <div class="collection-hub__meta">
+                <span class="stat-chip">{{ t('counts.collections', count=sidebar_categories|length) }}</span>
+                {% if selected_filter_mode == 'folder' and selected_folder_name %}
+                    <span class="stat-chip stat-chip--accent">{{ selected_folder_name }}</span>
+                {% endif %}
+            </div>
         </div>
     </section>
 
     {% if can_manage %}
-        <section class="sidebar-section">
-            <div class="section-title-row section-title-row--compact">
-                <div>
-                    <h3>New Folder</h3>
-                </div>
-            </div>
-            <form action="{{ url_for('main.create_category') }}" method="post" class="stack-form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="text" name="name" class="input" placeholder="For example: Study Notes" required>
-                <textarea name="description" class="input textarea textarea--compact" rows="3" placeholder="Short description for this folder"></textarea>
-                <label class="field">
-                    <span>Parent Folder</span>
-                    <select name="parent_id" class="input">
-                        <option value="">Top level</option>
-                        {% for choice in sidebar_folder_choices %}
-                            <option value="{{ choice.id }}">{{ "-- " * choice.depth }}{{ choice.name }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <button type="submit" class="button button--ghost">Create Folder</button>
-            </form>
-        </section>
-
         <section class="sidebar-section sidebar-section--account">
             <div class="sidebar__account-copy">
-                <p class="sidebar-section__label">Signed in as</p>
-                <strong>Administrator</strong>
+                <p class="sidebar-section__label">{{ t('nav.signed_in_as') }}</p>
+                <strong>{{ t('common.administrator') }}</strong>
             </div>
             <form action="{{ url_for('auth.logout') }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="button button--subtle">Logout</button>
+                <button type="submit" class="button button--subtle">{{ t('nav.logout') }}</button>
             </form>
         </section>
     {% else %}
         <section class="sidebar-section">
             <div class="sidebar__account-copy">
-                <p class="sidebar-section__label">Current mode</p>
-                <strong>Public read-only</strong>
+                <p class="sidebar-section__label">{{ t('nav.current_mode') }}</p>
+                <strong>{{ t('nav.public_read_only') }}</strong>
             </div>
-            <a href="{{ url_for('auth.login') }}" class="button button--ghost button--full">Admin Login</a>
+            <a href="{{ url_for('auth.login') }}" class="button button--ghost button--full">{{ t('nav.admin_login') }}</a>
         </section>
     {% endif %}
 </aside>
+
+<div class="folder-panel-backdrop" data-folder-panel-backdrop hidden></div>
+
+<section
+    class="folder-panel folder-panel--map"
+    id="folder-map-panel"
+    data-folder-panel="map"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="folder-map-title"
+    hidden
+>
+    <div class="folder-panel__header">
+        <div>
+            <p class="eyebrow">{{ t('folders.collections') }}</p>
+            <h2 id="folder-map-title">{{ t('folders.folder_map') }}</h2>
+        </div>
+        <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('folders.close_map') }}">
+            &times;
+        </button>
+    </div>
+
+    <div class="folder-panel__body">
+        <div class="folder-map__shortcuts">
+            <a
+                class="folder-map__shortcut {% if active_nav == 'feed' and selected_folder_key == 'all' %}is-active{% endif %}"
+                href="{{ url_for('main.index', q=search_query or None) }}"
+                data-folder-jump
+            >
+                <span>
+                    <strong>{{ t('folders.all_moments') }}</strong>
+                </span>
+                <em>{{ total_count }}</em>
+            </a>
+
+            <a
+                class="folder-map__shortcut {% if active_nav == 'feed' and selected_folder_key == 'uncategorized' %}is-active{% endif %}"
+                href="{{ url_for('main.index', category='uncategorized', q=search_query or None) }}"
+                data-folder-jump
+            >
+                <span>
+                    <strong>{{ t('folders.uncategorized') }}</strong>
+                </span>
+                <em>{{ uncategorized_count }}</em>
+            </a>
+        </div>
+
+        {% if sidebar_folder_tree %}
+            <div class="folder-map__canvas" aria-label="Collection map">
+                {% for folder_node in sidebar_folder_tree %}
+                    {% include "includes/folder_map_item.html" %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>{{ t('folders.empty_map') }}</p>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{% if can_manage %}
+    <section
+        class="folder-panel folder-panel--create"
+        id="folder-create-panel"
+        data-folder-panel="create"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="folder-create-title"
+        hidden
+    >
+        <div class="folder-panel__header">
+            <div>
+                <p class="eyebrow">{{ t('folders.collections') }}</p>
+                <h2 id="folder-create-title">{{ t('folders.create_folder') }}</h2>
+            </div>
+            <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('folders.close_creator') }}">
+                &times;
+            </button>
+        </div>
+
+        <div class="folder-panel__body">
+            <form action="{{ url_for('main.create_category') }}" method="post" class="stack-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+
+                <div class="folder-create-mode" role="radiogroup" aria-label="{{ t('folders.creation_mode') }}">
+                    <label class="folder-create-mode__option">
+                        <input type="radio" name="folder_parent_mode" value="root" data-folder-parent-mode="root" checked>
+                        <span class="folder-create-mode__title">{{ t('folders.top_level') }}</span>
+                    </label>
+
+                    <label class="folder-create-mode__option {% if not sidebar_folder_choices %}is-disabled{% endif %}">
+                        <input
+                            type="radio"
+                            name="folder_parent_mode"
+                            value="child"
+                            data-folder-parent-mode="child"
+                            {% if not sidebar_folder_choices %}disabled{% endif %}
+                        >
+                        <span class="folder-create-mode__title">{{ t('folders.nested') }}</span>
+                    </label>
+                </div>
+
+                <input type="text" name="name" class="input" placeholder="{{ t('folders.name_placeholder') }}" required>
+                <textarea name="description" class="input textarea textarea--compact" rows="3" placeholder="{{ t('folders.description_placeholder') }}"></textarea>
+
+                <label class="field folder-create__parent" data-folder-parent-field hidden>
+                    <span>{{ t('folders.parent_folder') }}</span>
+                    <select name="parent_id" class="input" data-folder-parent-select disabled>
+                        <option value="">{{ t('folders.choose_parent') }}</option>
+                        {% for choice in sidebar_folder_choices %}
+                            <option value="{{ choice.id }}">{{ "-- " * choice.depth }}{{ choice.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <div class="folder-panel__actions">
+                    <button type="button" class="button button--subtle" data-close-folder-panel>{{ t('common.cancel') }}</button>
+                    <button type="submit" class="button button--ghost">{{ t('folders.create_folder') }}</button>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endif %}
+
+{% if can_manage %}
+    <section
+        class="folder-panel folder-panel--create"
+        id="workspace-panel"
+        data-folder-panel="workspace"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="workspace-panel-title"
+        hidden
+    >
+        <div class="folder-panel__header">
+            <div>
+                <p class="eyebrow">{{ t('nav.studio') }}</p>
+                <h2 id="workspace-panel-title">{{ t('workspace_panel.title') }}</h2>
+            </div>
+            <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('workspace_panel.close') }}">
+                &times;
+            </button>
+        </div>
+
+        <div class="folder-panel__body">
+            <form action="{{ url_for('main.update_workspace_preferences') }}" method="post" class="stack-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+
+                <div class="composer-grid">
+                    <label class="field">
+                        <span>{{ t('workspace_panel.workspace_name') }}</span>
+                        <input
+                            type="text"
+                            name="workspace_name"
+                            class="input"
+                            value="{{ workspace_owner.workspace_name if workspace_owner else '' }}"
+                            placeholder="{{ t('workspace.default_name') }}"
+                        >
+                    </label>
+                    <label class="field">
+                        <span>{{ t('workspace_panel.tagline') }}</span>
+                        <input
+                            type="text"
+                            name="workspace_tagline"
+                            class="input"
+                            value="{{ workspace_owner.workspace_tagline if workspace_owner else '' }}"
+                            placeholder="{{ t('workspace.default_tagline') }}"
+                        >
+                    </label>
+                    <label class="field">
+                        <span>{{ t('workspace_panel.feed_label') }}</span>
+                        <input
+                            type="text"
+                            name="feed_label"
+                            class="input"
+                            value="{{ workspace_owner.feed_label if workspace_owner else '' }}"
+                            placeholder="{{ t('module.feed') }}"
+                        >
+                    </label>
+                    <label class="field">
+                        <span>{{ t('workspace_panel.books_label') }}</span>
+                        <input
+                            type="text"
+                            name="books_label"
+                            class="input"
+                            value="{{ workspace_owner.books_label if workspace_owner else '' }}"
+                            placeholder="{{ t('module.books') }}"
+                        >
+                    </label>
+                    <label class="field">
+                        <span>{{ t('workspace_panel.music_label') }}</span>
+                        <input
+                            type="text"
+                            name="music_label"
+                            class="input"
+                            value="{{ workspace_owner.music_label if workspace_owner else '' }}"
+                            placeholder="{{ t('module.music') }}"
+                        >
+                    </label>
+                    <label class="field">
+                        <span>{{ t('workspace_panel.videos_label') }}</span>
+                        <input
+                            type="text"
+                            name="videos_label"
+                            class="input"
+                            value="{{ workspace_owner.videos_label if workspace_owner else '' }}"
+                            placeholder="{{ t('module.videos') }}"
+                        >
+                    </label>
+                </div>
+
+                <div class="folder-panel__actions">
+                    <button type="button" class="button button--subtle" data-close-folder-panel>{{ t('common.cancel') }}</button>
+                    <button type="submit" class="button button--ghost">{{ t('workspace_panel.save_style') }}</button>
+                </div>
+            </form>
+        </div>
+    </section>
+{% endif %}

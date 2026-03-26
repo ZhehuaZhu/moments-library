@@ -40,6 +40,8 @@ def reverse_geocode(lat: float, lon: float, user_agent: str) -> dict[str, Any]:
         raise GeocodingError("Geocoding service returned invalid data.") from error
 
     address = payload.get("address", {})
+    country = address.get("country") or ""
+    country_code = (address.get("country_code") or "").upper()
     province = address.get("state") or address.get("province") or address.get("region") or ""
     city = (
         address.get("city")
@@ -72,6 +74,8 @@ def reverse_geocode(lat: float, lon: float, user_agent: str) -> dict[str, Any]:
 
     return {
         "formatted_address": formatted_address,
+        "country": country,
+        "country_code": country_code,
         "province": province,
         "city": city,
         "district": district,

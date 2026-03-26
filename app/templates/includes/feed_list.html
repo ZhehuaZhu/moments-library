@@ -1,10 +1,15 @@
-<section class="feed-section">
-    <div class="section-title-row">
-        <div>
-            <h2>{{ feed_title }}</h2>
-            <p>{{ feed_description }}</p>
+{% set show_feed_header = show_feed_header | default(true, true) %}
+<section class="feed-section{% if not show_feed_header %} feed-section--stream{% endif %}">
+    {% if show_feed_header %}
+        <div class="section-title-row">
+            <div>
+                <h2>{{ feed_title }}</h2>
+                {% if feed_description %}
+                    <p>{{ feed_description }}</p>
+                {% endif %}
+            </div>
         </div>
-    </div>
+    {% endif %}
 
     <div class="feed-list" id="moments-feed" data-filter-mode="{{ filter_mode }}" data-filter-key="{{ filter_key }}">
         {% if moments %}
@@ -15,7 +20,9 @@
 
         <div class="empty-state" data-empty-state {% if moments %}hidden{% endif %}>
             <h3>{{ empty_title }}</h3>
-            <p>{{ empty_description }}</p>
+            {% if empty_description %}
+                <p>{{ empty_description }}</p>
+            {% endif %}
         </div>
     </div>
 </section>

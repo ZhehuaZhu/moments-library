@@ -1,0 +1,164 @@
+html[lang="zh-CN"] {
+    --content-width: 1216px;
+}
+
+html[lang="zh-CN"] body {
+    line-height: 1.65;
+}
+
+html[lang="zh-CN"] .page-shell {
+    gap: 32px;
+}
+
+html[lang="zh-CN"] .page-frame {
+    gap: 22px;
+}
+
+html[lang="zh-CN"] .main-panel {
+    gap: 28px;
+}
+
+html[lang="zh-CN"] .sidebar__brand-copy h2,
+html[lang="zh-CN"] .page-header h1,
+html[lang="zh-CN"] .auth-card h1,
+html[lang="zh-CN"] .folder-panel__header h2,
+html[lang="zh-CN"] .reader-notes-sheet__header h2 {
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+}
+
+html[lang="zh-CN"] .eyebrow,
+html[lang="zh-CN"] .sidebar-nav-group__label,
+html[lang="zh-CN"] .composer-citation-card__label,
+html[lang="zh-CN"] .moment-citation__label,
+html[lang="zh-CN"] .home-module-card__eyebrow,
+html[lang="zh-CN"] .moment-card__location-label,
+html[lang="zh-CN"] .reader-bottom-bar__toc span,
+html[lang="zh-CN"] .audio-player__setting span,
+html[lang="zh-CN"] .bookshelf-card__placeholder span {
+    letter-spacing: 0.04em;
+    text-transform: none;
+}
+
+html[lang="zh-CN"] .app-header {
+    align-items: flex-start;
+    gap: 16px;
+}
+
+html[lang="zh-CN"] .app-header__label {
+    white-space: normal;
+    line-height: 1.35;
+}
+
+html[lang="zh-CN"] .app-header__quicknav {
+    row-gap: 10px;
+}
+
+html[lang="zh-CN"] .app-header__quicklink,
+html[lang="zh-CN"] .language-switch__trigger,
+html[lang="zh-CN"] .language-switch__option,
+html[lang="zh-CN"] .button,
+html[lang="zh-CN"] .stat-chip,
+html[lang="zh-CN"] .badge,
+html[lang="zh-CN"] .composer-citation__scope,
+html[lang="zh-CN"] .moment-menu__item {
+    white-space: normal;
+    line-height: 1.35;
+}
+
+html[lang="zh-CN"] .app-header__quicklink {
+    min-height: 40px;
+    padding-inline: 16px;
+    text-align: center;
+}
+
+html[lang="zh-CN"] .button {
+    padding-block: 12px;
+}
+
+html[lang="zh-CN"] .page-header,
+html[lang="zh-CN"] .section-title-row,
+html[lang="zh-CN"] .sidebar-section--account,
+html[lang="zh-CN"] .folder-panel__header,
+html[lang="zh-CN"] .reader-notes-sheet__header {
+    flex-wrap: wrap;
+}
+
+html[lang="zh-CN"] .page-header__stats,
+html[lang="zh-CN"] .folder-panel__actions,
+html[lang="zh-CN"] .bookshelf-card__actions,
+html[lang="zh-CN"] .work-card__footer {
+    gap: 10px 12px;
+}
+
+html[lang="zh-CN"] .nav-link {
+    align-items: flex-start;
+    gap: 12px;
+}
+
+html[lang="zh-CN"] .nav-link__text {
+    align-items: flex-start;
+}
+
+html[lang="zh-CN"] .nav-link__label,
+html[lang="zh-CN"] .collection-tool__copy strong,
+html[lang="zh-CN"] .folder-map__shortcut strong,
+html[lang="zh-CN"] .folder-map__node-copy strong,
+html[lang="zh-CN"] .page-description,
+html[lang="zh-CN"] .helper-text,
+html[lang="zh-CN"] .collection-tool__copy small,
+html[lang="zh-CN"] .folder-map__shortcut small,
+html[lang="zh-CN"] .folder-map__node-copy small,
+html[lang="zh-CN"] .work-card__summary {
+    white-space: normal;
+    line-height: 1.6;
+}
+
+html[lang="zh-CN"] .nav-link__label {
+    white-space: normal;
+}
+
+html[lang="zh-CN"] .home-modules__grid {
+    gap: 16px;
+}
+
+html[lang="zh-CN"] .home-module-card {
+    gap: 12px;
+}
+
+html[lang="zh-CN"] .moment-card__content {
+    max-width: 48ch;
+    line-height: 1.88;
+    letter-spacing: normal;
+}
+
+@media (max-width: 1080px) {
+    html[lang="zh-CN"] .page-shell {
+        gap: 18px;
+    }
+
+    html[lang="zh-CN"] .page-frame {
+        gap: 18px;
+    }
+
+    html[lang="zh-CN"] .main-panel {
+        gap: 22px;
+    }
+}
+
+@media (max-width: 720px) {
+    html[lang="zh-CN"] .app-header__quicklink,
+    html[lang="zh-CN"] .language-switch__trigger,
+    html[lang="zh-CN"] .language-switch__option {
+        min-height: 34px;
+        padding-inline: 14px;
+    }
+
+    html[lang="zh-CN"] .button {
+        padding-block: 11px;
+    }
+
+    html[lang="zh-CN"] .page-header__stats {
+        width: 100%;
+    }
+}

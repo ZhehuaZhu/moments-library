@@ -107,6 +107,10 @@ def print_help() -> None:
     print("  python run.py --reset-admin Create or reset the admin account.")
 
 
+def is_debugger_attached() -> bool:
+    return sys.gettrace() is not None or bool(os.environ.get("DEBUGPY_LAUNCHER_PORT"))
+
+
 def main() -> None:
     if "--help" in sys.argv or "-h" in sys.argv:
         print_help()
@@ -118,7 +122,10 @@ def main() -> None:
 
     ensure_local_setup()
     print("Starting local app at http://127.0.0.1:5000")
-    app.run(debug=True)
+    use_reloader = not is_debugger_attached()
+    if not use_reloader:
+        print("Debugger detected. Flask auto-reload is disabled to avoid duplicate launches.")
+    app.run(debug=True, use_reloader=use_reloader)
 
 
 if __name__ == "__main__":

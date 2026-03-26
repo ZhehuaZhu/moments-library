@@ -7,7 +7,9 @@ from flask import Blueprint, current_app, jsonify, request
 from ..extensions import db
 from ..models import Category, Moment
 from ..permissions import admin_required
+from ..services.citations import normalize_citation_scope, search_citation_payloads
 from ..services.folders import resolve_folders
+from ..services.footprints import normalize_reverse_geocode_result
 from ..services.geocoding import GeocodingError, reverse_geocode
 
 api_bp = Blueprint("api", __name__)
@@ -33,7 +35,21 @@ def geocode():
     except GeocodingError as error:
         return jsonify({"error": str(error)}), 502
 
-    return jsonify(result)
+    return jsonify(
+        {
+            **result,
+            **normalize_reverse_geocode_result(result, source="browser"),
+        }
+    )
+
+
+@api_bp.route("/api/citations/search")
+@admin_required
+def citation_search():
+    search_query = (request.args.get("q") or "").strip()
+    scope = normalize_citation_scope(request.args.get("scope"))
+    items = search_citation_payloads(search_query, scope=scope, limit=24)
+    return jsonify({"items": items, "scope": scope})
 
 
 def _update_moment_folders(moment_id: int, payload: dict):

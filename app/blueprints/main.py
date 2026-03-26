@@ -7,8 +7,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from ..extensions import db
-from ..models import Attachment, Category, Moment, MomentRevision, moment_folders
+from ..models import (
+    Attachment,
+    Book,
+    Category,
+    Moment,
+    MomentRevision,
+    Track,
+    User,
+    VideoEntry,
+    moment_folders,
+)
 from ..permissions import admin_required
+from ..services.citations import resolve_citation_payload
 from ..services.folders import (
     build_folder_tree,
     calculate_folder_counts,
@@ -20,9 +31,23 @@ from ..services.folders import (
     resolve_folders,
     serialize_folder_snapshot,
 )
+from ..services.footprints import (
+    apply_place_fields,
+    build_footprint_payload,
+    ensure_moment_place_metadata,
+    parse_place_form_data,
+)
+from ..services.i18n import LANGUAGE_COOKIE_NAME, normalize_language, translate
 from ..services.storage import UploadValidationError, cleanup_files, save_upload
+from ..services.video_previews import ensure_attachment_video_preview
 
 main_bp = Blueprint("main", __name__)
+
+
+def resolve_workspace_owner() -> User | None:
+    if current_user.is_authenticated:
+        return current_user  # type: ignore[return-value]
+    return User.query.order_by(User.id.asc()).first()
 
 
 def build_sidebar_context(
@@ -35,11 +60,58 @@ def build_sidebar_context(
     search_query: str = "",
     search_action: str = "main.index",
 ) -> dict:
+    workspace_owner = resolve_workspace_owner()
+    module_labels = {
+        "feed": (
+            (workspace_owner.feed_label or "").strip()
+            if workspace_owner is not None
+            else ""
+        )
+        or translate("module.feed"),
+        "books": (
+            (workspace_owner.books_label or "").strip()
+            if workspace_owner is not None
+            else ""
+        )
+        or translate("module.books"),
+        "music": (
+            (workspace_owner.music_label or "").strip()
+            if workspace_owner is not None
+            else ""
+        )
+        or translate("module.music"),
+        "videos": (
+            (workspace_owner.videos_label or "").strip()
+            if workspace_owner is not None
+            else ""
+        )
+        or translate("module.videos"),
+    }
+    workspace_name = (
+        (workspace_owner.workspace_name or "").strip()
+        if workspace_owner is not None
+        else ""
+    ) or translate("workspace.default_name")
+    workspace_tagline = (
+        (workspace_owner.workspace_tagline or "").strip()
+        if workspace_owner is not None
+        else ""
+    ) or translate("workspace.default_tagline")
     categories = categories or Category.query.order_by(Category.name.asc()).all()
     folder_counts = calculate_folder_counts(categories, include_deleted=False)
     folder_tree = build_folder_tree(categories, folder_counts)
     folder_choices = flatten_folder_tree(folder_tree)
     total_count = Moment.query.filter(Moment.is_deleted.is_(False)).count()
+    footprint_count = (
+        Moment.query.filter(
+            Moment.is_deleted.is_(False),
+            Moment.latitude.is_not(None),
+            Moment.longitude.is_not(None),
+        ).count()
+    )
+    book_count = Book.query.count()
+    track_count = Track.query.count()
+    video_count = VideoEntry.query.count()
     uncategorized_count = (
         Moment.query.filter(
             Moment.is_deleted.is_(False),
@@ -47,6 +119,20 @@ def build_sidebar_context(
             Moment.category_id.is_(None),
         ).count()
     )
+    track_catalog_payload = [
+        {
+            "id": track.id,
+            "title": track.title,
+            "artist": track.artist_name or "",
+            "src": url_for("static", filename=track.relative_path),
+            "cover": (
+                url_for("static", filename=track.cover_relative_path)
+                if track.cover_relative_path
+                else None
+            ),
+        }
+        for track in Track.query.order_by(Track.created_at.desc()).all()
+    ]
 
     return {
         "sidebar_categories": categories,
@@ -55,6 +141,10 @@ def build_sidebar_context(
         "folder_counts": folder_counts,
         "folder_tree_mode": len(categories) >= 6 or any(node["children"] for node in folder_tree),
         "total_count": total_count,
+        "footprint_count": footprint_count,
+        "book_count": book_count,
+        "track_count": track_count,
+        "video_count": video_count,
         "uncategorized_count": uncategorized_count,
         "active_nav": active_nav,
         "selected_folder_key": selected_folder_key,
@@ -63,12 +153,31 @@ def build_sidebar_context(
         "search_query": search_query,
         "search_action": search_action,
         "can_manage": current_user.is_authenticated and current_user.is_admin,
+        "workspace_owner": workspace_owner,
+        "workspace_name": workspace_name,
+        "workspace_tagline": workspace_tagline,
+        "module_labels": module_labels,
+        "track_catalog_payload": track_catalog_payload,
     }
 
 
 def redirect_back(default_endpoint: str = "main.index"):
     target = request.form.get("next") or request.referrer
     return redirect(target or url_for(default_endpoint))
+
+
+def ensure_feed_video_previews(moments: list[Moment]) -> None:
+    changed = False
+    upload_root = current_app.config["UPLOAD_FOLDER"]
+
+    for moment in moments:
+        for attachment in moment.attachments:
+            created_paths = ensure_attachment_video_preview(attachment, upload_root)
+            if created_paths:
+                changed = True
+
+    if changed:
+        db.session.commit()
 
 
 def parse_optional_coordinate(value: str | None) -> float | None:
@@ -85,6 +194,13 @@ def resolve_parent_folder(parent_raw: str | None) -> Category | None:
     if parent is None:
         raise ValueError("Selected parent folder does not exist.")
     return parent
+
+
+def normalize_workspace_copy(value: str | None, limit: int) -> str | None:
+    cleaned = (value or "").strip()
+    if not cleaned:
+        return None
+    return cleaned[:limit]
 
 
 def load_feed_query(*, include_deleted: bool = False):
@@ -112,6 +228,9 @@ def apply_search_filter(query, search_query: str):
         or_(
             Moment.content.ilike(pattern),
             Moment.location_label.ilike(pattern),
+            Moment.citation_title.ilike(pattern),
+            Moment.citation_subtitle.ilike(pattern),
+            Moment.citation_excerpt.ilike(pattern),
             Moment.attachments.any(Attachment.original_name.ilike(pattern)),
             Moment.categories.any(
                 or_(
@@ -155,6 +274,13 @@ def snapshot_moment(moment: Moment, editor_id: int) -> None:
         location_label=moment.location_label,
         latitude=moment.latitude,
         longitude=moment.longitude,
+        country_code=moment.country_code,
+        country_name=moment.country_name,
+        admin_area=moment.admin_area,
+        city_name=moment.city_name,
+        district_name=moment.district_name,
+        place_key=moment.place_key,
+        location_source=moment.location_source,
         category_id=moment.primary_category.id if moment.primary_category else None,
         folder_snapshot=serialize_folder_snapshot(moment.assigned_categories),
         edited_by_id=editor_id,
@@ -167,7 +293,7 @@ def index():
     all_categories = Category.query.order_by(Category.name.asc()).all()
     selected_folder = None
     selected_folder_key = "all"
-    selected_folder_name = "All Moments"
+    selected_folder_name = translate("folders.all_moments")
     filter_mode = "all"
     filter_key = ""
     search_query = (request.args.get("q") or "").strip()
@@ -180,7 +306,7 @@ def index():
             Moment.category_id.is_(None),
         )
         selected_folder_key = "uncategorized"
-        selected_folder_name = "Uncategorized"
+        selected_folder_name = translate("folders.uncategorized")
         filter_mode = "uncategorized"
     else:
         folder_id = request.args.get("folder_id", type=int) or request.args.get(
@@ -202,6 +328,7 @@ def index():
                 filter_key = str(selected_folder.id)
 
     moments = moments_query.all()
+    ensure_feed_video_previews(moments)
     context = build_sidebar_context(
         active_nav="feed",
         selected_folder_key=selected_folder_key,
@@ -214,7 +341,7 @@ def index():
 
     return render_template(
         "index.html",
-        title="Feed",
+        title=translate("module.feed"),
         moments=moments,
         selected_folder=selected_folder,
         selected_folder_name=selected_folder_name,
@@ -232,18 +359,18 @@ def create_category():
     description = normalize_folder_description(request.form.get("description"))
 
     if not name:
-        flash("Folder name cannot be empty.", "error")
+        flash("Collection name cannot be empty.", "error")
         return redirect_back()
 
     try:
         parent = resolve_parent_folder(request.form.get("parent_id"))
     except (ValueError, TypeError):
-        flash("Selected parent folder is invalid.", "error")
+        flash("Selected parent collection is invalid.", "error")
         return redirect_back()
 
     existing = Category.query.filter(db.func.lower(Category.name) == name.lower()).first()
     if existing:
-        flash("Folder name already exists.", "error")
+        flash("Collection name already exists.", "error")
         return redirect_back()
 
     folder = Category(name=name, description=description, parent=parent)
@@ -251,12 +378,42 @@ def create_category():
 
     try:
         db.session.commit()
-        flash("Folder created.", "success")
+        flash("Collection created.", "success")
     except IntegrityError:
         db.session.rollback()
-        flash("Folder name already exists.", "error")
+        flash("Collection name already exists.", "error")
 
     return redirect_back()
+
+
+@main_bp.route("/workspace/preferences", methods=["POST"])
+@admin_required
+def update_workspace_preferences():
+    current_user.workspace_name = normalize_workspace_copy(request.form.get("workspace_name"), 120)
+    current_user.workspace_tagline = normalize_workspace_copy(
+        request.form.get("workspace_tagline"),
+        120,
+    )
+    current_user.feed_label = normalize_workspace_copy(request.form.get("feed_label"), 40)
+    current_user.books_label = normalize_workspace_copy(request.form.get("books_label"), 40)
+    current_user.music_label = normalize_workspace_copy(request.form.get("music_label"), 40)
+    current_user.videos_label = normalize_workspace_copy(request.form.get("videos_label"), 40)
+    db.session.commit()
+    flash("Workspace style updated.", "success")
+    return redirect_back()
+
+
+@main_bp.route("/preferences/language", methods=["POST"])
+def update_language_preference():
+    language = normalize_language(request.form.get("language"))
+    response = redirect(request.form.get("next") or request.referrer or url_for("main.index"))
+    response.set_cookie(
+        LANGUAGE_COOKIE_NAME,
+        language,
+        max_age=60 * 60 * 24 * 365,
+        samesite="Lax",
+    )
+    return response
 
 
 @main_bp.route("/categories/<int:category_id>/delete", methods=["POST"])
@@ -270,7 +427,7 @@ def delete_category(category_id: int):
         .first()
     )
     if folder is None:
-        flash("Folder not found.", "error")
+        flash("Collection not found.", "error")
         return redirect_back()
 
     affected_moments = (
@@ -302,7 +459,7 @@ def delete_category(category_id: int):
     db.session.delete(folder)
     db.session.commit()
 
-    flash("Folder deleted. Child folders were moved up and existing moments were preserved.", "success")
+    flash("Collection deleted. Child collections were moved up and existing items were preserved.", "success")
     return redirect_back()
 
 
@@ -312,14 +469,11 @@ def create_moment():
     content = (request.form.get("content") or "").strip()
     files = [file for file in request.files.getlist("files") if file and file.filename]
 
-    if not content and not files:
-        flash("Add text or upload at least one attachment.", "error")
-        return redirect_back()
-
     try:
         folders = resolve_folders(extract_folder_values(request.form))
         latitude = parse_optional_coordinate(request.form.get("latitude"))
         longitude = parse_optional_coordinate(request.form.get("longitude"))
+        citation_target_id = request.form.get("citation_target_id", type=int)
     except (ValueError, TypeError):
         flash("Submitted data is invalid.", "error")
         return redirect_back()
@@ -329,6 +483,18 @@ def create_moment():
         return redirect_back()
 
     location_label = (request.form.get("location_label") or "").strip() or None
+    place_fields = parse_place_form_data(request.form)
+    citation_payload = resolve_citation_payload(
+        request.form.get("citation_kind"),
+        citation_target_id,
+    )
+    if request.form.get("citation_kind") and citation_payload is None:
+        flash("The selected citation is no longer available. Pick it again.", "error")
+        return redirect_back()
+
+    if not content and not files and citation_payload is None:
+        flash("Add text, upload at least one attachment, or cite something.", "error")
+        return redirect_back()
 
     moment = Moment(
         content=content or None,
@@ -336,7 +502,16 @@ def create_moment():
         location_label=location_label,
         latitude=latitude,
         longitude=longitude,
+        citation_kind=citation_payload["kind"] if citation_payload else None,
+        citation_target_id=citation_payload["id"] if citation_payload else None,
+        citation_label=citation_payload["label"] if citation_payload else None,
+        citation_title=citation_payload["title"] if citation_payload else None,
+        citation_subtitle=citation_payload["subtitle"] if citation_payload else None,
+        citation_excerpt=citation_payload["excerpt"] if citation_payload else None,
+        citation_href=citation_payload["href"] if citation_payload else None,
+        citation_cover_path=citation_payload["cover"] if citation_payload else None,
     )
+    apply_place_fields(moment, place_fields if latitude is not None else {})
     moment.set_categories(folders)
 
     saved_paths: list[str] = []
@@ -356,6 +531,9 @@ def create_moment():
                 mime_type=metadata["mime_type"],
                 media_kind=metadata["media_kind"],
                 size_bytes=metadata["size_bytes"],
+            )
+            saved_paths.extend(
+                ensure_attachment_video_preview(attachment, current_app.config["UPLOAD_FOLDER"])
             )
             db.session.add(attachment)
 
@@ -410,6 +588,7 @@ def update_moment(moment_id: int):
         return redirect(url_for("main.edit_moment", moment_id=moment.id))
 
     location_label = (request.form.get("location_label") or "").strip() or None
+    place_fields = parse_place_form_data(request.form)
     incoming_folder_ids = [folder.id for folder in folders]
 
     has_changes = any(
@@ -418,6 +597,13 @@ def update_moment(moment_id: int):
             moment.location_label != location_label,
             moment.latitude != latitude,
             moment.longitude != longitude,
+            moment.country_code != place_fields.get("country_code"),
+            moment.country_name != place_fields.get("country_name"),
+            moment.admin_area != place_fields.get("admin_area"),
+            moment.city_name != place_fields.get("city_name"),
+            moment.district_name != place_fields.get("district_name"),
+            moment.place_key != place_fields.get("place_key"),
+            moment.location_source != place_fields.get("location_source"),
             moment.category_ids_list != incoming_folder_ids,
         ]
     )
@@ -431,6 +617,7 @@ def update_moment(moment_id: int):
     moment.location_label = location_label
     moment.latitude = latitude
     moment.longitude = longitude
+    apply_place_fields(moment, place_fields if latitude is not None else {})
     moment.set_categories(folders)
     db.session.commit()
 
@@ -471,6 +658,7 @@ def moment_history(moment_id: int):
 def recycle_bin():
     search_query = (request.args.get("q") or "").strip()
     moments = apply_search_filter(load_feed_query(include_deleted=True), search_query).all()
+    ensure_feed_video_previews(moments)
     context = build_sidebar_context(
         active_nav="recycle",
         selected_folder_key="all",
@@ -480,8 +668,46 @@ def recycle_bin():
     )
     return render_template(
         "recycle_bin.html",
-        title="Recycle Bin",
+        title=translate("nav.trash"),
         moments=moments,
         result_count=len(moments),
+        **context,
+    )
+
+
+@main_bp.route("/footprints")
+def footprints():
+    search_query = (request.args.get("q") or "").strip()
+    moments = (
+        apply_search_filter(load_feed_query(include_deleted=False), search_query)
+        .filter(
+            Moment.latitude.is_not(None),
+            Moment.longitude.is_not(None),
+        )
+        .all()
+    )
+    ensure_feed_video_previews(moments)
+    if not current_app.config.get("TESTING"):
+        metadata_changed = ensure_moment_place_metadata(
+            moments,
+            user_agent=current_app.config["NOMINATIM_USER_AGENT"],
+        )
+        if metadata_changed:
+            db.session.commit()
+
+    payload = build_footprint_payload(moments)
+    default_view = payload["default_view"]
+    default_summary = payload["views"][default_view]
+    context = build_sidebar_context(
+        active_nav="footprints",
+        search_query=search_query,
+        search_action="main.footprints",
+    )
+    return render_template(
+        "footprints.html",
+        title=translate("nav.footprints"),
+        footprint_payload=payload,
+        place_count=default_summary["place_count"],
+        mapped_moment_count=default_summary["mapped_moment_count"],
         **context,
     )

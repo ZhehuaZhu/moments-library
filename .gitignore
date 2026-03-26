@@ -9,3 +9,4 @@ instance/*
 !instance/.gitkeep
 app/static/uploads/*
 !app/static/uploads/.gitkeep
+moments-deploy.tar.gz
