@@ -79,6 +79,7 @@
 .composer-attachment-trigger {
     position: relative;
     overflow: hidden;
+    justify-content: center;
 }
 
 .composer-input-hidden {

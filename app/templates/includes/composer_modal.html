@@ -33,27 +33,27 @@
                     multiple
                     accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
                 >
+                <input
+                    type="file"
+                    class="composer-input-hidden"
+                    data-library-input
+                    multiple
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
+                >
+                <input
+                    type="file"
+                    class="composer-input-hidden"
+                    data-camera-input
+                    accept="image/*,video/*"
+                    capture="environment"
+                >
                 <div class="composer-attachment-actions">
-                    <label class="button button--ghost composer-attachment-trigger">
-                        <input
-                            type="file"
-                            class="composer-input-hidden"
-                            data-library-input
-                            multiple
-                            accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
-                        >
+                    <button type="button" class="button button--ghost composer-attachment-trigger" data-open-library-picker>
                         <span>{{ t('composer.choose_media') }}</span>
-                    </label>
-                    <label class="button composer-attachment-trigger">
-                        <input
-                            type="file"
-                            class="composer-input-hidden"
-                            data-camera-input
-                            accept="image/*,video/*"
-                            capture="environment"
-                        >
+                    </button>
+                    <button type="button" class="button composer-attachment-trigger" data-open-camera-picker>
                         <span>{{ t('composer.open_camera') }}</span>
-                    </label>
+                    </button>
                 </div>
                 <small class="helper-text">{{ t('composer.attachments_hint') }}</small>
                 <small class="helper-text" data-file-summary hidden></small>

@@ -1,6 +1,5 @@
 import { t } from "./i18n.js";
 import {
-    buildFileList,
     extensionForFile,
     fileSignature,
     previewKindForFile,
@@ -20,14 +19,24 @@ export function createComposerFileController({
 }) {
     let selectedFiles = [];
     let dragIndex = null;
+    const libraryPickerButton = modal?.querySelector("[data-open-library-picker]");
+    const cameraPickerButton = modal?.querySelector("[data-open-camera-picker]");
 
-    function syncInputFiles() {
-        if (!fileInput) {
+    function openPicker(input) {
+        if (!(input instanceof HTMLInputElement)) {
             return;
         }
 
-        buildFileList(fileInput, selectedFiles);
-        updateFileSummary(modal);
+        if (typeof input.showPicker === "function") {
+            input.showPicker();
+            return;
+        }
+
+        input.click();
+    }
+
+    function syncInputFiles() {
+        updateFileSummary(modal, selectedFiles.length);
     }
 
     function appendSelectedFiles(files) {
@@ -252,10 +261,7 @@ export function createComposerFileController({
     }
 
     if (fileInput) {
-        fileInput.addEventListener("change", () => {
-            appendSelectedFiles(Array.from(fileInput.files || []));
-        }, { signal });
-        updateFileSummary(modal);
+        updateFileSummary(modal, selectedFiles.length);
     }
 
     libraryInput?.addEventListener("change", () => {
@@ -265,11 +271,19 @@ export function createComposerFileController({
         }
     }, { signal });
 
+    libraryPickerButton?.addEventListener("click", () => {
+        openPicker(libraryInput);
+    }, { signal });
+
     cameraInput?.addEventListener("change", () => {
         appendSelectedFiles(Array.from(cameraInput.files || []));
         if (cameraInput instanceof HTMLInputElement) {
             cameraInput.value = "";
         }
+    }, { signal });
+
+    cameraPickerButton?.addEventListener("click", () => {
+        openPicker(cameraInput);
     }, { signal });
 
     signal.addEventListener("abort", () => {

@@ -48,14 +48,17 @@ export function buildFileList(fileInput, selectedFiles) {
     fileInput.files = transfer.files;
 }
 
-export function updateFileSummary(modal) {
+export function updateFileSummary(modal, countOverride = null) {
     const fileInput = modal.querySelector("[data-file-input]");
     const summary = modal.querySelector("[data-file-summary]");
     if (!fileInput || !summary) {
         return;
     }
 
-    const count = fileInput.files ? fileInput.files.length : 0;
+    const count =
+        typeof countOverride === "number"
+            ? countOverride
+            : (fileInput.files ? fileInput.files.length : 0);
     summary.hidden = count === 0;
     summary.textContent = count
         ? t("composer.attachments_selected", { count }, `${count} attachment(s) selected.`)
