@@ -247,84 +247,101 @@
     }
 
     .app-body.books-page .page-header--bookshelf {
-        padding: 12px 14px;
-        border-radius: 22px;
+        padding: 16px;
+        border-radius: 24px;
     }
 
-    .app-body.books-page .bookshelf-toolbar__title {
-        grid-template-columns: 40px minmax(0, 1fr);
-        gap: 10px;
-        flex-shrink: 0;
+    .app-body.books-page .bookshelf-header-bar {
+        align-items: flex-start;
+        gap: 12px;
     }
 
-    .app-body.books-page .bookshelf-toolbar__icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
+    .app-body.books-page .bookshelf-header-bar__title .eyebrow {
+        margin-bottom: 2px;
+        font-size: 0.62rem;
+        letter-spacing: 0.12em;
     }
 
-    .app-body.books-page .bookshelf-toolbar__icon .nav-link__glyph {
-        width: 16px;
-        height: 16px;
+    .app-body.books-page .bookshelf-header-bar__title h1 {
+        font-size: 1.46rem;
     }
 
-    .app-body.books-page .bookshelf-toolbar {
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        gap: 10px;
-        align-items: center;
-    }
-
-    .app-body.books-page .bookshelf-toolbar__copy .eyebrow {
-        display: none;
-    }
-
-    .app-body.books-page .bookshelf-toolbar__copy h1 {
-        font-size: 1.16rem;
-    }
-
-    .app-body.books-page .bookshelf-toolbar__stats {
-        min-width: 0;
-        flex-wrap: nowrap;
-        justify-content: flex-start;
+    .app-body.books-page .bookshelf-header-bar__meta {
+        justify-content: flex-end;
         gap: 8px;
-        overflow-x: auto;
-        scrollbar-width: none;
     }
 
-    .app-body.books-page .bookshelf-toolbar__stats::-webkit-scrollbar {
-        display: none;
-    }
-
-    .app-body.books-page .stat-chip--bookshelf {
-        min-height: 30px;
-        padding: 0 9px;
-    }
-
-    .app-body.books-page .bookshelf-toolbar__chip-value {
+    .app-body.books-page .bookshelf-header-bar__meta .stat-chip {
+        min-height: 32px;
+        padding-inline: 10px;
         font-size: 0.78rem;
     }
 
-    .app-body.books-page .bookshelf-toolbar__chip-label {
-        font-size: 0.72rem;
+    .app-body.books-page .bookshelf-header-bar__add {
+        width: 38px;
+        min-height: 38px;
+        border-radius: 13px;
+        font-size: 1.35rem;
     }
 
-    .app-body.books-page .bookshelf-toolbar__action {
-        width: 34px;
-        min-height: 34px;
-        padding: 0;
-        border-radius: 12px;
-        font-size: 0;
-        box-shadow: none;
-        flex-shrink: 0;
+    .app-body.books-page .bookshelf-overview {
+        margin-top: 12px;
+        border-radius: 22px;
     }
 
-    .app-body.books-page .bookshelf-toolbar__action::before {
-        width: 14px;
-        height: 14px;
+    .app-body.books-page .bookshelf-overview__summary {
+        grid-template-columns: 54px minmax(0, 1fr) auto;
+        gap: 12px;
+        padding: 12px 14px;
     }
 
-    .app-body.books-page .bookshelf-toolbar__action-label {
-        display: none;
+    .app-body.books-page .bookshelf-overview__thumb {
+        width: 54px;
+        height: 54px;
+        border-radius: 16px;
+    }
+
+    .app-body.books-page .bookshelf-overview__copy strong {
+        font-size: 0.94rem;
+    }
+
+    .app-body.books-page .bookshelf-overview__copy span {
+        font-size: 0.82rem;
+    }
+
+    .app-body.books-page .bookshelf-overview__toggle {
+        min-height: 32px;
+        padding: 0 10px;
+        font-size: 0.76rem;
+    }
+
+    .app-body.books-page .bookshelf-overview__panel {
+        gap: 12px;
+        padding: 0 14px 14px;
+    }
+
+    .app-body.books-page .bookshelf-overview__stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .app-body.books-page .bookshelf-overview__stat {
+        padding: 11px 12px;
+        border-radius: 16px;
+    }
+
+    .app-body.books-page .bookshelf-overview__stat span {
+        font-size: 0.7rem;
+    }
+
+    .app-body.books-page .bookshelf-overview__stat strong {
+        font-size: 1rem;
+    }
+
+    .app-body.books-page .bookshelf-overview__insights p {
+        padding: 11px 12px;
+        border-radius: 16px;
+        font-size: 0.82rem;
     }
 
     .sidebar {
@@ -1475,57 +1492,65 @@
 }
 
 @media (max-width: 480px) {
-    .app-body.books-page .bookshelf-toolbar__action {
-        width: 32px;
-        height: 32px;
-        min-height: 32px;
-        border-radius: 11px;
-    }
-
     .app-body.books-page .page-header--bookshelf {
-        padding: 10px 12px;
-        border-radius: 16px;
+        padding: 14px;
+        border-radius: 20px;
     }
 
-    .app-body.books-page .bookshelf-toolbar__title {
-        grid-template-columns: 36px minmax(0, 1fr);
-        gap: 8px;
+    .app-body.books-page .bookshelf-header-bar {
+        gap: 10px;
     }
 
-    .app-body.books-page .bookshelf-toolbar__icon {
-        width: 36px;
-        height: 36px;
-        border-radius: 11px;
+    .app-body.books-page .bookshelf-header-bar__title h1 {
+        font-size: 1.32rem;
     }
 
-    .app-body.books-page .bookshelf-toolbar {
-        gap: 8px;
-    }
-
-    .app-body.books-page .bookshelf-toolbar__copy h1 {
-        font-size: 1.02rem;
-    }
-
-    .app-body.books-page .bookshelf-toolbar__stats {
+    .app-body.books-page .bookshelf-header-bar__meta {
         gap: 6px;
     }
 
-    .app-body.books-page .stat-chip--bookshelf {
-        min-height: 28px;
-        padding: 0 8px;
-    }
-
-    .app-body.books-page .stat-chip--bookshelf::before {
-        width: 11px;
-        height: 11px;
-    }
-
-    .app-body.books-page .bookshelf-toolbar__chip-value {
+    .app-body.books-page .bookshelf-header-bar__meta .stat-chip {
+        min-height: 30px;
+        padding-inline: 9px;
         font-size: 0.74rem;
     }
 
-    .app-body.books-page .bookshelf-toolbar__chip-label {
-        font-size: 0.68rem;
+    .app-body.books-page .bookshelf-header-bar__add {
+        width: 34px;
+        min-height: 34px;
+        border-radius: 12px;
+        font-size: 1.2rem;
+    }
+
+    .app-body.books-page .bookshelf-overview__summary {
+        grid-template-columns: 48px minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .app-body.books-page .bookshelf-overview__thumb {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+    }
+
+    .app-body.books-page .bookshelf-overview__toggle {
+        display: none;
+    }
+
+    .app-body.books-page .bookshelf-overview__copy strong {
+        font-size: 0.9rem;
+    }
+
+    .app-body.books-page .bookshelf-overview__copy span {
+        font-size: 0.78rem;
+    }
+
+    .app-body.books-page .bookshelf-overview__stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .app-body.books-page .bookshelf-overview__insights p {
+        font-size: 0.78rem;
     }
 }
 
