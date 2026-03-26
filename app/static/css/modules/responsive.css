@@ -202,7 +202,6 @@
     .inline-field,
     .sidebar-section--account,
     .moment-card__header,
-    .modal-card__header,
     .history-card__coords {
         flex-direction: column;
         align-items: stretch;
@@ -618,6 +617,16 @@
         max-height: none;
         border-radius: 0;
         padding: 20px 16px 24px;
+    }
+
+    .modal-card__header {
+        flex-direction: row;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+    .modal-card__header .eyebrow {
+        display: none;
     }
 
     .media-viewer__pdf {

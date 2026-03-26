@@ -278,12 +278,11 @@ def test_admin_feed_includes_composer_preview_workspace(admin_client):
     assert b'capture="environment"' in response.data
     assert b"data-mobile-compose" in response.data
     assert b"Attachment Order" in response.data
-    assert b"data-citation-toggle" in response.data
     assert b"data-citation-search" in response.data
     assert b"data-citation-results" in response.data
     assert b"vendor/mammoth.browser.min.js" not in response.data
     assert b"vendor/epub.min.js" not in response.data
-    assert b"Add Citation" in response.data
+    assert b"Cite" in response.data
     assert b"Choose Existing Media" in response.data
     assert b"Take Photo / Video" in response.data
     assert b"Cross-Post Assistant" in response.data
