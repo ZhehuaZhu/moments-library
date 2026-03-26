@@ -1,6 +1,9 @@
 import { ensureEpubJs, ensureMammoth } from "./vendor-loader.js";
 import { t } from "./i18n.js";
 import { requestJson } from "./http.js";
+import { initTimestampHelpers, initTrackLyrics } from "./library-audio-helpers.js";
+import { secondsToClock } from "./library-time-utils.js";
+import { initVideoCardPreviews } from "./library-video-previews.js";
 
 const playerStorageKey = "moments-global-player";
 const playerDockStateKey = "moments-global-player-dock-state";
@@ -8,7 +11,6 @@ const playerDockPositionKey = "moments-global-player-dock-position";
 const playerAppearanceKey = "moments-global-player-appearance";
 const playerSizeKey = "moments-global-player-size";
 const readerUiTimers = new WeakMap();
-let timestampHelpersInitialized = false;
 let libraryPageController = null;
 let immersiveReaderGlobalsBound = false;
 let sectionReaderGlobalsBound = false;
@@ -115,18 +117,6 @@ function closeReaderNotesDrawer(scope, { keepPanels = false } = {}) {
         shell.classList.remove("is-reader-top-visible", "is-reader-bottom-visible");
         clearReaderUiTimer(shell);
     }
-}
-
-function secondsToClock(totalSeconds) {
-    const total = Math.max(Math.floor(totalSeconds || 0), 0);
-    const hours = Math.floor(total / 3600);
-    const minutes = Math.floor((total % 3600) / 60);
-    const seconds = total % 60;
-
-    if (hours) {
-        return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-    }
-    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 function clampReaderScrollRatio(value) {
@@ -428,49 +418,6 @@ function initLinearReaderProgress() {
                 flushProgress();
             }
         });
-    });
-}
-
-function initVideoCardPreviews() {
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const previewVideos = document.querySelectorAll("[data-video-card-preview]");
-    if (!previewVideos.length) {
-        return;
-    }
-
-    previewVideos.forEach((video) => {
-        if (!(video instanceof HTMLVideoElement) || video.dataset.previewBound === "true") {
-            return;
-        }
-
-        const shell = video.closest("[data-video-card-link]");
-        if (!(shell instanceof HTMLElement)) {
-            return;
-        }
-
-        video.dataset.previewBound = "true";
-        video.muted = true;
-        video.loop = true;
-        video.playsInline = true;
-
-        const playPreview = () => {
-            if (prefersReducedMotion) {
-                return;
-            }
-            void video.play().catch(() => {});
-        };
-
-        const pausePreview = () => {
-            video.pause();
-            if (video.currentTime > 0) {
-                video.currentTime = 0;
-            }
-        };
-
-        shell.addEventListener("mouseenter", playPreview);
-        shell.addEventListener("mouseleave", pausePreview);
-        shell.addEventListener("focusin", playPreview);
-        shell.addEventListener("focusout", pausePreview);
     });
 }
 
@@ -1603,122 +1550,6 @@ async function initEpubReaders() {
             )}</p>`;
         }
     }
-}
-
-function initTimestampHelpers() {
-    if (timestampHelpersInitialized) {
-        return;
-    }
-    timestampHelpersInitialized = true;
-    document.addEventListener("click", (event) => {
-        if (!(event.target instanceof Element)) {
-            return;
-        }
-
-        const useCurrentTime = event.target.closest("[data-use-current-time]");
-        if (useCurrentTime) {
-            const scope =
-                useCurrentTime.closest(".detail-card") ||
-                useCurrentTime.closest(".library-detail-grid") ||
-                document;
-            const media = scope.querySelector("[data-timestamp-media]");
-            const input = scope.querySelector("[data-timestamp-input]");
-            if (media instanceof HTMLMediaElement && input instanceof HTMLInputElement) {
-                input.value = secondsToClock(media.currentTime);
-            }
-            return;
-        }
-
-        const seekButton = event.target.closest("[data-seek-to]");
-        if (!seekButton) {
-            return;
-        }
-
-        const scope =
-            seekButton.closest(".library-detail-grid") ||
-            seekButton.closest(".detail-card") ||
-            document;
-        const media = scope.querySelector("[data-timestamp-media]");
-        const seconds = Number(seekButton.getAttribute("data-seek-to"));
-        if (media instanceof HTMLMediaElement && !Number.isNaN(seconds)) {
-            media.currentTime = seconds;
-            media.play().catch(() => {});
-        }
-    });
-}
-
-function initTrackLyrics() {
-    const shells = document.querySelectorAll("[data-lyrics-shell]");
-    if (!shells.length) {
-        return;
-    }
-
-    shells.forEach((shell) => {
-        if (!(shell instanceof HTMLElement) || shell.dataset.lyricsBound === "true") {
-            return;
-        }
-        shell.dataset.lyricsBound = "true";
-
-        const scope = shell.closest(".library-detail-grid") || shell;
-        const media = scope.querySelector("[data-timestamp-media]");
-        const lines = Array.from(shell.querySelectorAll("[data-lyrics-line]")).filter(
-            (line) => line instanceof HTMLButtonElement
-        );
-        if (!(media instanceof HTMLMediaElement) || !lines.length) {
-            return;
-        }
-
-        let activeLine = null;
-
-        const setActiveLine = (nextLine) => {
-            if (activeLine === nextLine) {
-                return;
-            }
-
-            if (activeLine instanceof HTMLElement) {
-                activeLine.classList.remove("is-active");
-            }
-
-            activeLine = nextLine instanceof HTMLElement ? nextLine : null;
-            if (!(activeLine instanceof HTMLElement)) {
-                return;
-            }
-
-            activeLine.classList.add("is-active");
-            activeLine.scrollIntoView({
-                behavior: "smooth",
-                block: "nearest",
-            });
-        };
-
-        const syncLyrics = () => {
-            const currentTime = media.currentTime;
-            let matchedLine = null;
-
-            lines.forEach((line) => {
-                const start = Number(line.getAttribute("data-lyrics-start"));
-                const next = Number(line.getAttribute("data-lyrics-next"));
-                if (!Number.isFinite(start) || currentTime < start) {
-                    return;
-                }
-
-                if (!Number.isFinite(next) || currentTime < next) {
-                    matchedLine = line;
-                }
-            });
-
-            setActiveLine(matchedLine);
-        };
-
-        media.addEventListener("loadedmetadata", syncLyrics);
-        media.addEventListener("timeupdate", syncLyrics);
-        media.addEventListener("seeked", syncLyrics);
-        media.addEventListener("emptied", () => {
-            setActiveLine(null);
-        });
-
-        syncLyrics();
-    });
 }
 
 function readStoredJson(key) {
