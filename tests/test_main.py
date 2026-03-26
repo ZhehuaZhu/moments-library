@@ -22,6 +22,7 @@ from app.models import (
     VideoEntry,
 )
 from app.services.folders import serialize_folder_snapshot
+from app.services.image_previews import ensure_attachment_image_preview
 from app.services.storage import resolve_storage_path
 
 
@@ -1001,6 +1002,44 @@ def test_feed_request_backfills_preview_for_existing_image_attachment(client, ap
         )
         assert preview_path.exists()
         assert attachment.preview_relative_path.encode() in response.data
+
+
+def test_existing_image_preview_skips_reoptimization(monkeypatch, app):
+    with app.app_context():
+        relative_path = "uploads/2026/03/already-optimized.jpg"
+        preview_relative_path = "uploads/2026/03/already-optimized-preview.jpg"
+        source_path = resolve_storage_path(app.config["UPLOAD_FOLDER"], relative_path)
+        preview_path = resolve_storage_path(app.config["UPLOAD_FOLDER"], preview_relative_path)
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        preview_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_bytes(build_photo_bytes())
+        preview_path.write_bytes(b"preview")
+
+        attachment = Attachment(
+            original_name="already-optimized.jpg",
+            stored_name="already-optimized.jpg",
+            relative_path=relative_path,
+            preview_relative_path=preview_relative_path,
+            mime_type="image/jpeg",
+            preview_mime_type="image/jpeg",
+            media_kind="image",
+            size_bytes=source_path.stat().st_size,
+            moment_id=1,
+        )
+
+        called = False
+
+        def fake_optimize(_source_path):
+            nonlocal called
+            called = True
+            return None
+
+        monkeypatch.setattr("app.services.image_previews.optimize_uploaded_image", fake_optimize)
+
+        created_paths = ensure_attachment_image_preview(attachment, app.config["UPLOAD_FOLDER"])
+
+        assert created_paths == []
+        assert called is False
 
 
 def test_admin_can_publish_citation_only_moment(admin_client, app):

@@ -153,16 +153,16 @@ def ensure_attachment_image_preview(attachment: Attachment, upload_root: str) ->
     if not source_path.exists():
         return []
 
-    optimized_size = optimize_uploaded_image(source_path)
-    if optimized_size is not None:
-        attachment.size_bytes = optimized_size
-
     preview_exists = bool(
         attachment.preview_relative_path
         and resolve_storage_path(upload_root, attachment.preview_relative_path).exists()
     )
     if preview_exists:
         return []
+
+    optimized_size = optimize_uploaded_image(source_path)
+    if optimized_size is not None:
+        attachment.size_bytes = optimized_size
 
     preview_asset = _generate_preview_asset(source_path, upload_root, attachment.original_name)
     if preview_asset is None:
