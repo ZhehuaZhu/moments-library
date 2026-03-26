@@ -1521,6 +1521,7 @@ function normalizePlayerState(rawState, fallbackQueue = []) {
 
     const currentTime = Number(rawState?.currentTime);
     const duration = Number(rawState?.duration);
+    const repeatMode = rawState?.repeatMode === "one" ? "one" : "off";
 
     return {
         queue,
@@ -1528,6 +1529,7 @@ function normalizePlayerState(rawState, fallbackQueue = []) {
         currentTime: Number.isFinite(currentTime) ? Math.max(currentTime, 0) : 0,
         duration: Number.isFinite(duration) ? Math.max(duration, 0) : 0,
         wasPlaying: Boolean(rawState?.wasPlaying),
+        repeatMode,
     };
 }
 
@@ -1614,6 +1616,33 @@ function applyPlayerSize(shell, size) {
     shell.style.setProperty("--player-panel-width", `${normalized.width}px`);
     shell.style.setProperty("--player-panel-height", `${normalized.height}px`);
     return normalized;
+}
+
+function animateMediaVolume(media, from, to, duration = 220) {
+    if (!(media instanceof HTMLMediaElement)) {
+        return Promise.resolve();
+    }
+
+    media.volume = Math.min(Math.max(from, 0), 1);
+    if (duration <= 0) {
+        media.volume = Math.min(Math.max(to, 0), 1);
+        return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+        const startTime = performance.now();
+        const tick = (now) => {
+            const progress = Math.min((now - startTime) / duration, 1);
+            media.volume = from + (to - from) * progress;
+            if (progress >= 1) {
+                resolve();
+                return;
+            }
+            window.requestAnimationFrame(tick);
+        };
+
+        window.requestAnimationFrame(tick);
+    });
 }
 
 function getPlayerLabel(track) {
@@ -1712,15 +1741,48 @@ function setPlayerToggleIcon(button, isPlaying) {
     );
 }
 
-function renderPlayerQueue(queuePanel, queue, currentIndex, onSelect) {
+function renderPlayerQueue(queuePanel, queue, currentIndex, handlers = {}) {
     queuePanel.replaceChildren();
     queue.forEach((track, index) => {
+        const item = document.createElement("div");
+        item.className = `audio-player__queue-item${index === currentIndex ? " is-active" : ""}`;
+        item.dataset.playerQueueItem = "true";
+
         const button = document.createElement("button");
         button.type = "button";
-        button.className = `audio-player__queue-item${index === currentIndex ? " is-active" : ""}`;
+        button.className = "audio-player__queue-track";
         button.textContent = getPlayerLabel(track);
-        button.addEventListener("click", () => onSelect(index));
-        queuePanel.append(button);
+        button.addEventListener("click", () => handlers.onSelect?.(index));
+
+        const actions = document.createElement("div");
+        actions.className = "audio-player__queue-actions";
+
+        const moveUp = document.createElement("button");
+        moveUp.type = "button";
+        moveUp.className = "icon-button icon-button--ghost audio-player__queue-action";
+        moveUp.innerHTML = '<span aria-hidden="true">&#8593;</span>';
+        moveUp.disabled = index === 0;
+        moveUp.setAttribute("aria-label", t("player.queue_move_up", {}, "Move track earlier"));
+        moveUp.addEventListener("click", () => handlers.onMove?.(index, -1));
+
+        const moveDown = document.createElement("button");
+        moveDown.type = "button";
+        moveDown.className = "icon-button icon-button--ghost audio-player__queue-action";
+        moveDown.innerHTML = '<span aria-hidden="true">&#8595;</span>';
+        moveDown.disabled = index === queue.length - 1;
+        moveDown.setAttribute("aria-label", t("player.queue_move_down", {}, "Move track later"));
+        moveDown.addEventListener("click", () => handlers.onMove?.(index, 1));
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "icon-button icon-button--ghost audio-player__queue-action";
+        remove.innerHTML = '<span aria-hidden="true">&#10005;</span>';
+        remove.setAttribute("aria-label", t("player.remove_from_queue", {}, "Remove track from queue"));
+        remove.addEventListener("click", () => handlers.onRemove?.(index));
+
+        actions.append(moveUp, moveDown, remove);
+        item.append(button, actions);
+        queuePanel.append(item);
     });
 }
 
@@ -1733,6 +1795,7 @@ function initRemotePlayerShell(shell, elements) {
         toggle,
         previous,
         next,
+        loopToggle,
         progress,
         current,
         duration,
@@ -1756,6 +1819,7 @@ function initRemotePlayerShell(shell, elements) {
         !(toggle instanceof HTMLButtonElement) ||
         !(previous instanceof HTMLButtonElement) ||
         !(next instanceof HTMLButtonElement) ||
+        !(loopToggle instanceof HTMLButtonElement) ||
         !(progress instanceof HTMLInputElement) ||
         !(current instanceof HTMLElement) ||
         !(duration instanceof HTMLElement) ||
@@ -1794,6 +1858,69 @@ function initRemotePlayerShell(shell, elements) {
     let lastPersistAt = 0;
     let playerAppearance = applyPlayerAppearance(shell, readPlayerAppearance(), { opacityInput });
     let playerSize = applyPlayerSize(shell, readPlayerSize());
+    let audioTransitionToken = 0;
+    let videoSuspension = {
+        shouldResume: false,
+    };
+
+    const hasActiveAudibleVideo = () =>
+        Array.from(document.querySelectorAll("video")).some(
+            (video) => !video.muted && !video.paused && !video.ended
+        );
+
+    const suspendPlayerForVideo = async () => {
+        if (!playerState.queue[playerState.currentIndex]) {
+            videoSuspension = { shouldResume: false };
+            return;
+        }
+
+        if (audio.paused) {
+            if (videoSuspension.shouldResume) {
+                return;
+            }
+            videoSuspension = { shouldResume: false };
+            return;
+        }
+
+        videoSuspension = { shouldResume: true };
+        const token = ++audioTransitionToken;
+        const startingVolume = audio.volume || 1;
+        await animateMediaVolume(audio, startingVolume, 0, 180);
+        if (token !== audioTransitionToken) {
+            return;
+        }
+        audio.pause();
+        audio.volume = 1;
+        persistState({ force: true });
+        renderShell();
+    };
+
+    const resumePlayerAfterVideo = async () => {
+        if (!videoSuspension.shouldResume || hasActiveAudibleVideo()) {
+            return;
+        }
+
+        const currentTrack = playerState.queue[playerState.currentIndex];
+        videoSuspension = { shouldResume: false };
+        if (!currentTrack) {
+            return;
+        }
+
+        const token = ++audioTransitionToken;
+        try {
+            audio.volume = 0;
+            await audio.play();
+            if (token !== audioTransitionToken) {
+                return;
+            }
+            await animateMediaVolume(audio, 0, 1, 260);
+        } catch {
+            audio.volume = 1;
+        }
+
+        persistState({ force: true });
+        renderShell();
+    };
 
     const persistState = ({ force = false } = {}) => {
         const now = Date.now();
@@ -1971,6 +2098,8 @@ function initRemotePlayerShell(shell, elements) {
         next.disabled =
             playerState.currentIndex < 0 || playerState.currentIndex >= playerState.queue.length - 1;
         shell.classList.toggle("is-player-playing", Boolean(track) && playerState.wasPlaying);
+        loopToggle.classList.toggle("is-active", playerState.repeatMode === "one");
+        loopToggle.setAttribute("aria-pressed", playerState.repeatMode === "one" ? "true" : "false");
 
         if (!track) {
             queueOpen = false;
@@ -1982,7 +2111,7 @@ function initRemotePlayerShell(shell, elements) {
             current.textContent = "00:00";
             duration.textContent = "00:00";
             queuePanel.hidden = true;
-            renderPlayerQueue(queuePanel, playerState.queue, playerState.currentIndex, () => {});
+            renderPlayerQueue(queuePanel, playerState.queue, playerState.currentIndex, {});
             updatePlayerArtwork(shell, null);
             return;
         }
@@ -2000,10 +2129,18 @@ function initRemotePlayerShell(shell, elements) {
                 ? String((playerState.currentTime / playerState.duration) * 100)
                 : "0";
         queuePanel.hidden = !queueOpen;
-        renderPlayerQueue(queuePanel, playerState.queue, playerState.currentIndex, (index) => {
-            queueOpen = false;
-            void loadTrack(index, true, 0);
-            renderShell();
+        renderPlayerQueue(queuePanel, playerState.queue, playerState.currentIndex, {
+            onSelect(index) {
+                queueOpen = false;
+                void loadTrack(index, true, 0);
+                renderShell();
+            },
+            onMove(index, delta) {
+                moveTrackInQueue(index, delta);
+            },
+            onRemove(index) {
+                removeTrackFromQueue(index);
+            },
         });
         updatePlayerArtwork(shell, track);
         applyCollapsedState();
@@ -2066,6 +2203,78 @@ function initRemotePlayerShell(shell, elements) {
             },
             pageCatalog
         );
+        renderShell();
+    };
+
+    const moveTrackInQueue = (index, delta) => {
+        const targetIndex = index + delta;
+        if (
+            index < 0 ||
+            targetIndex < 0 ||
+            index >= playerState.queue.length ||
+            targetIndex >= playerState.queue.length
+        ) {
+            return;
+        }
+
+        const nextQueue = [...playerState.queue];
+        const [movedTrack] = nextQueue.splice(index, 1);
+        nextQueue.splice(targetIndex, 0, movedTrack);
+
+        let nextCurrentIndex = playerState.currentIndex;
+        if (playerState.currentIndex === index) {
+            nextCurrentIndex = targetIndex;
+        } else if (
+            playerState.currentIndex >= Math.min(index, targetIndex) &&
+            playerState.currentIndex <= Math.max(index, targetIndex)
+        ) {
+            nextCurrentIndex += index < targetIndex ? -1 : 1;
+        }
+
+        playerState = writeStoredPlayerState(
+            {
+                ...playerState,
+                queue: nextQueue,
+                currentIndex: nextCurrentIndex,
+            },
+            pageCatalog
+        );
+        renderShell();
+    };
+
+    const removeTrackFromQueue = (index) => {
+        if (index < 0 || index >= playerState.queue.length) {
+            return;
+        }
+
+        const removingCurrent = index === playerState.currentIndex;
+        const nextQueue = playerState.queue.filter((_track, queueIndex) => queueIndex !== index);
+        let nextCurrentIndex = playerState.currentIndex;
+        if (nextCurrentIndex > index) {
+            nextCurrentIndex -= 1;
+        } else if (removingCurrent) {
+            nextCurrentIndex = Math.min(index, nextQueue.length - 1);
+        }
+
+        playerState = writeStoredPlayerState(
+            {
+                ...playerState,
+                queue: nextQueue,
+                currentIndex: nextQueue.length ? nextCurrentIndex : -1,
+            },
+            pageCatalog
+        );
+
+        if (!nextQueue.length) {
+            clearAudio();
+            return;
+        }
+
+        if (removingCurrent) {
+            void loadTrack(playerState.currentIndex, playerState.wasPlaying, 0);
+            return;
+        }
+
         renderShell();
     };
 
@@ -2191,6 +2400,28 @@ function initRemotePlayerShell(shell, elements) {
         beginDrag(event, "handle");
     });
 
+    shell.addEventListener("click", (event) => {
+        if (isCollapsed || !(event.target instanceof Element)) {
+            return;
+        }
+
+        if (
+            event.target.closest(
+                "button, input, a, label, select, textarea, [role='button'], [data-player-queue-item], [data-player-title], [data-player-artist], [data-player-state], [data-player-artwork]"
+            )
+        ) {
+            return;
+        }
+
+        if (!shell.contains(event.target)) {
+            return;
+        }
+
+        isCollapsed = true;
+        settingsOpen = false;
+        applyCollapsedState();
+    });
+
     collapseToggle.addEventListener("click", () => {
         isCollapsed = !isCollapsed;
         applyCollapsedState();
@@ -2239,6 +2470,17 @@ function initRemotePlayerShell(shell, elements) {
         }
 
         void loadTrack(playerState.currentIndex + 1, true, 0);
+    });
+
+    loopToggle.addEventListener("click", () => {
+        playerState = writeStoredPlayerState(
+            {
+                ...playerState,
+                repeatMode: playerState.repeatMode === "one" ? "off" : "one",
+            },
+            pageCatalog
+        );
+        renderShell();
     });
 
     queueToggle.addEventListener("click", () => {
@@ -2294,9 +2536,27 @@ function initRemotePlayerShell(shell, elements) {
         "play",
         (event) => {
             if (event.target instanceof HTMLVideoElement && !event.target.muted && playerState.wasPlaying) {
-                audio.pause();
-                persistState({ force: true });
-                renderShell();
+                void suspendPlayerForVideo();
+            }
+        },
+        true
+    );
+
+    document.addEventListener(
+        "pause",
+        (event) => {
+            if (event.target instanceof HTMLVideoElement && !event.target.muted) {
+                void resumePlayerAfterVideo();
+            }
+        },
+        true
+    );
+
+    document.addEventListener(
+        "ended",
+        (event) => {
+            if (event.target instanceof HTMLVideoElement && !event.target.muted) {
+                void resumePlayerAfterVideo();
             }
         },
         true
@@ -2323,6 +2583,11 @@ function initRemotePlayerShell(shell, elements) {
     });
 
     audio.addEventListener("ended", () => {
+        if (playerState.repeatMode === "one" && playerState.currentIndex >= 0) {
+            void loadTrack(playerState.currentIndex, true, 0);
+            return;
+        }
+
         if (playerState.currentIndex < playerState.queue.length - 1) {
             void loadTrack(playerState.currentIndex + 1, true, 0);
             return;
@@ -2359,6 +2624,12 @@ function initRemotePlayerShell(shell, elements) {
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") {
             persistBeforeNavigation();
+        }
+    });
+
+    document.addEventListener("app:after-swap", () => {
+        if (videoSuspension.shouldResume) {
+            void resumePlayerAfterVideo();
         }
     });
 
@@ -2458,6 +2729,7 @@ function initGlobalPlayer() {
         toggle: shell.querySelector("[data-player-toggle]"),
         previous: shell.querySelector("[data-player-prev]"),
         next: shell.querySelector("[data-player-next]"),
+        loopToggle: shell.querySelector("[data-player-loop-toggle]"),
         progress: shell.querySelector("[data-player-progress]"),
         current: shell.querySelector("[data-player-current]"),
         duration: shell.querySelector("[data-player-duration]"),

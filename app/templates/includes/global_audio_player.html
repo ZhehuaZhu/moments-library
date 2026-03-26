@@ -76,6 +76,15 @@
             <button
                 type="button"
                 class="icon-button icon-button--ghost"
+                data-player-loop-toggle
+                aria-label="{{ t('player.loop_track') }}"
+                aria-pressed="false"
+            >
+                <span aria-hidden="true">&#8635;</span>
+            </button>
+            <button
+                type="button"
+                class="icon-button icon-button--ghost"
                 data-player-queue-toggle
                 aria-label="{{ t('common.queue') }}"
             >
