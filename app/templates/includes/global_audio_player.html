@@ -21,13 +21,17 @@
     <div class="audio-player__panel" data-player-panel>
         {% if player_variant != 'window' %}
             <div class="audio-player__header">
+                <div class="audio-player__header-copy">
+                    <span class="audio-player__eyebrow">{{ t('player.mini_player') }}</span>
+                    <strong class="audio-player__state" data-player-state>{{ t('player.ready') }}</strong>
+                </div>
                 <div class="audio-player__header-actions">
                     <button
-                    type="button"
-                    class="audio-player__drag-handle"
-                    data-player-drag-handle
-                    aria-label="{{ t('player.drag_mini_player') }}"
-                >
+                        type="button"
+                        class="audio-player__drag-handle"
+                        data-player-drag-handle
+                        aria-label="{{ t('player.drag_mini_player') }}"
+                    >
                         <span aria-hidden="true">&#8942;&#8942;</span>
                     </button>
                     <button
@@ -39,15 +43,15 @@
                     >
                         <span aria-hidden="true">&#9881;</span>
                     </button>
+                    <button
+                        type="button"
+                        class="icon-button icon-button--ghost"
+                        data-player-collapse-toggle
+                        aria-label="{{ t('player.collapse_mini_player') }}"
+                    >
+                        <span aria-hidden="true">&#8722;</span>
+                    </button>
                 </div>
-                <button
-                    type="button"
-                    class="icon-button icon-button--ghost"
-                    data-player-collapse-toggle
-                    aria-label="{{ t('player.collapse_mini_player') }}"
-                >
-                    <span aria-hidden="true">&#8722;</span>
-                </button>
             </div>
         {% endif %}
         <div class="audio-player__summary">
@@ -89,12 +93,26 @@
                     <span>{{ t('player.opacity') }}</span>
                     <input type="range" min="70" max="100" step="1" value="92" data-player-opacity-input>
                 </label>
-                <label class="audio-player__setting">
-                    <span>{{ t('player.scale') }}</span>
-                    <input type="range" min="78" max="112" step="1" value="92" data-player-scale-input>
-                </label>
+                <button
+                    type="button"
+                    class="button button--subtle button--compact audio-player__reset-size"
+                    data-player-reset-size
+                    aria-label="{{ t('player.reset_size') }}"
+                >
+                    100%
+                </button>
             </div>
         {% endif %}
         <div class="audio-player__queue" data-player-queue hidden></div>
     </div>
+    {% if player_variant != 'window' %}
+        <button
+            type="button"
+            class="audio-player__resize-handle"
+            data-player-resize-handle
+            aria-label="{{ t('player.resize_player') }}"
+        >
+            <span aria-hidden="true">&#8690;</span>
+        </button>
+    {% endif %}
 </div>
