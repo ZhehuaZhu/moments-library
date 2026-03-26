@@ -201,7 +201,7 @@
     }
 
     .app-header {
-        padding: 10px 12px;
+        padding: 10px 10px 12px;
         border-radius: 18px;
         align-items: stretch;
         box-shadow: 0 6px 14px rgba(21, 33, 42, 0.08);
@@ -224,11 +224,12 @@
 
     .app-header__quicknav {
         width: 100%;
-        overflow: visible;
-        flex-wrap: wrap;
+        overflow-x: auto;
+        flex-wrap: nowrap;
         margin-inline: 0;
         padding-inline: 0;
         justify-content: flex-start;
+        padding-bottom: 2px;
     }
 
     .app-header__quicknav::-webkit-scrollbar {
@@ -241,6 +242,20 @@
 
     .language-switch--compact {
         flex: 0 0 auto;
+    }
+
+    .app-header__compose {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        min-width: 42px;
+        height: 42px;
+        padding: 0;
+        border-radius: 14px;
+        font-size: 1.35rem;
+        font-weight: 700;
+        line-height: 1;
     }
 
     .sidebar {
@@ -267,6 +282,20 @@
     .moment-menu,
     .cross-post-card {
         box-shadow: 0 6px 14px rgba(21, 33, 42, 0.08);
+    }
+
+    .moment-card {
+        padding: 16px 14px;
+        border-radius: 20px;
+    }
+
+    .page-header.page-header--home {
+        padding: 16px 14px;
+        gap: 12px;
+    }
+
+    .page-header.page-header--home h1 {
+        font-size: clamp(1.52rem, 6vw, 1.95rem);
     }
 
     .moment-card:hover,
@@ -513,9 +542,9 @@
 
     .moment-card__content {
         max-width: none;
-        margin-top: 14px;
-        font-size: 1rem;
-        line-height: 1.68;
+        margin-top: 12px;
+        font-size: 0.98rem;
+        line-height: 1.62;
     }
 
     .moment-card__location {
@@ -531,8 +560,8 @@
     }
 
     .media-cluster {
-        gap: 8px;
-        margin-top: 16px;
+        gap: 6px;
+        margin-top: 14px;
     }
 
     .media-tile,
@@ -577,10 +606,19 @@
         width: min(280px, calc(100vw - 32px));
     }
 
-    .media-cluster--duo,
+    .media-cluster--single {
+        grid-template-columns: minmax(0, min(100%, 280px));
+    }
+
+    .media-cluster--duo {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: min(100%, 236px);
+    }
+
     .media-cluster--quad,
     .media-cluster--grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: min(100%, 320px);
     }
 
     .composer-file-list {

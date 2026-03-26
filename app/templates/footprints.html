@@ -74,6 +74,20 @@
                             <option value="name">{{ t('footprints.sort_name') }}</option>
                         </select>
                     </label>
+                    <label class="atlas-control">
+                        <span class="atlas-control__label">{{ t('footprints.display_label') }}</span>
+                        <select class="input atlas-control__select" data-footprints-display-mode>
+                            <option value="timeline">{{ t('footprints.display_timeline') }}</option>
+                            <option value="cards">{{ t('footprints.display_cards') }}</option>
+                        </select>
+                    </label>
+                    <label class="atlas-control">
+                        <span class="atlas-control__label">{{ t('footprints.open_label') }}</span>
+                        <select class="input atlas-control__select" data-footprints-open-mode>
+                            <option value="panel">{{ t('footprints.open_panel') }}</option>
+                            <option value="popup">{{ t('footprints.open_popup') }}</option>
+                        </select>
+                    </label>
                 </div>
             </div>
             <div class="atlas-map" data-footprints-map aria-label="{{ t('footprints.title') }}"></div>
