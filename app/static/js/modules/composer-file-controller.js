@@ -11,6 +11,8 @@ import {
 export function createComposerFileController({
     modal,
     fileInput,
+    libraryInput,
+    cameraInput,
     previewSection,
     previewList,
     signal,
@@ -26,6 +28,32 @@ export function createComposerFileController({
 
         buildFileList(fileInput, selectedFiles);
         updateFileSummary(modal);
+    }
+
+    function appendSelectedFiles(files) {
+        if (!files.length) {
+            return;
+        }
+
+        const existing = new Set(selectedFiles.map((entry) => fileSignature(entry.file)));
+        files.forEach((file) => {
+            const signature = fileSignature(file);
+            if (existing.has(signature)) {
+                return;
+            }
+
+            selectedFiles.push({
+                id: crypto.randomUUID(),
+                file,
+                kind: previewKindForFile(file),
+                objectUrl: URL.createObjectURL(file),
+            });
+            existing.add(signature);
+        });
+
+        syncInputFiles();
+        renderPreviewList();
+        onFilesChange();
     }
 
     function renderPreviewList() {
@@ -225,33 +253,24 @@ export function createComposerFileController({
 
     if (fileInput) {
         fileInput.addEventListener("change", () => {
-            const files = Array.from(fileInput.files || []);
-            if (!files.length) {
-                return;
-            }
-
-            const existing = new Set(selectedFiles.map((entry) => fileSignature(entry.file)));
-            files.forEach((file) => {
-                const signature = fileSignature(file);
-                if (existing.has(signature)) {
-                    return;
-                }
-
-                selectedFiles.push({
-                    id: crypto.randomUUID(),
-                    file,
-                    kind: previewKindForFile(file),
-                    objectUrl: URL.createObjectURL(file),
-                });
-                existing.add(signature);
-            });
-
-            syncInputFiles();
-            renderPreviewList();
-            onFilesChange();
+            appendSelectedFiles(Array.from(fileInput.files || []));
         }, { signal });
         updateFileSummary(modal);
     }
+
+    libraryInput?.addEventListener("change", () => {
+        appendSelectedFiles(Array.from(libraryInput.files || []));
+        if (libraryInput instanceof HTMLInputElement) {
+            libraryInput.value = "";
+        }
+    }, { signal });
+
+    cameraInput?.addEventListener("change", () => {
+        appendSelectedFiles(Array.from(cameraInput.files || []));
+        if (cameraInput instanceof HTMLInputElement) {
+            cameraInput.value = "";
+        }
+    }, { signal });
 
     signal.addEventListener("abort", () => {
         selectedFiles.forEach((entry) => {
@@ -263,6 +282,7 @@ export function createComposerFileController({
 
     return {
         getSelectedFiles: () => selectedFiles,
+        appendSelectedFiles,
         renderPreviewList,
         syncInputFiles,
     };

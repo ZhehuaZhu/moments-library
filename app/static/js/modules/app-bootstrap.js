@@ -34,7 +34,7 @@ const bootstrapEntries = [
     },
     {
         selector:
-            "[data-action='delete-moment'], [data-action='restore-moment'], [data-folder-moment-count], [data-folder-moment-list], [data-cross-post-action], [data-copy-cross-post-caption]",
+            "[data-action='delete-moment'], [data-action='restore-moment'], [data-folder-moment-count], [data-folder-moment-list], [data-cross-post-action], [data-copy-cross-post-caption], [data-share-platform], [data-toggle-share-platforms]",
         module: "feed",
         init: "initFeedInteractions",
     },

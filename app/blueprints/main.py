@@ -195,6 +195,7 @@ def ensure_feed_media_previews(moments: list[Moment]) -> None:
 def attach_cross_post_plans(moments: list[Moment]) -> None:
     for moment in moments:
         moment.cross_post_plan = build_cross_post_plan(moment)
+        moment.cross_post_share_options = build_cross_post_plan(moment, selected_only=False)
 
 
 def parse_optional_coordinate(value: str | None) -> float | None:

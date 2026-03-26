@@ -17,6 +17,11 @@
     gap: 18px;
 }
 
+.feed-list > .moment-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 560px;
+}
+
 .moment-card {
     position: relative;
     background: rgba(255, 255, 255, 0.95);
@@ -520,4 +525,64 @@
 
 .moment-menu__field .folder-picker {
     max-height: 200px;
+}
+
+.moment-menu__share {
+    display: grid;
+    gap: 10px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+}
+
+.moment-menu__share-label {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.moment-menu__share-list,
+.moment-share-option {
+    display: grid;
+    gap: 8px;
+}
+
+.moment-menu__item--share {
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.moment-menu__item[disabled] {
+    cursor: not-allowed;
+    opacity: 0.72;
+    transform: none;
+}
+
+.moment-menu__item[disabled]:hover {
+    background: rgba(34, 48, 60, 0.04);
+}
+
+.moment-share-assets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.moment-share-assets__item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(34, 48, 60, 0.08);
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--accent-strong);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.moment-share-option__feedback {
+    min-height: 1.2em;
 }

@@ -120,6 +120,7 @@ export function initMediaViewer() {
     let activeItems = [];
     let activeIndex = -1;
     let renderToken = 0;
+    const prefersCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
 
     const syncInlineVideoButton = (tile, isPlaying) => {
         const toggle = tile?.querySelector("[data-inline-video-toggle]");
@@ -188,6 +189,10 @@ export function initMediaViewer() {
 
         syncInlineVideoButton(tile, false);
 
+        if (prefersCoarsePointer) {
+            video.preload = "none";
+        }
+
         video.addEventListener("play", () => {
             pauseOtherInlineVideos(tile);
             tile.classList.add("is-playing");
@@ -199,7 +204,7 @@ export function initMediaViewer() {
             syncInlineVideoButton(tile, false);
         }, { signal });
 
-        if (video.readyState === 0) {
+        if (!prefersCoarsePointer && video.readyState === 0) {
             video.load();
         }
     });

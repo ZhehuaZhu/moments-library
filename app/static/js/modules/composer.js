@@ -28,6 +28,8 @@ export function initComposerModal() {
     const openButtons = document.querySelectorAll("[data-open-composer]");
     const closeButtons = modal.querySelectorAll("[data-close-composer]");
     const fileInput = modal.querySelector("[data-file-input]");
+    const libraryInput = modal.querySelector("[data-library-input]");
+    const cameraInput = modal.querySelector("[data-camera-input]");
     const form = modal.querySelector("[data-composer-form]");
     const previewSection = modal.querySelector("[data-composer-preview]");
     const previewList = modal.querySelector("[data-composer-file-list]");
@@ -58,6 +60,8 @@ export function initComposerModal() {
     fileController = createComposerFileController({
         modal,
         fileInput,
+        libraryInput,
+        cameraInput,
         previewSection,
         previewList,
         signal,

@@ -258,6 +258,7 @@ def evaluate_cross_post_platform(moment, platform: str) -> dict[str, Any]:
     video_count = summary["video_count"]
     document_count = summary["document_count"]
     media_count = summary["media_count"]
+    share_attachments = list(summary["social_media"])
 
     reason_key: str | None = None
 
@@ -293,6 +294,12 @@ def evaluate_cross_post_platform(moment, platform: str) -> dict[str, Any]:
         "caption": caption,
         "caption_available": has_caption,
         "media_attachments": summary["social_media"],
+        "share_asset_paths": [
+            attachment.relative_path
+            if attachment.media_kind == "image"
+            else attachment.preview_asset_path
+            for attachment in share_attachments
+        ],
         "media_count": media_count,
         "image_count": image_count,
         "video_count": video_count,
@@ -302,9 +309,13 @@ def evaluate_cross_post_platform(moment, platform: str) -> dict[str, Any]:
     }
 
 
-def build_cross_post_plan(moment) -> list[dict[str, Any]]:
+def build_cross_post_plan(moment, *, selected_only: bool = True) -> list[dict[str, Any]]:
     state = load_cross_post_state(getattr(moment, "cross_post_targets", None))
-    selected_targets = [key for key in PLATFORM_ORDER if state.get(key, {}).get("selected")]
+    selected_targets = (
+        [key for key in PLATFORM_ORDER if state.get(key, {}).get("selected")]
+        if selected_only
+        else list(PLATFORM_ORDER)
+    )
     plans: list[dict[str, Any]] = []
 
     for platform in selected_targets:
