@@ -1,5 +1,6 @@
 import { ensureEpubJs, ensureMammoth } from "./vendor-loader.js";
 import { t } from "./i18n.js";
+import { requestJson } from "./http.js";
 
 const playerStorageKey = "moments-global-player";
 const playerDockStateKey = "moments-global-player-dock-state";
@@ -126,6 +127,100 @@ function secondsToClock(totalSeconds) {
         return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
     }
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function clampReaderScrollRatio(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+        return 0;
+    }
+    return Math.max(0, Math.min(numericValue, 1));
+}
+
+function getElementScrollRatio(element) {
+    if (!(element instanceof HTMLElement)) {
+        return 0;
+    }
+
+    const maxScroll = Math.max(element.scrollHeight - element.clientHeight, 0);
+    if (!maxScroll) {
+        return 0;
+    }
+    return clampReaderScrollRatio(element.scrollTop / maxScroll);
+}
+
+function setElementScrollRatio(element, ratio) {
+    if (!(element instanceof HTMLElement)) {
+        return;
+    }
+
+    const normalizedRatio = clampReaderScrollRatio(ratio);
+    const maxScroll = Math.max(element.scrollHeight - element.clientHeight, 0);
+    if (!maxScroll) {
+        return;
+    }
+    element.scrollTop = maxScroll * normalizedRatio;
+}
+
+function createReaderProgressSaver(endpoint, buildPayload) {
+    if (!endpoint || typeof buildPayload !== "function") {
+        return {
+            schedule() {},
+            flush() {},
+        };
+    }
+
+    let timerId = 0;
+    let lastSavedSnapshot = "";
+
+    const persist = async ({ immediate = false } = {}) => {
+        if (timerId) {
+            window.clearTimeout(timerId);
+            timerId = 0;
+        }
+
+        const payload = buildPayload();
+        if (!payload) {
+            return;
+        }
+
+        const snapshot = JSON.stringify(payload);
+        if (snapshot === lastSavedSnapshot) {
+            return;
+        }
+
+        const send = async () => {
+            try {
+                await requestJson(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                lastSavedSnapshot = snapshot;
+            } catch {
+                // Ignore transient progress save failures to keep reading uninterrupted.
+            }
+        };
+
+        if (immediate) {
+            await send();
+            return;
+        }
+
+        timerId = window.setTimeout(() => {
+            timerId = 0;
+            void send();
+        }, 420);
+    };
+
+    return {
+        schedule() {
+            void persist();
+        },
+        flush() {
+            void persist({ immediate: true });
+        },
+    };
 }
 
 function readTrackCatalog() {
@@ -264,6 +359,76 @@ async function initDocxReaders() {
             )}</p>`;
         }
     }
+}
+
+function initLinearReaderProgress() {
+    const readers = document.querySelectorAll(
+        "[data-reader-progress-source]:not([data-section-reader])",
+    );
+    if (!readers.length) {
+        return;
+    }
+
+    readers.forEach((reader) => {
+        if (!(reader instanceof HTMLElement)) {
+            return;
+        }
+
+        const shell = getReaderShell(reader);
+        const endpoint = shell?.getAttribute("data-reader-progress-endpoint") || "";
+        if (!endpoint) {
+            return;
+        }
+
+        const initialRatio = clampReaderScrollRatio(
+            Number.parseFloat(reader.getAttribute("data-reader-resume-scroll-ratio") || "0"),
+        );
+        let hasRestoredInitialPosition = initialRatio <= 0;
+
+        const saver = createReaderProgressSaver(endpoint, () => ({
+            scroll_ratio: getElementScrollRatio(reader),
+        }));
+
+        const restoreInitialPosition = () => {
+            if (hasRestoredInitialPosition) {
+                return;
+            }
+
+            const maxScroll = Math.max(reader.scrollHeight - reader.clientHeight, 0);
+            if (!maxScroll) {
+                return;
+            }
+
+            hasRestoredInitialPosition = true;
+            window.requestAnimationFrame(() => {
+                setElementScrollRatio(reader, initialRatio);
+            });
+        };
+
+        restoreInitialPosition();
+        window.setTimeout(restoreInitialPosition, 180);
+        window.setTimeout(restoreInitialPosition, 480);
+
+        const observer = new MutationObserver(() => {
+            restoreInitialPosition();
+        });
+        observer.observe(reader, { childList: true, subtree: true });
+
+        const flushProgress = () => {
+            saver.flush();
+        };
+
+        reader.addEventListener("scroll", () => {
+            saver.schedule();
+        }, { passive: true });
+
+        window.addEventListener("pagehide", flushProgress);
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden") {
+                flushProgress();
+            }
+        });
+    });
 }
 
 function initVideoCardPreviews() {
@@ -418,8 +583,7 @@ function initImmersiveReaderShells() {
             closeReaderNotesDrawer(shell);
         }, { signal });
 
-        shell.classList.add("is-reader-top-visible", "is-reader-bottom-visible");
-        scheduleReaderUiHide(shell, 3200);
+        shell.classList.add("is-reader-top-visible");
 
         stage?.addEventListener("click", (event) => {
             if (!(event.target instanceof Element)) {
@@ -597,6 +761,8 @@ function initSectionReaders() {
         const progressMeters = Array.from(readerLayout.querySelectorAll("[data-reader-progress-meter]"));
         const progressFills = Array.from(readerLayout.querySelectorAll("[data-reader-progress-fill]"));
         const sectionLabels = Array.from(readerLayout.querySelectorAll("[data-reader-current-section-label]"));
+        const progressTexts = Array.from(readerLayout.querySelectorAll("[data-reader-progress-text]"));
+        const progressPercents = Array.from(readerLayout.querySelectorAll("[data-reader-progress-percent]"));
 
         if (
             !(reader instanceof HTMLElement) ||
@@ -650,6 +816,17 @@ function initSectionReaders() {
         let pendingAnnotationId = Number.isInteger(initialFocusAnnotationId)
             ? initialFocusAnnotationId
             : null;
+        let pendingResumeScrollRatio = clampReaderScrollRatio(
+            Number.parseFloat(reader.getAttribute("data-reader-resume-scroll-ratio") || "0"),
+        );
+        const saveProgressEndpoint =
+            (readerLayout instanceof Element
+                ? readerLayout.getAttribute("data-reader-progress-endpoint")
+                : "") || "";
+        const progressSaver = createReaderProgressSaver(saveProgressEndpoint, () => ({
+            section_index: activeIndex,
+            scroll_ratio: getElementScrollRatio(reader),
+        }));
 
         const clearAnnotationLocation = () => {
             const url = new URL(window.location.href);
@@ -774,6 +951,23 @@ function initSectionReaders() {
             showPeek(annotation);
         };
 
+        const restoreReaderScroll = () => {
+            if (pendingResumeScrollRatio <= 0) {
+                return;
+            }
+
+            const targetRatio = pendingResumeScrollRatio;
+            pendingResumeScrollRatio = 0;
+
+            window.requestAnimationFrame(() => {
+                setElementScrollRatio(reader, targetRatio);
+            });
+        };
+
+        const flushProgressSave = () => {
+            progressSaver.flush();
+        };
+
         const renderHighlights = () => {
             unwrapReaderHighlights(reader);
             clearActiveAnnotationState();
@@ -817,22 +1011,33 @@ function initSectionReaders() {
             }
 
             hidePeek();
+            restoreReaderScroll();
         };
 
         const sync = (index) => {
             activeIndex = Math.max(0, Math.min(index, manifest.length - 1));
             const section = manifest[activeIndex];
             const label = section?.label || `Section ${activeIndex + 1}`;
-            const optionLabel = section?.is_front_matter ? `${label} (Front matter)` : label;
+            const optionLabel = section?.is_front_matter
+                ? `${label} (${t("books.front_matter", {}, "Front matter")})`
+                : label;
             const percent = manifest.length ? ((activeIndex + 1) / manifest.length) * 100 : 0;
+            const progressLabel = `${activeIndex + 1} / ${manifest.length}`;
+            const topProgressLabel = section?.is_front_matter
+                ? `${t("books.front_matter", {}, "Front matter")} - ${t("books.section", {}, "Section")} ${progressLabel}`
+                : `${t("books.section", {}, "Section")} ${progressLabel}`;
 
             title.textContent = label;
-            progress.textContent = section?.is_front_matter
-                ? `Front matter - ${activeIndex + 1} / ${manifest.length}`
-                : `${activeIndex + 1} / ${manifest.length}`;
+            progress.textContent = topProgressLabel;
             sectionLabels.forEach((node) => {
                 node.textContent = label;
                 node.setAttribute("title", label);
+            });
+            progressTexts.forEach((node) => {
+                node.textContent = progressLabel;
+            });
+            progressPercents.forEach((node) => {
+                node.textContent = `${Math.round(percent)}%`;
             });
             progressFills.forEach((fill) => {
                 fill.style.width = `${percent}%`;
@@ -878,6 +1083,7 @@ function initSectionReaders() {
                 reader.innerHTML = cache.get(activeIndex) || "";
                 reader.scrollTop = 0;
                 renderHighlights();
+                progressSaver.schedule();
                 return;
             }
 
@@ -912,6 +1118,7 @@ function initSectionReaders() {
                 reader.scrollTop = 0;
                 sync(activeIndex);
                 renderHighlights();
+                progressSaver.schedule();
             } catch {
                 reader.innerHTML =
                     "<p class='helper-text'>This section could not be loaded right now.</p>";
@@ -1028,6 +1235,9 @@ function initSectionReaders() {
             }
         }, { signal });
 
+        reader.addEventListener("scroll", () => {
+            progressSaver.schedule();
+        }, { passive: true, signal });
         reader.addEventListener("mouseup", syncSelection, { signal });
         reader.addEventListener("touchend", syncSelection, { signal });
         reader.addEventListener("click", (event) => {
@@ -1082,9 +1292,17 @@ function initSectionReaders() {
             }, { signal });
         });
 
+        window.addEventListener("pagehide", flushProgressSave, { signal });
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden") {
+                flushProgressSave();
+            }
+        }, { signal });
+
         sync(activeIndex);
         writeLocation();
         renderHighlights();
+        progressSaver.schedule();
 
         if (!sectionReaderGlobalsBound) {
             sectionReaderGlobalsBound = true;
@@ -2500,6 +2718,7 @@ export function initLibraryFeatures() {
     initImmersiveReaderShells();
     initBookReaderSelection();
     initDocxReaders();
+    initLinearReaderProgress();
     initSectionReaders();
     initEpubReaders();
     initTimestampHelpers();

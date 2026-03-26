@@ -2,11 +2,10 @@
 
 {% block content %}
 {% set reader_note_count = book.annotations|length %}
-{% set reader_has_sections = book.reader_kind == "html" and section_manifest %}
-{% set reader_progress_percent = ((active_section_index + 1) * 100 / (section_manifest|length)) if reader_has_sections else 0 %}
 <section
     class="reader-layout reader-layout--immersive reader-layout--{{ book.reader_kind }}"
     data-reader-shell
+    data-reader-progress-endpoint="{{ url_for('library.save_book_reader_progress', book_id=book.id) }}"
     {% if reader_focus_annotation_id %}
         data-reader-focus-annotation-id="{{ reader_focus_annotation_id }}"
     {% endif %}
@@ -63,7 +62,7 @@
                     {% if book.reader_kind == "html" %}
                         <span class="reader-overlay__progress" data-section-progress>
                             {% if section_manifest %}
-                                {{ active_section_index + 1 }} / {{ section_manifest|length }}
+                                {{ t('books.section') }} {{ active_section_index + 1 }} / {{ section_manifest|length }}
                             {% else %}
                                 {{ t('books.preparing') }}
                             {% endif %}
@@ -78,41 +77,18 @@
                 </div>
             </div>
 
-            <div class="reader-overlay__row reader-overlay__row--status">
-                <div class="reader-chip-row">
-                    <span class="reader-chip">{{ book_status_label(book.status) }}</span>
-                    <span class="reader-chip">{{ book.author_name or t('books.personal_archive') }}</span>
-                    <span class="reader-chip">{{ book.source_format|upper }}</span>
-                    {% if book.category %}
-                        <span class="reader-chip">{{ book.category.name }}</span>
-                    {% endif %}
-                </div>
-
-                {% if book.reader_kind == "html" %}
-                    <div
-                        class="reader-progress-meter"
-                        data-reader-progress-meter
-                        role="progressbar"
-                        aria-label="{{ t('common.chapter_section') }}"
-                        aria-valuemin="1"
-                        aria-valuemax="{{ section_manifest|length if section_manifest else 1 }}"
-                        aria-valuenow="{{ active_section_index + 1 if section_manifest else 1 }}"
-                    >
-                        <span
-                            class="reader-progress-meter__fill"
-                            data-reader-progress-fill
-                            style="width: {{ '%.2f'|format(reader_progress_percent) }}%;"
-                        ></span>
-                    </div>
-                {% endif %}
-            </div>
         </header>
 
         <div class="reader-surface__stage" data-reader-stage>
             {% if book.reader_kind == "pdf" %}
                 <embed class="reader-surface__embed" src="{{ url_for('static', filename=reader_source_path) }}" type="application/pdf">
             {% elif book.reader_kind == "text" %}
-                <div class="reader-surface__content" data-book-selection-source>
+                <div
+                    class="reader-surface__content"
+                    data-book-selection-source
+                    data-reader-progress-source
+                    data-reader-resume-scroll-ratio="{{ '%.6f'|format(reader_resume_scroll_ratio or 0) }}"
+                >
                     {% for paragraph in text_content.split('\n\n') if paragraph.strip() %}
                         <p>{{ paragraph|e|replace('\n', '<br>')|safe }}</p>
                     {% endfor %}
@@ -121,8 +97,10 @@
                 <div
                     class="reader-surface__content"
                     data-book-selection-source
+                    data-reader-progress-source
                     data-docx-reader
                     data-docx-src="{{ url_for('static', filename=reader_source_path) }}"
+                    data-reader-resume-scroll-ratio="{{ '%.6f'|format(reader_resume_scroll_ratio or 0) }}"
                 >
                     <p class="helper-text">{{ t('books.preparing_docx') }}</p>
                 </div>
@@ -132,9 +110,11 @@
                 <div
                     class="reader-surface__content reader-surface__content--book"
                     data-book-selection-source
+                    data-reader-progress-source
                     data-section-reader
                     data-section-endpoint="{{ url_for('library.book_reader_section', book_id=book.id) }}"
                     data-section-initial-index="{{ active_section_index }}"
+                    data-reader-resume-scroll-ratio="{{ '%.6f'|format(reader_resume_scroll_ratio or 0) }}"
                 >
                     {{ current_section_markup|safe if current_section_markup else (html_content|safe if html_content else '<p class="helper-text">' ~ t('books.reader_preparing') ~ '</p>') }}
                 </div>
@@ -179,7 +159,7 @@
             <div class="reader-bottom-actions">
                 <div class="reader-chip-row reader-chip-row--compact">
                     {% if book.reader_kind == "html" %}
-                        <span class="reader-chip reader-chip--ghost" data-reader-current-section-label>{{ current_section_label }}</span>
+                        <span class="reader-chip reader-chip--ghost" data-reader-current-section-label title="{{ current_section_label }}">{{ current_section_label }}</span>
                     {% endif %}
                     <span class="reader-chip reader-chip--ghost">{{ reader_note_count }} {{ t('common.notes') }}</span>
                 </div>

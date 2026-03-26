@@ -346,6 +346,9 @@ class Book(db.Model):
     cover_stored_name = db.Column(db.String(255), nullable=True)
     cover_relative_path = db.Column(db.String(255), nullable=True)
     cover_mime_type = db.Column(db.String(120), nullable=True)
+    last_read_section_index = db.Column(db.Integer, nullable=True)
+    last_read_scroll_ratio = db.Column(db.Float, nullable=True)
+    last_read_at = db.Column(db.DateTime, nullable=True)
     size_bytes = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
     updated_at = db.Column(

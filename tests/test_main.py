@@ -599,6 +599,48 @@ def test_html_reader_skips_front_matter_by_default(admin_client, app):
     assert b"(Front matter)" in reader_response.data
 
 
+def test_html_reader_resumes_from_saved_progress(admin_client, app):
+    response = admin_client.post(
+        "/books",
+        data={
+            "title": "Resume Draft",
+            "status": "reading",
+            "source_file": (
+                BytesIO(build_epub_with_front_matter_bytes("Resume Draft")),
+                "resume.epub",
+            ),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+
+    with app.app_context():
+        book = Book.query.filter_by(title="Resume Draft").one()
+        book_id = book.id
+
+    progress_response = admin_client.post(
+        f"/books/{book_id}/reader/progress",
+        data=json.dumps({"section_index": 1, "scroll_ratio": 0.35}),
+        content_type="application/json",
+    )
+    assert progress_response.status_code == 200
+    assert progress_response.get_json()["ok"] is True
+
+    with app.app_context():
+        book = db.session.get(Book, book_id)
+        assert book.last_read_section_index == 1
+        assert book.last_read_scroll_ratio == 0.35
+        assert book.last_read_at is not None
+
+    reader_response = admin_client.get(f"/books/{book_id}/reader")
+    assert reader_response.status_code == 200
+    assert b'data-section-initial-index="1"' in reader_response.data
+    assert b'data-reader-resume-scroll-ratio="0.350000"' in reader_response.data
+    assert b'data-reader-progress-endpoint="/books/' in reader_response.data
+
+
 def test_html_reader_annotation_persists_precise_anchor(admin_client, app):
     response = admin_client.post(
         "/books",
