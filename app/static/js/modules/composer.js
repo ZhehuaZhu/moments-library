@@ -104,6 +104,8 @@ export function initComposerModal() {
     const openButtons = document.querySelectorAll("[data-open-composer]");
     const closeButtons = modal.querySelectorAll("[data-close-composer]");
     const fileInput = modal.querySelector("[data-file-input]");
+    const libraryInput = modal.querySelector("[data-library-input]");
+    const cameraInput = modal.querySelector("[data-camera-input]");
     const form = modal.querySelector("[data-composer-form]");
     const previewSection = modal.querySelector("[data-composer-preview]");
     const previewList = modal.querySelector("[data-composer-file-list]");
@@ -169,6 +171,32 @@ export function initComposerModal() {
 
         buildFileList(fileInput, selectedFiles);
         updateFileSummary(modal);
+    };
+
+    const appendSelectedFiles = (files) => {
+        if (!files.length) {
+            return;
+        }
+
+        const existing = new Set(selectedFiles.map((entry) => fileSignature(entry.file)));
+        files.forEach((file) => {
+            const signature = fileSignature(file);
+            if (existing.has(signature)) {
+                return;
+            }
+
+            selectedFiles.push({
+                id: crypto.randomUUID(),
+                file,
+                kind: previewKindForFile(file),
+                objectUrl: URL.createObjectURL(file),
+            });
+            existing.add(signature);
+        });
+
+        syncInputFiles();
+        renderPreviewList();
+        renderCrossPostOptions();
     };
 
     const renderPreviewList = () => {
@@ -781,34 +809,22 @@ export function initComposerModal() {
     });
 
     if (fileInput) {
-        fileInput.addEventListener("change", () => {
-            const files = Array.from(fileInput.files || []);
-            if (!files.length) {
-                return;
-            }
-
-            const existing = new Set(selectedFiles.map((entry) => fileSignature(entry.file)));
-            files.forEach((file) => {
-                const signature = fileSignature(file);
-                if (existing.has(signature)) {
-                    return;
-                }
-
-                selectedFiles.push({
-                    id: crypto.randomUUID(),
-                    file,
-                    kind: previewKindForFile(file),
-                    objectUrl: URL.createObjectURL(file),
-                });
-                existing.add(signature);
-            });
-
-            syncInputFiles();
-            renderPreviewList();
-            renderCrossPostOptions();
-        });
         updateFileSummary(modal);
     }
+
+    libraryInput?.addEventListener("change", () => {
+        appendSelectedFiles(Array.from(libraryInput.files || []));
+        if (libraryInput instanceof HTMLInputElement) {
+            libraryInput.value = "";
+        }
+    });
+
+    cameraInput?.addEventListener("change", () => {
+        appendSelectedFiles(Array.from(cameraInput.files || []));
+        if (cameraInput instanceof HTMLInputElement) {
+            cameraInput.value = "";
+        }
+    });
 
     crossPostOptions.forEach((option) => {
         const checkbox = option.querySelector("[data-cross-post-checkbox]");

@@ -99,6 +99,16 @@ async function copyText(text) {
     field.remove();
 }
 
+function setShareFeedback(row, message = "", isVisible = true) {
+    const feedback = row.querySelector("[data-share-feedback]");
+    if (!(feedback instanceof HTMLElement)) {
+        return;
+    }
+
+    feedback.textContent = message;
+    feedback.hidden = !isVisible || !message;
+}
+
 function initCrossPostCopy() {
     document.querySelectorAll("[data-copy-cross-post-caption]").forEach((button) => {
         if (button.dataset.crossPostCopyBound === "true") {
@@ -160,10 +170,33 @@ function initCrossPostActions() {
     });
 }
 
+function initMomentShare() {
+    document.querySelectorAll("[data-share-platform]").forEach((button) => {
+        if (button.dataset.shareBound === "true") {
+            return;
+        }
+
+        button.dataset.shareBound = "true";
+        button.addEventListener("click", () => {
+            const row = button.closest("[data-share-platform-row]");
+            if (!row) {
+                return;
+            }
+
+            const placeholderLabel =
+                button.dataset.sharePlaceholderLabel ||
+                "Jump window placeholder is reserved here for the next step.";
+
+            setShareFeedback(row, placeholderLabel);
+        });
+    });
+}
+
 export function initFeedInteractions() {
     initFolderUpdates();
     initDeleteMoments();
     initRestoreMoments();
     initCrossPostCopy();
     initCrossPostActions();
+    initMomentShare();
 }

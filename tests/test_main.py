@@ -273,6 +273,9 @@ def test_admin_feed_includes_composer_preview_workspace(admin_client):
     assert response.status_code == 200
     assert b"data-composer-preview" in response.data
     assert b"data-composer-file-list" in response.data
+    assert b"data-library-input" in response.data
+    assert b"data-camera-input" in response.data
+    assert b'capture="environment"' in response.data
     assert b"Attachment Order" in response.data
     assert b"data-citation-toggle" in response.data
     assert b"data-citation-search" in response.data
@@ -280,9 +283,33 @@ def test_admin_feed_includes_composer_preview_workspace(admin_client):
     assert b"vendor/mammoth.browser.min.js" not in response.data
     assert b"vendor/epub.min.js" not in response.data
     assert b"Add Citation" in response.data
+    assert b"Choose Existing Media" in response.data
+    assert b"Take Photo / Video" in response.data
     assert b"Cross-Post Assistant" in response.data
     assert b'name="cross_post_targets"' in response.data
     assert b"WeChat Moments" in response.data
+
+
+def test_admin_feed_moment_menu_includes_share_choices(admin_client):
+    create_response = admin_client.post(
+        "/moments",
+        data={
+            "content": "Share from the overflow menu.",
+            "files": (BytesIO(build_photo_bytes()), "share-menu.jpg"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+    assert create_response.status_code == 200
+
+    response = admin_client.get("/")
+    assert response.status_code == 200
+    assert b"data-toggle-share-platforms" in response.data
+    assert b"Share To" in response.data
+    assert b"Placeholder only for now" in response.data
+    assert b"WeChat Moments" in response.data
+    assert b"Instagram" in response.data
+    assert b"Xiaohongshu" in response.data
 
 
 def test_admin_can_prepare_cross_post_targets_for_moment(admin_client, app):

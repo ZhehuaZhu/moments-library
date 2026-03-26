@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (
         has(
-            "[data-action='delete-moment'], [data-action='restore-moment'], [data-folder-moment-count], [data-folder-moment-list], [data-cross-post-action], [data-copy-cross-post-caption]",
+            "[data-action='delete-moment'], [data-action='restore-moment'], [data-folder-moment-count], [data-folder-moment-list], [data-cross-post-action], [data-copy-cross-post-caption], [data-share-platform], [data-toggle-share-platforms]",
         )
     ) {
         tasks.push(import("./modules/feed.js").then(({ initFeedInteractions }) => initFeedInteractions()));

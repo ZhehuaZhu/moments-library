@@ -70,18 +70,41 @@
                     {% include "includes/folder_picker.html" %}
                 </div>
 
-                <label class="field">
+                <div class="field">
                     <span>{{ t('common.attachments') }}</span>
                     <input
                         type="file"
                         name="files"
-                        class="input input--file"
+                        class="composer-input-hidden"
                         data-file-input
                         multiple
                         accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
                     >
+                    <div class="composer-attachment-actions">
+                        <label class="button button--ghost composer-attachment-trigger">
+                            <input
+                                type="file"
+                                class="composer-input-hidden"
+                                data-library-input
+                                multiple
+                                accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
+                            >
+                            <span>{{ t('composer.choose_media') }}</span>
+                        </label>
+                        <label class="button composer-attachment-trigger">
+                            <input
+                                type="file"
+                                class="composer-input-hidden"
+                                data-camera-input
+                                accept="image/*,video/*"
+                                capture="environment"
+                            >
+                            <span>{{ t('composer.open_camera') }}</span>
+                        </label>
+                    </div>
+                    <small class="helper-text">{{ t('composer.attachments_hint') }}</small>
                     <small class="helper-text" data-file-summary hidden></small>
-                </label>
+                </div>
             </div>
 
             <section class="composer-preview" data-composer-preview hidden>
