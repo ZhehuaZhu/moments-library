@@ -299,10 +299,11 @@
     top: 108px;
     display: grid;
     gap: 14px;
-    padding: 20px 18px;
+    padding: 20px 26px 20px 18px;
     max-height: calc(100vh - 150px);
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-gutter: stable;
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 248, 0.96));
 }
@@ -366,11 +367,26 @@
 .atlas-moment-list {
     display: grid;
     gap: 10px;
+    padding-right: 2px;
 }
 
 .atlas-inspector__quicklist {
     display: grid;
     gap: 10px;
+}
+
+.atlas-inspector::-webkit-scrollbar {
+    width: 10px;
+}
+
+.atlas-inspector::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.atlas-inspector::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(120, 133, 144, 0.42);
+    border: 2px solid rgba(255, 255, 255, 0.96);
 }
 
 .atlas-inspector__note {
