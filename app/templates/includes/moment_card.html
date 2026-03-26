@@ -50,28 +50,32 @@
 
     {% if moment.citation_card %}
         {% set citation = moment.citation_card %}
+        {% set citation_is_music = citation.kind in ['track', 'track_comment'] %}
         {% if citation.href %}
-            <a class="moment-citation" href="{{ citation.href }}">
+            <a class="moment-citation{% if citation_is_music %} moment-citation--music{% endif %}" href="{{ citation.href }}">
         {% else %}
-            <div class="moment-citation">
+            <div class="moment-citation{% if citation_is_music %} moment-citation--music{% endif %}">
         {% endif %}
-            <span class="moment-citation__cover">
+            <span class="moment-citation__cover{% if citation_is_music %} moment-citation__cover--music{% endif %}">
                 {% if citation.cover_path %}
                     <img src="{{ citation.cover_path }}" alt="{{ citation.title }}">
                 {% else %}
                     <span>{{ (citation.label or t('composer.citation_default'))[:2] }}</span>
                 {% endif %}
-            </span>
-            <span class="moment-citation__body">
-                {% if citation.label %}
-                    <span class="moment-citation__label">{{ citation.label }}</span>
+                {% if citation_is_music %}
+                    <span class="moment-citation__music-glyph" aria-hidden="true">&#9835;</span>
                 {% endif %}
-                <strong>{{ citation.title }}</strong>
+            </span>
+            <span class="moment-citation__body{% if citation_is_music %} moment-citation__body--music{% endif %}">
+                {% if citation.label %}
+                    <span class="moment-citation__label{% if citation_is_music %} moment-citation__label--music{% endif %}">{{ citation.label }}</span>
+                {% endif %}
+                <strong class="{% if citation_is_music %}moment-citation__title--music{% endif %}">{{ citation.title }}</strong>
                 {% if citation.subtitle %}
-                    <span class="moment-citation__subtitle">{{ citation.subtitle }}</span>
+                    <span class="moment-citation__subtitle{% if citation_is_music %} moment-citation__subtitle--music{% endif %}">{{ citation.subtitle }}</span>
                 {% endif %}
                 {% if citation.excerpt %}
-                    <span class="moment-citation__excerpt">{{ citation.excerpt }}</span>
+                    <span class="moment-citation__excerpt{% if citation_is_music %} moment-citation__excerpt--music{% endif %}">{{ citation.excerpt }}</span>
                 {% endif %}
             </span>
         {% if citation.href %}

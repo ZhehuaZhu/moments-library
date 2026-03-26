@@ -1109,6 +1109,38 @@ def test_admin_can_publish_citation_only_moment(admin_client, app):
         assert moment.citation_title == "Cited Book"
 
 
+def test_track_citation_uses_music_card_presentation(admin_client, app):
+    with app.app_context():
+        track = Track(
+            title="Garden Theme",
+            artist_name="Zhehua",
+            owner_id=1,
+            original_name="garden-theme.mp3",
+            stored_name="garden-theme.mp3",
+            relative_path="uploads/2026/03/garden-theme.mp3",
+            mime_type="audio/mpeg",
+            size_bytes=12,
+            cover_relative_path="uploads/2026/03/garden-theme-cover.jpg",
+        )
+        db.session.add(track)
+        db.session.commit()
+        track_id = track.id
+
+    response = admin_client.post(
+        "/moments",
+        data={
+            "citation_kind": "track",
+            "citation_target_id": str(track_id),
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"moment-citation--music" in response.data
+    assert b"Garden Theme" in response.data
+    assert b"Zhehua" in response.data
+
+
 def test_citation_search_endpoint_returns_library_items(admin_client, app):
     with app.app_context():
         book = Book(
