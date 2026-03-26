@@ -52,6 +52,8 @@ def ensure_local_schema() -> None:
 
     if "moments" in existing_tables:
         moment_columns = {column["name"] for column in inspector.get_columns("moments")}
+        if "cross_post_targets" not in moment_columns:
+            db.session.execute(text("ALTER TABLE moments ADD COLUMN cross_post_targets TEXT"))
         if "country_code" not in moment_columns:
             db.session.execute(text("ALTER TABLE moments ADD COLUMN country_code TEXT"))
         if "country_name" not in moment_columns:

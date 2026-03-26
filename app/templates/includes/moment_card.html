@@ -84,4 +84,97 @@
     {% if moment.attachments %}
         {% include "includes/moment_media_cluster.html" %}
     {% endif %}
+
+    {% if can_manage and not recycle_view and moment.cross_post_plan %}
+        <section class="cross-post-panel">
+            <div class="section-title-row section-title-row--compact">
+                <div>
+                    <h3>{{ t('cross_post.title') }}</h3>
+                </div>
+            </div>
+
+            <div class="cross-post-panel__list">
+                {% for entry in moment.cross_post_plan %}
+                    <article class="cross-post-card" data-cross-post-card>
+                        <div class="cross-post-card__header">
+                            <div class="cross-post-card__copy">
+                                <strong>{{ t(entry.label_key) }}</strong>
+                                <p class="helper-text">{{ t(entry.requirements_key) }}</p>
+                            </div>
+                            <span
+                                class="cross-post-status cross-post-status--{% if entry.published %}published{% elif entry.eligible %}ready{% else %}blocked{% endif %}"
+                            >
+                                {{ t(entry.status_key) }}
+                            </span>
+                        </div>
+
+                        {% if entry.published_at %}
+                            <p class="helper-text">{{ t('cross_post.published_at', time=entry.published_at|datetimeformat) }}</p>
+                        {% elif entry.reason_key %}
+                            <p class="helper-text">{{ t(entry.reason_key) }}</p>
+                        {% endif %}
+
+                        {% if entry.media_attachments %}
+                            <div class="cross-post-assets">
+                                <span class="cross-post-assets__label">{{ t('cross_post.assets') }}</span>
+                                <div class="cross-post-assets__list">
+                                    {% for attachment in entry.media_attachments %}
+                                        <a
+                                            class="cross-post-assets__item"
+                                            href="{{ url_for('static', filename=attachment.relative_path) }}"
+                                            target="_blank"
+                                            rel="noopener"
+                                            title="{{ attachment.original_name }}"
+                                        >
+                                            {{ loop.index }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if entry.caption_available %}
+                            <textarea hidden data-cross-post-caption>{{ entry.caption }}</textarea>
+                        {% endif %}
+
+                        <div class="cross-post-card__actions">
+                            {% if entry.caption_available %}
+                                <button
+                                    type="button"
+                                    class="button button--ghost button--compact"
+                                    data-copy-cross-post-caption
+                                    data-copy-label="{{ t('cross_post.copy_caption') }}"
+                                    data-copied-label="{{ t('cross_post.copied') }}"
+                                >
+                                    {{ t('cross_post.copy_caption') }}
+                                </button>
+                            {% else %}
+                                <span class="helper-text">{{ t('cross_post.no_caption') }}</span>
+                            {% endif %}
+
+                            {% if entry.eligible and not entry.published %}
+                                <button
+                                    type="button"
+                                    class="button button--compact"
+                                    data-cross-post-action="publish"
+                                    data-cross-post-platform="{{ entry.platform }}"
+                                >
+                                    {{ t('cross_post.mark_published') }}
+                                </button>
+                            {% elif entry.published %}
+                                <button
+                                    type="button"
+                                    class="button button--subtle button--compact"
+                                    data-cross-post-action="reset"
+                                    data-cross-post-platform="{{ entry.platform }}"
+                                >
+                                    {{ t('cross_post.reset') }}
+                                </button>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
 </article>
