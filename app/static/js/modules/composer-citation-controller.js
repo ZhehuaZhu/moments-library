@@ -38,6 +38,8 @@ export function createComposerCitationController({
     let citationSearchTimer = null;
     let citationRequestToken = 0;
 
+    const hasToggleButton = citationToggle instanceof HTMLButtonElement;
+
     function syncCitationFields() {
         if (
             !(citationKindField instanceof HTMLInputElement) ||
@@ -124,9 +126,6 @@ export function createComposerCitationController({
         citationResults.replaceChildren();
 
         if (!items.length) {
-            if (!query) {
-                return;
-            }
             const empty = document.createElement("div");
             empty.className = "empty-state empty-state--compact";
             const message = document.createElement("p");
@@ -180,10 +179,10 @@ export function createComposerCitationController({
                 selectedCitation = item;
                 renderSelectedCitation();
                 onSelectionChange();
-                if (citationPanel instanceof HTMLElement) {
+                if (hasToggleButton && citationPanel instanceof HTMLElement) {
                     citationPanel.hidden = true;
                 }
-                if (citationToggle instanceof HTMLButtonElement) {
+                if (hasToggleButton && citationToggle instanceof HTMLButtonElement) {
                     citationToggle.setAttribute("aria-expanded", "false");
                 }
             }, { signal });
@@ -285,9 +284,15 @@ export function createComposerCitationController({
         }
     }, { once: true });
 
+    if (!hasToggleButton && citationPanel instanceof HTMLElement) {
+        citationPanel.hidden = false;
+    }
+    void loadCitationResults();
+
     return {
         getSelectedCitation: () => selectedCitation,
         renderSelectedCitation,
         syncCitationFields,
+        loadCitationResults,
     };
 }

@@ -99,13 +99,48 @@ export function initComposerModal() {
         document.body.classList.remove("is-modal-open");
     };
 
+    async function submitComposerForm(event) {
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        event.preventDefault();
+        fileController?.syncInputFiles();
+        citationController?.syncCitationFields();
+
+        const submitButton =
+            form.querySelector('.composer-actions [type="submit"]');
+        if (submitButton instanceof HTMLButtonElement) {
+            submitButton.disabled = true;
+        }
+
+        try {
+            const formData = new FormData(form);
+            formData.delete("files");
+            for (const entry of fileController?.getSelectedFiles() || []) {
+                formData.append("files", entry.file, entry.file.name);
+            }
+
+            const response = await fetch(form.action, {
+                method: form.method || "POST",
+                body: formData,
+                credentials: "same-origin",
+                redirect: "follow",
+            });
+
+            window.location.href = response.url || window.location.href;
+        } catch (_error) {
+            if (submitButton instanceof HTMLButtonElement) {
+                submitButton.disabled = false;
+            }
+            window.alert("Publishing failed. Please try again.");
+        }
+    }
+
     openButtons.forEach((button) => button.addEventListener("click", openModal, { signal }));
     closeButtons.forEach((button) => button.addEventListener("click", closeModal, { signal }));
 
-    form?.addEventListener("submit", () => {
-        fileController?.syncInputFiles();
-        citationController?.syncCitationFields();
-    }, { signal });
+    form?.addEventListener("submit", submitComposerForm, { signal });
 
     bindLocationResolver(modal);
     citationController.renderSelectedCitation();

@@ -15,11 +15,11 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <label class="field">
-                <span>{{ t('common.text') }}</span>
                 <textarea
                     name="content"
                     rows="6"
                     class="input textarea"
+                    placeholder="{{ t('composer.write_placeholder') }}"
                 ></textarea>
             </label>
 
@@ -64,24 +64,12 @@
                     <span>{{ t('composer.cite') }}</span>
                 </summary>
                 <section class="composer-citation composer-disclosure__body" data-citation-shell>
-                    <div class="section-title-row section-title-row--compact">
-                        <div><h3>{{ t('composer.cite') }}</h3></div>
-                        <button
-                            type="button"
-                            class="button button--ghost button--compact"
-                            data-citation-toggle
-                            aria-expanded="false"
-                        >
-                            {{ t('composer.add_citation') }}
-                        </button>
-                    </div>
-
                     <input type="hidden" name="citation_kind" data-citation-kind>
                     <input type="hidden" name="citation_target_id" data-citation-target-id>
 
                     <div class="composer-citation__selected" data-selected-citation hidden></div>
 
-                    <div class="composer-citation__panel" data-citation-panel hidden>
+                    <div class="composer-citation__panel" data-citation-panel>
                         <div class="composer-citation__scopes" role="tablist" aria-label="{{ t('composer.citation_scope') }}">
                             <button type="button" class="composer-citation__scope is-active" data-citation-scope="all">{{ t('common.all') }}</button>
                             <button type="button" class="composer-citation__scope" data-citation-scope="books">{{ module_labels.books }}</button>
