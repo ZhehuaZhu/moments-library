@@ -335,7 +335,7 @@ function openReaderNotesDrawer(scope) {
 
     const drawer = shell.querySelector("[data-reader-notes-drawer]");
     if (drawer instanceof HTMLElement) {
-        shell.classList.add("is-reader-bottom-visible", "is-reader-notes-visible");
+        shell.classList.add("is-reader-top-visible", "is-reader-bottom-visible", "is-reader-notes-visible");
         drawer.setAttribute("aria-hidden", "false");
         clearReaderUiTimer(shell);
         return drawer;
@@ -386,6 +386,9 @@ function initImmersiveReaderShells() {
         notesBackdrop?.addEventListener("click", () => {
             closeReaderNotesDrawer(shell);
         });
+
+        shell.classList.add("is-reader-top-visible", "is-reader-bottom-visible");
+        scheduleReaderUiHide(shell, 3200);
 
         stage?.addEventListener("click", (event) => {
             if (!(event.target instanceof Element)) {
@@ -551,6 +554,9 @@ function initSectionReaders() {
         const peekQuote = readerLayout.querySelector("[data-reader-annotation-peek-quote]");
         const peekComment = readerLayout.querySelector("[data-reader-annotation-peek-comment]");
         const annotationCards = Array.from(readerLayout.querySelectorAll("[data-annotation-card]"));
+        const progressMeters = Array.from(readerLayout.querySelectorAll("[data-reader-progress-meter]"));
+        const progressFills = Array.from(readerLayout.querySelectorAll("[data-reader-progress-fill]"));
+        const sectionLabels = Array.from(readerLayout.querySelectorAll("[data-reader-current-section-label]"));
 
         if (
             !(reader instanceof HTMLElement) ||
@@ -778,11 +784,23 @@ function initSectionReaders() {
             const section = manifest[activeIndex];
             const label = section?.label || `Section ${activeIndex + 1}`;
             const optionLabel = section?.is_front_matter ? `${label} (Front matter)` : label;
+            const percent = manifest.length ? ((activeIndex + 1) / manifest.length) * 100 : 0;
 
             title.textContent = label;
             progress.textContent = section?.is_front_matter
                 ? `Front matter - ${activeIndex + 1} / ${manifest.length}`
                 : `${activeIndex + 1} / ${manifest.length}`;
+            sectionLabels.forEach((node) => {
+                node.textContent = label;
+                node.setAttribute("title", label);
+            });
+            progressFills.forEach((fill) => {
+                fill.style.width = `${percent}%`;
+            });
+            progressMeters.forEach((meter) => {
+                meter.setAttribute("aria-valuemax", String(manifest.length));
+                meter.setAttribute("aria-valuenow", String(activeIndex + 1));
+            });
             toc.value = String(activeIndex);
             if (toc.options[activeIndex]) {
                 toc.options[activeIndex].textContent = optionLabel;

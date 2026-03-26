@@ -1156,3 +1156,226 @@
         border-radius: 22px;
     }
 }
+
+@media (max-width: 1080px) {
+    .app-body.book-reader-page .reader-overlay {
+        left: 18px;
+        right: 18px;
+        padding: 16px 18px;
+    }
+
+    .app-body.book-reader-page .reader-overlay--top {
+        top: 18px;
+    }
+
+    .app-body.book-reader-page .reader-overlay--bottom {
+        bottom: 18px;
+    }
+
+    .app-body.book-reader-page .reader-overlay__row--status {
+        grid-template-columns: 1fr;
+    }
+
+    .app-body.book-reader-page .reader-notes-sheet {
+        top: 18px;
+        right: 18px;
+        bottom: 18px;
+        width: min(400px, calc(100vw - 36px));
+    }
+}
+
+@media (max-width: 720px) {
+    .app-body.book-reader-page .page-shell {
+        padding: 10px;
+    }
+
+    .app-body.book-reader-page .main-panel {
+        padding-bottom: 116px;
+    }
+
+    .app-body.book-reader-page .reader-surface--immersive {
+        min-height: calc(100vh - 20px);
+        border-radius: 28px;
+    }
+
+    .app-body.book-reader-page .reader-surface--immersive::before {
+        inset: 12px;
+        border-radius: 22px;
+    }
+
+    .app-body.book-reader-page .reader-surface__stage,
+    .app-body.book-reader-page .reader-surface__content,
+    .app-body.book-reader-page .reader-surface__content--book,
+    .app-body.book-reader-page .reader-surface__embed,
+    .app-body.book-reader-page .reader-surface__viewport,
+    .app-body.book-reader-page .reader-surface__frame {
+        min-height: calc(100vh - 20px);
+        height: calc(100vh - 20px);
+        border-radius: 28px;
+    }
+
+    .app-body.book-reader-page .reader-overlay {
+        left: 12px;
+        right: 12px;
+        padding: 14px;
+        border-radius: 24px;
+        gap: 12px;
+    }
+
+    .app-body.book-reader-page .reader-overlay--top {
+        top: 12px;
+    }
+
+    .app-body.book-reader-page .reader-overlay--bottom {
+        bottom: 12px;
+    }
+
+    .app-body.book-reader-page .reader-overlay__row--top {
+        grid-template-columns: 1fr;
+    }
+
+    .app-body.book-reader-page .reader-overlay__edge,
+    .app-body.book-reader-page .reader-overlay__edge--trailing {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .app-body.book-reader-page .reader-book-badge {
+        grid-template-columns: 52px minmax(0, 1fr);
+    }
+
+    .app-body.book-reader-page .reader-chip-row {
+        justify-content: center;
+    }
+
+    .app-body.book-reader-page .reader-bottom-bar {
+        grid-template-columns: 1fr;
+        padding: 12px;
+    }
+
+    .app-body.book-reader-page .reader-bottom-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .app-body.book-reader-page .reader-bottom-actions__buttons {
+        justify-content: flex-start;
+    }
+
+    .app-body.book-reader-page .reader-bottom-actions__buttons .button {
+        width: 100%;
+    }
+
+    .app-body.book-reader-page .reader-surface__content {
+        padding: 96px 24px 120px;
+    }
+
+    .app-body.book-reader-page .reader-surface__content--book {
+        padding: 16px;
+    }
+
+    .app-body.book-reader-page .book-reader-section,
+    .app-body.book-reader-page .reader-layout--immersive .book-reader-section {
+        max-width: none;
+        padding: 40px 22px 108px;
+        border-radius: 24px;
+    }
+
+    .app-body.book-reader-page .reader-notes-sheet {
+        top: auto;
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+        width: auto;
+        max-height: min(78vh, 760px);
+        padding: 18px;
+        border-radius: 28px;
+        transform: translateY(18px);
+    }
+
+    .app-body.book-reader-page .reader-notes-summary {
+        grid-template-columns: 64px minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .app-body.book-reader-page .page-shell {
+        padding: 8px;
+    }
+
+    .app-body.book-reader-page .reader-hotspot {
+        height: 56px;
+    }
+
+    .app-body.book-reader-page .reader-overlay {
+        left: 8px;
+        right: 8px;
+        padding: 12px;
+        border-radius: 20px;
+    }
+
+    .app-body.book-reader-page .reader-overlay--top {
+        top: 8px;
+    }
+
+    .app-body.book-reader-page .reader-overlay--bottom {
+        bottom: 8px;
+    }
+
+    .app-body.book-reader-page .reader-book-badge {
+        grid-template-columns: 46px minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .app-body.book-reader-page .reader-book-badge__cover {
+        width: 46px;
+        height: 62px;
+        border-radius: 14px;
+    }
+
+    .app-body.book-reader-page .reader-overlay__progress,
+    .app-body.book-reader-page .reader-overlay .button,
+    .app-body.book-reader-page .reader-chip {
+        min-height: 36px;
+        font-size: 0.82rem;
+    }
+
+    .app-body.book-reader-page .reader-surface--immersive,
+    .app-body.book-reader-page .reader-surface__stage,
+    .app-body.book-reader-page .reader-surface__content,
+    .app-body.book-reader-page .reader-surface__content--book,
+    .app-body.book-reader-page .reader-surface__embed,
+    .app-body.book-reader-page .reader-surface__viewport,
+    .app-body.book-reader-page .reader-surface__frame {
+        border-radius: 22px;
+    }
+
+    .app-body.book-reader-page .reader-surface__content--book {
+        padding: 12px;
+    }
+
+    .app-body.book-reader-page .book-reader-section,
+    .app-body.book-reader-page .reader-layout--immersive .book-reader-section {
+        padding: 34px 18px 98px;
+        border-radius: 20px;
+    }
+
+    .app-body.book-reader-page .reader-notes-sheet {
+        right: 8px;
+        bottom: 8px;
+        left: 8px;
+        padding: 16px;
+        border-radius: 22px;
+    }
+
+    .app-body.book-reader-page .reader-notes-summary {
+        grid-template-columns: 56px minmax(0, 1fr);
+        padding: 14px;
+    }
+
+    .app-body.book-reader-page .reader-notes-summary__cover {
+        width: 56px;
+        height: 78px;
+        border-radius: 16px;
+    }
+}
