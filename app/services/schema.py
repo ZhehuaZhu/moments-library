@@ -49,6 +49,12 @@ def ensure_local_schema() -> None:
             db.session.execute(text("ALTER TABLE books ADD COLUMN cover_relative_path TEXT"))
         if "cover_mime_type" not in book_columns:
             db.session.execute(text("ALTER TABLE books ADD COLUMN cover_mime_type TEXT"))
+        if "last_read_section_index" not in book_columns:
+            db.session.execute(text("ALTER TABLE books ADD COLUMN last_read_section_index INTEGER"))
+        if "last_read_scroll_ratio" not in book_columns:
+            db.session.execute(text("ALTER TABLE books ADD COLUMN last_read_scroll_ratio FLOAT"))
+        if "last_read_at" not in book_columns:
+            db.session.execute(text("ALTER TABLE books ADD COLUMN last_read_at DATETIME"))
 
     if "moments" in existing_tables:
         moment_columns = {column["name"] for column in inspector.get_columns("moments")}

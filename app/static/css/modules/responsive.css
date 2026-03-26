@@ -1095,8 +1095,9 @@
 
 @media (max-width: 1080px) {
     .app-body.book-reader-page .reader-overlay {
-        left: 18px;
-        right: 18px;
+        width: min(calc(100% - 36px), 980px);
+        left: 50%;
+        right: auto;
         padding: 16px 18px;
     }
 
@@ -1151,19 +1152,23 @@
     }
 
     .app-body.book-reader-page .reader-overlay {
+        width: auto;
         left: 12px;
         right: 12px;
         padding: 14px;
         border-radius: 24px;
         gap: 12px;
+        transform: none;
     }
 
     .app-body.book-reader-page .reader-overlay--top {
         top: 12px;
+        transform: translateY(-10px);
     }
 
     .app-body.book-reader-page .reader-overlay--bottom {
         bottom: 12px;
+        transform: translateY(10px);
     }
 
     .app-body.book-reader-page .reader-overlay__row--top {
@@ -1180,8 +1185,32 @@
         grid-template-columns: 52px minmax(0, 1fr);
     }
 
+    .app-body.book-reader-page .reader-layout--immersive.is-reader-top-visible [data-reader-top-panel] {
+        transform: translateY(0);
+    }
+
+    .app-body.book-reader-page .reader-layout--immersive.is-reader-bottom-visible [data-reader-bottom-panel],
+    .app-body.book-reader-page .reader-layout--immersive.is-reader-notes-visible [data-reader-bottom-panel] {
+        transform: translateY(0);
+    }
+
     .app-body.book-reader-page .reader-chip-row {
         justify-content: center;
+    }
+
+    .app-body.book-reader-page .reader-progress-summary__track {
+        grid-template-columns: 1fr;
+    }
+
+    .app-body.book-reader-page .reader-progress-summary__labels {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .app-body.book-reader-page .reader-progress-summary__percent {
+        min-width: 0;
+        text-align: center;
     }
 
     .app-body.book-reader-page .reader-bottom-bar {
@@ -1244,18 +1273,22 @@
     }
 
     .app-body.book-reader-page .reader-overlay {
+        width: auto;
         left: 8px;
         right: 8px;
         padding: 12px;
         border-radius: 20px;
+        transform: none;
     }
 
     .app-body.book-reader-page .reader-overlay--top {
         top: 8px;
+        transform: translateY(-10px);
     }
 
     .app-body.book-reader-page .reader-overlay--bottom {
         bottom: 8px;
+        transform: translateY(10px);
     }
 
     .app-body.book-reader-page .reader-book-badge {
