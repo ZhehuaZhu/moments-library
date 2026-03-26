@@ -569,6 +569,8 @@
         left: 12px;
         bottom: max(12px, env(safe-area-inset-bottom));
         width: auto;
+        height: auto;
+        max-height: min(72vh, 560px);
         padding: 14px;
         border-radius: 20px;
     }
@@ -605,6 +607,14 @@
     .audio-player__controls,
     .audio-player__progress {
         gap: 8px;
+    }
+
+    .audio-player__settings {
+        grid-template-columns: 1fr;
+    }
+
+    .audio-player__resize-handle {
+        display: none;
     }
 
     .empty-state {
@@ -822,7 +832,6 @@
         aspect-ratio: 1 / 1.08;
     }
 
-    .audio-player__controls,
     .audio-player__progress,
     .work-card__footer,
     .inline-field--actions {
@@ -919,6 +928,14 @@
         min-width: 42px;
         min-height: 42px;
         border-radius: 14px;
+    }
+
+    .audio-player__controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .audio-player__header {
+        align-items: flex-start;
     }
 
     .reader-notes-drawer {

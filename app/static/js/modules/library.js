@@ -5,6 +5,7 @@ const playerStorageKey = "moments-global-player";
 const playerDockStateKey = "moments-global-player-dock-state";
 const playerDockPositionKey = "moments-global-player-dock-position";
 const playerAppearanceKey = "moments-global-player-appearance";
+const playerSizeKey = "moments-global-player-size";
 const readerUiTimers = new WeakMap();
 
 function getReaderShell(scope) {
@@ -1481,10 +1482,8 @@ function writeStoredPlayerState(state, fallbackQueue = []) {
 
 function normalizePlayerAppearance(rawAppearance) {
     const opacity = Number(rawAppearance?.opacity);
-    const scale = Number(rawAppearance?.scale);
     return {
         opacity: Number.isFinite(opacity) ? Math.min(Math.max(opacity, 70), 100) : 92,
-        scale: Number.isFinite(scale) ? Math.min(Math.max(scale, 78), 112) : 92,
     };
 }
 
@@ -1504,18 +1503,55 @@ function applyPlayerAppearance(shell, appearance, controls = {}) {
     }
 
     const normalized = normalizePlayerAppearance(appearance);
-    const width = Math.round(348 * (normalized.scale / 100));
-    const bubbleSize = Math.round(70 * (normalized.scale / 100));
-    shell.style.setProperty("--player-panel-width", `${width}px`);
-    shell.style.setProperty("--player-bubble-size", `${bubbleSize}px`);
     shell.style.setProperty("--player-panel-opacity", `${normalized.opacity / 100}`);
 
     if (controls.opacityInput instanceof HTMLInputElement) {
         controls.opacityInput.value = String(normalized.opacity);
     }
-    if (controls.scaleInput instanceof HTMLInputElement) {
-        controls.scaleInput.value = String(normalized.scale);
+    return normalized;
+}
+
+function getPlayerSizeBounds() {
+    return {
+        minWidth: 320,
+        minHeight: 250,
+        maxWidth: Math.max(320, window.innerWidth - 24),
+        maxHeight: Math.max(250, window.innerHeight - 24),
+    };
+}
+
+function normalizePlayerSize(rawSize) {
+    const width = Number(rawSize?.width);
+    const height = Number(rawSize?.height);
+    const bounds = getPlayerSizeBounds();
+    return {
+        width: Number.isFinite(width)
+            ? Math.min(Math.max(Math.round(width), bounds.minWidth), bounds.maxWidth)
+            : Math.min(392, bounds.maxWidth),
+        height: Number.isFinite(height)
+            ? Math.min(Math.max(Math.round(height), bounds.minHeight), bounds.maxHeight)
+            : Math.min(332, bounds.maxHeight),
+    };
+}
+
+function readPlayerSize() {
+    return normalizePlayerSize(readStoredJson(playerSizeKey));
+}
+
+function writePlayerSize(size) {
+    const normalized = normalizePlayerSize(size);
+    window.localStorage.setItem(playerSizeKey, JSON.stringify(normalized));
+    return normalized;
+}
+
+function applyPlayerSize(shell, size) {
+    if (!(shell instanceof HTMLElement)) {
+        return size;
     }
+
+    const normalized = normalizePlayerSize(size);
+    shell.style.setProperty("--player-panel-width", `${normalized.width}px`);
+    shell.style.setProperty("--player-panel-height", `${normalized.height}px`);
     return normalized;
 }
 
@@ -1630,6 +1666,7 @@ function renderPlayerQueue(queuePanel, queue, currentIndex, onSelect) {
 function initRemotePlayerShell(shell, elements) {
     const {
         audio,
+        stateLabel,
         title,
         artist,
         toggle,
@@ -1647,10 +1684,12 @@ function initRemotePlayerShell(shell, elements) {
         settings,
         settingsToggle,
         opacityInput,
-        scaleInput,
+        resetSizeButton,
+        resizeHandle,
     } = elements;
     if (
         !(audio instanceof HTMLAudioElement) ||
+        !(stateLabel instanceof HTMLElement) ||
         !(title instanceof HTMLElement) ||
         !(artist instanceof HTMLElement) ||
         !(toggle instanceof HTMLButtonElement) ||
@@ -1668,7 +1707,8 @@ function initRemotePlayerShell(shell, elements) {
         !(settingsToggle instanceof HTMLButtonElement) ||
         !(settings instanceof HTMLElement) ||
         !(opacityInput instanceof HTMLInputElement) ||
-        !(scaleInput instanceof HTMLInputElement)
+        !(resetSizeButton instanceof HTMLButtonElement) ||
+        !(resizeHandle instanceof HTMLButtonElement)
     ) {
         return;
     }
@@ -1683,12 +1723,11 @@ function initRemotePlayerShell(shell, elements) {
     }
     let customPosition = readStoredJson(playerDockPositionKey);
     let dragState = null;
+    let resizeState = null;
     let suppressBubbleClick = false;
     let lastPersistAt = 0;
-    let playerAppearance = applyPlayerAppearance(shell, readPlayerAppearance(), {
-        opacityInput,
-        scaleInput,
-    });
+    let playerAppearance = applyPlayerAppearance(shell, readPlayerAppearance(), { opacityInput });
+    let playerSize = applyPlayerSize(shell, readPlayerSize());
 
     const persistState = ({ force = false } = {}) => {
         const now = Date.now();
@@ -1757,6 +1796,15 @@ function initRemotePlayerShell(shell, elements) {
         customPosition = nextPosition;
     };
 
+    const pinShellToRect = (rect) => {
+        const nextPosition = clampDockPosition(rect.left, rect.top);
+        shell.style.left = `${nextPosition.left}px`;
+        shell.style.top = `${nextPosition.top}px`;
+        shell.style.right = "auto";
+        shell.style.bottom = "auto";
+        customPosition = nextPosition;
+    };
+
     const applyCollapsedState = () => {
         shell.classList.toggle("is-audio-player-collapsed", isCollapsed);
         bubble.setAttribute("aria-expanded", String(!isCollapsed));
@@ -1766,15 +1814,32 @@ function initRemotePlayerShell(shell, elements) {
                 ? t("player.open_mini_player", {}, "Open mini player")
                 : t("player.collapse_mini_player", {}, "Collapse mini player")
         );
+        resizeHandle.hidden = isCollapsed;
+        if (isCollapsed) {
+            shell.style.removeProperty("--player-panel-width");
+            shell.style.removeProperty("--player-panel-height");
+        } else {
+            playerSize = applyPlayerSize(shell, playerSize);
+        }
         panel.hidden = isCollapsed;
         settings.hidden = isCollapsed || !settingsOpen;
         settingsToggle.setAttribute("aria-expanded", String(!isCollapsed && settingsOpen));
         if (!shell.hidden) {
             window.requestAnimationFrame(() => {
+                if (!isCollapsed) {
+                    playerSize = applyPlayerSize(shell, playerSize);
+                }
                 applyDockPosition();
             });
         }
         persistDockState();
+    };
+
+    const persistBeforeNavigation = () => {
+        if (shell.hidden) {
+            return;
+        }
+        persistState({ force: true });
     };
 
     const beginDrag = (event, source) => {
@@ -1793,6 +1858,25 @@ function initRemotePlayerShell(shell, elements) {
             moved: false,
         };
         shell.classList.add("is-audio-player-dragging");
+        event.currentTarget?.setPointerCapture?.(event.pointerId);
+        event.preventDefault();
+    };
+
+    const beginResize = (event) => {
+        if (!(event instanceof PointerEvent) || event.button !== 0 || isCollapsed || shell.hidden) {
+            return;
+        }
+
+        const rect = shell.getBoundingClientRect();
+        pinShellToRect(rect);
+        resizeState = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            originWidth: rect.width,
+            originHeight: rect.height,
+        };
+        shell.classList.add("is-audio-player-resizing");
         event.currentTarget?.setPointerCapture?.(event.pointerId);
         event.preventDefault();
     };
@@ -1824,6 +1908,7 @@ function initRemotePlayerShell(shell, elements) {
 
         if (!track) {
             queueOpen = false;
+            stateLabel.textContent = t("player.ready", {}, "Ready");
             title.textContent = t("player.ready", {}, "Ready");
             artist.textContent = t("player.ready", {}, "Ready");
             setPlayerToggleIcon(toggle, false);
@@ -1836,6 +1921,9 @@ function initRemotePlayerShell(shell, elements) {
             return;
         }
 
+        stateLabel.textContent = playerState.wasPlaying
+            ? t("player.now_playing", {}, "Now playing")
+            : t("player.paused", {}, "Paused");
         title.textContent = track.title;
         artist.textContent = track.artist || t("music.personal_library", {}, "Personal music library");
         setPlayerToggleIcon(toggle, playerState.wasPlaying);
@@ -1993,6 +2081,18 @@ function initRemotePlayerShell(shell, elements) {
         renderShell();
     };
 
+    const resetPlayerSize = () => {
+        playerSize = writePlayerSize({
+            width: 392,
+            height: 332,
+        });
+        playerSize = applyPlayerSize(shell, playerSize);
+        if (customPosition) {
+            applyDockPosition();
+            persistDockPosition(customPosition);
+        }
+    };
+
     document.addEventListener("click", (event) => {
         if (!(event.target instanceof Element)) {
             return;
@@ -2040,17 +2140,16 @@ function initRemotePlayerShell(shell, elements) {
             ...playerAppearance,
             opacity: Number(opacityInput.value),
         });
-        applyPlayerAppearance(shell, playerAppearance, { opacityInput, scaleInput });
+        applyPlayerAppearance(shell, playerAppearance, { opacityInput });
         applyCollapsedState();
     });
 
-    scaleInput.addEventListener("input", () => {
-        playerAppearance = writePlayerAppearance({
-            ...playerAppearance,
-            scale: Number(scaleInput.value),
-        });
-        applyPlayerAppearance(shell, playerAppearance, { opacityInput, scaleInput });
-        applyCollapsedState();
+    resetSizeButton.addEventListener("click", () => {
+        resetPlayerSize();
+    });
+
+    resizeHandle.addEventListener("pointerdown", (event) => {
+        beginResize(event);
     });
 
     toggle.addEventListener("click", () => {
@@ -2090,6 +2189,40 @@ function initRemotePlayerShell(shell, elements) {
             autoplay: playerState.wasPlaying,
         });
     });
+
+    document.addEventListener(
+        "click",
+        (event) => {
+            if (!(event.target instanceof Element)) {
+                return;
+            }
+
+            const link = event.target.closest("a[href]");
+            if (!(link instanceof HTMLAnchorElement)) {
+                return;
+            }
+
+            if (
+                link.target === "_blank" ||
+                link.hasAttribute("download") ||
+                (event instanceof MouseEvent &&
+                    (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey))
+            ) {
+                return;
+            }
+
+            persistBeforeNavigation();
+        },
+        true
+    );
+
+    document.addEventListener(
+        "submit",
+        () => {
+            persistBeforeNavigation();
+        },
+        true
+    );
 
     document.addEventListener(
         "play",
@@ -2150,10 +2283,33 @@ function initRemotePlayerShell(shell, elements) {
     });
 
     window.addEventListener("pagehide", () => {
-        persistState({ force: true });
+        persistBeforeNavigation();
+    });
+
+    window.addEventListener("beforeunload", () => {
+        persistBeforeNavigation();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+            persistBeforeNavigation();
+        }
     });
 
     window.addEventListener("pointermove", (event) => {
+        if (resizeState && event.pointerId === resizeState.pointerId) {
+            const deltaX = event.clientX - resizeState.startX;
+            const deltaY = event.clientY - resizeState.startY;
+            playerSize = applyPlayerSize(shell, {
+                width: resizeState.originWidth + deltaX,
+                height: resizeState.originHeight + deltaY,
+            });
+            if (customPosition) {
+                applyDockPosition();
+            }
+            return;
+        }
+
         if (!dragState || event.pointerId !== dragState.pointerId) {
             return;
         }
@@ -2179,6 +2335,16 @@ function initRemotePlayerShell(shell, elements) {
     });
 
     window.addEventListener("pointerup", (event) => {
+        if (resizeState && event.pointerId === resizeState.pointerId) {
+            resizeState = null;
+            shell.classList.remove("is-audio-player-resizing");
+            playerSize = writePlayerSize(playerSize);
+            if (customPosition) {
+                persistDockPosition(customPosition);
+            }
+            return;
+        }
+
         if (!dragState || event.pointerId !== dragState.pointerId) {
             return;
         }
@@ -2195,6 +2361,10 @@ function initRemotePlayerShell(shell, elements) {
     });
 
     window.addEventListener("resize", () => {
+        playerSize = applyPlayerSize(shell, playerSize);
+        if (!isCollapsed) {
+            playerSize = writePlayerSize(playerSize);
+        }
         if (!shell.hidden) {
             applyDockPosition();
         }
@@ -2216,6 +2386,7 @@ function initGlobalPlayer() {
 
     const elements = {
         audio: shell.querySelector("[data-player-audio]"),
+        stateLabel: shell.querySelector("[data-player-state]"),
         title: shell.querySelector("[data-player-title]"),
         artist: shell.querySelector("[data-player-artist]"),
         toggle: shell.querySelector("[data-player-toggle]"),
@@ -2233,7 +2404,8 @@ function initGlobalPlayer() {
         settings: shell.querySelector("[data-player-settings]"),
         settingsToggle: shell.querySelector("[data-player-settings-toggle]"),
         opacityInput: shell.querySelector("[data-player-opacity-input]"),
-        scaleInput: shell.querySelector("[data-player-scale-input]"),
+        resetSizeButton: shell.querySelector("[data-player-reset-size]"),
+        resizeHandle: shell.querySelector("[data-player-resize-handle]"),
     };
 
     initRemotePlayerShell(shell, elements);
