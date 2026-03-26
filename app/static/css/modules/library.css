@@ -2353,71 +2353,12 @@
 
 @media (max-width: 720px) {
     .page-header.page-header--music-library {
-        padding: 18px 16px;
-        border-radius: 22px;
-    }
-
-    .page-header.page-header--music-library h1 {
-        font-size: clamp(2rem, 8vw, 2.7rem);
-    }
-
-    .track-row {
-        padding: 14px 16px;
-        border-radius: 22px;
-    }
-
-    .track-row__primary {
-        grid-template-columns: 68px minmax(0, 1fr) auto;
-        gap: 12px;
-        align-items: flex-start;
-    }
-
-    .track-row__cover {
-        width: 68px;
-        height: 68px;
-        border-radius: 18px;
-    }
-
-    .track-row__title {
-        font-size: 1.02rem;
-    }
-
-    .track-row__artist {
-        font-size: 0.86rem;
-    }
-
-    .track-row__summary {
-        font-size: 0.86rem;
-    }
-
-    .track-row__meta .badge {
-        padding: 6px 9px;
-        font-size: 0.75rem;
-    }
-
-    .track-row__action {
-        width: 36px;
-        height: 36px;
-        border-radius: 12px;
-    }
-}
-
-@media (max-width: 540px) {
-    .music-library-page {
-        gap: 12px;
-    }
-
-    .page-header.page-header--music-library {
         padding: 16px 14px;
-        border-radius: 20px;
+        border-radius: 22px;
     }
 
     .page-header.page-header--music-library h1 {
-        font-size: clamp(1.85rem, 10vw, 2.25rem);
-    }
-
-    .music-library-page__headline .eyebrow {
-        margin-bottom: 6px;
+        font-size: clamp(1.75rem, 7vw, 2.25rem);
     }
 
     .track-row {
@@ -2426,22 +2367,15 @@
     }
 
     .track-row__primary {
-        grid-template-columns: 58px minmax(0, 1fr) auto;
+        grid-template-columns: 60px minmax(0, 1fr) auto;
         gap: 10px;
+        align-items: flex-start;
     }
 
     .track-row__cover {
-        width: 58px;
-        height: 58px;
+        width: 60px;
+        height: 60px;
         border-radius: 16px;
-    }
-
-    .track-row__main {
-        gap: 5px;
-    }
-
-    .track-row__title-row {
-        gap: 6px;
     }
 
     .track-row__title {
@@ -2453,11 +2387,7 @@
     }
 
     .track-row__summary {
-        display: none;
-    }
-
-    .track-row__meta {
-        gap: 5px;
+        font-size: 0.82rem;
     }
 
     .track-row__meta .badge {
@@ -2465,17 +2395,107 @@
         font-size: 0.72rem;
     }
 
-    .track-row__actions {
-        gap: 6px;
-    }
-
     .track-row__action {
         width: 34px;
         height: 34px;
         border-radius: 11px;
     }
+}
+
+@media (max-width: 540px) {
+    .music-library-page {
+        gap: 10px;
+    }
+
+    .page-header.page-header--music-library {
+        padding: 12px 12px;
+        border-radius: 18px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .page-header.page-header--music-library h1 {
+        font-size: clamp(1.55rem, 8vw, 1.95rem);
+    }
+
+    .music-library-page__headline .eyebrow {
+        margin-bottom: 4px;
+        font-size: 0.7rem;
+    }
+
+    .music-library-page__actions {
+        gap: 8px;
+        justify-items: start;
+    }
+
+    .music-library-page__stats .stat-chip {
+        padding: 6px 9px;
+        font-size: 0.76rem;
+    }
+
+    .music-library-page__actions .button {
+        min-height: 36px;
+        padding: 7px 12px;
+        font-size: 0.86rem;
+    }
+
+    .track-row {
+        padding: 10px 12px;
+        border-radius: 18px;
+    }
+
+    .track-row__primary {
+        grid-template-columns: 52px minmax(0, 1fr) auto;
+        gap: 8px;
+    }
+
+    .track-row__cover {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+    }
+
+    .track-row__main {
+        gap: 3px;
+    }
+
+    .track-row__title-row {
+        gap: 4px;
+    }
+
+    .track-row__title {
+        font-size: 0.92rem;
+    }
+
+    .track-row__artist {
+        font-size: 0.76rem;
+    }
+
+    .track-row__summary {
+        display: none;
+    }
+
+    .track-row__meta {
+        gap: 4px;
+    }
+
+    .track-row__meta .badge {
+        padding: 4px 7px;
+        font-size: 0.68rem;
+    }
+
+    .track-row__actions {
+        gap: 5px;
+    }
+
+    .track-row__action {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+    }
 
     .track-row__action span {
-        font-size: 0.9rem;
+        font-size: 0.82rem;
     }
 }
