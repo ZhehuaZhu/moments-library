@@ -1,5 +1,19 @@
 import { ensureMammoth } from "./vendor-loader.js";
 
+let mediaViewerController = null;
+
+function getMediaViewerSignal() {
+    if (!(mediaViewerController instanceof AbortController) || mediaViewerController.signal.aborted) {
+        mediaViewerController = new AbortController();
+    }
+    return mediaViewerController.signal;
+}
+
+document.addEventListener("app:before-swap", () => {
+    mediaViewerController?.abort();
+    mediaViewerController = null;
+});
+
 function syncBodyModalState() {
     const hasVisibleModal = Array.from(document.querySelectorAll(".modal-shell")).some(
         (modal) => !modal.hidden
@@ -92,6 +106,7 @@ export function initMediaViewer() {
         return;
     }
     modal.dataset.viewerInitialized = "true";
+    const signal = getMediaViewerSignal();
 
     const body = modal.querySelector("[data-media-viewer-body]");
     const previousButton = modal.querySelector("[data-media-viewer-prev]");
@@ -182,12 +197,12 @@ export function initMediaViewer() {
             pauseOtherInlineVideos(tile);
             tile.classList.add("is-playing");
             syncInlineVideoButton(tile, true);
-        });
+        }, { signal });
 
         video.addEventListener("pause", () => {
             tile.classList.remove("is-playing");
             syncInlineVideoButton(tile, false);
-        });
+        }, { signal });
 
         if (!prefersCoarsePointer && video.readyState === 0) {
             video.load();
@@ -328,20 +343,20 @@ export function initMediaViewer() {
         }
 
         openModal(trigger);
-    });
+    }, { signal });
 
     modal.querySelectorAll("[data-close-media-viewer]").forEach((button) => {
-        button.addEventListener("click", closeModal);
+        button.addEventListener("click", closeModal, { signal });
     });
 
     body.addEventListener("click", (event) => {
         if (event.target === body) {
             closeModal();
         }
-    });
+    }, { signal });
 
-    previousButton.addEventListener("click", () => step(-1));
-    nextButton.addEventListener("click", () => step(1));
+    previousButton.addEventListener("click", () => step(-1), { signal });
+    nextButton.addEventListener("click", () => step(1), { signal });
 
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && !modal.hidden) {
@@ -360,5 +375,5 @@ export function initMediaViewer() {
             event.preventDefault();
             step(1);
         }
-    });
+    }, { signal });
 }
