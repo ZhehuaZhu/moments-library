@@ -20,7 +20,7 @@ PLACE_FIELD_NAMES = (
     "location_source",
 )
 
-CITY_SPOT_PRECISION = 4
+CITY_SPOT_PRECISION = 5
 
 
 def _clean_text(value: object) -> str | None:
