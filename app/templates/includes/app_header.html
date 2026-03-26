@@ -34,6 +34,13 @@
         >
             +
         </button>
+    {% else %}
+        <a
+            class="button button--ghost button--compact app-header__login"
+            href="{{ url_for('auth.login') }}"
+        >
+            {{ t('nav.admin_login') }}
+        </a>
     {% endif %}
     {% if module_labels is defined %}
         <nav class="app-header__quicknav" aria-label="{{ t('nav.quick_navigation') }}">

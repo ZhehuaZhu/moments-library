@@ -97,11 +97,19 @@
         left: 16px;
         bottom: 16px;
         width: min(90vw, 360px);
-        max-height: none;
+        height: calc(100vh - 32px);
+        height: calc(100dvh - 32px);
+        max-height: calc(100vh - 32px);
+        max-height: calc(100dvh - 32px);
         transform: translate3d(calc(-100% - 20px), 0, 0);
         opacity: 0.98;
         background: rgba(251, 252, 252, 0.98);
         box-shadow: 0 20px 40px rgba(21, 33, 42, 0.16);
+        overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
         transition:
             transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
             opacity 220ms ease,
@@ -244,18 +252,9 @@
         flex: 0 0 auto;
     }
 
-    .app-header__compose {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 42px;
-        min-width: 42px;
-        height: 42px;
-        padding: 0;
-        border-radius: 14px;
-        font-size: 1.35rem;
-        font-weight: 700;
-        line-height: 1;
+    .app-header__compose,
+    .app-header__login {
+        flex: 0 0 auto;
     }
 
     .sidebar {
@@ -263,6 +262,10 @@
         left: 12px;
         bottom: 12px;
         width: min(92vw, 380px);
+        height: calc(100vh - 24px);
+        height: calc(100dvh - 24px);
+        max-height: calc(100vh - 24px);
+        max-height: calc(100dvh - 24px);
         padding: 18px 16px 24px;
         gap: 18px;
         border-radius: 24px;
