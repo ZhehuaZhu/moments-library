@@ -65,15 +65,15 @@
                             </div>
                             <div class="track-row__meta">
                                 {% if track.category %}
-                                    <span class="badge badge--category">{{ t('common.collection') }} / {{ track.category.name }}</span>
+                                    <span class="badge badge--category track-row__tag track-row__tag--collection">{{ t('common.collection') }} / {{ track.category.name }}</span>
                                 {% endif %}
                                 {% if track.mood %}
-                                    <span class="badge">{{ track.mood }}</span>
+                                    <span class="badge track-row__tag track-row__tag--mood">{{ track.mood }}</span>
                                 {% endif %}
                                 {% if track.has_lyrics %}
-                                    <span class="badge">LRC</span>
+                                    <span class="badge track-row__tag track-row__tag--lyrics">LRC</span>
                                 {% endif %}
-                                <span class="badge badge--edit">{{ t('counts.notes', count=track.comments|length) }}</span>
+                                <span class="badge badge--edit track-row__tag track-row__tag--notes">{{ t('counts.notes', count=track.comments|length) }}</span>
                             </div>
                         </div>
                         <p class="track-row__summary{% if not track_preview %} track-row__summary--placeholder{% endif %}">
