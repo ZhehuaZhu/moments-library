@@ -1759,6 +1759,7 @@ function initRemotePlayerShell(shell, elements) {
     let dragState = null;
     let resizeState = null;
     let suppressBubbleClick = false;
+    let suppressPanelClick = false;
     let lastPersistAt = 0;
     let playerAppearance = applyPlayerAppearance(shell, readPlayerAppearance(), { opacityInput });
     let playerSize = applyPlayerSize(shell, readPlayerSize());
@@ -1893,6 +1894,31 @@ function initRemotePlayerShell(shell, elements) {
         customPosition = nextPosition;
     };
 
+    const updateQueuePlacement = () => {
+        const rect = shell.getBoundingClientRect();
+        const preferredQueueWidth = 320;
+        const preferredQueueHeight = 280;
+        const rightSpace = window.innerWidth - rect.right - 12;
+        const leftSpace = rect.left - 12;
+        const bottomSpace = window.innerHeight - rect.bottom - 12;
+        const topSpace = rect.top - 12;
+
+        let placement = "bottom";
+        if (window.innerWidth <= 720) {
+            placement = "bottom";
+        } else if (rightSpace >= preferredQueueWidth) {
+            placement = "right";
+        } else if (leftSpace >= preferredQueueWidth) {
+            placement = "left";
+        } else if (bottomSpace >= preferredQueueHeight || bottomSpace >= topSpace) {
+            placement = "bottom";
+        } else {
+            placement = "top";
+        }
+
+        queuePanel.dataset.playerQueuePlacement = placement;
+    };
+
     const pinShellToRect = (rect) => {
         const nextPosition = clampDockPosition(rect.left, rect.top);
         shell.style.left = `${nextPosition.left}px`;
@@ -1913,6 +1939,8 @@ function initRemotePlayerShell(shell, elements) {
         );
         resizeHandle.hidden = isCollapsed;
         if (isCollapsed) {
+            queueOpen = false;
+            queuePanel.hidden = true;
             shell.style.removeProperty("--player-panel-width");
             shell.style.removeProperty("--player-panel-height");
         } else {
@@ -2033,6 +2061,9 @@ function initRemotePlayerShell(shell, elements) {
                 ? String((playerState.currentTime / playerState.duration) * 100)
                 : "0";
         queuePanel.hidden = !queueOpen;
+        if (queueOpen) {
+            updateQueuePlacement();
+        }
         renderPlayerQueue(queuePanel, playerState.queue, playerState.currentIndex, {
             onSelect(index) {
                 queueOpen = false;
@@ -2304,14 +2335,36 @@ function initRemotePlayerShell(shell, elements) {
         beginDrag(event, "handle");
     });
 
-    shell.addEventListener("click", (event) => {
+    shell.addEventListener("pointerdown", (event) => {
         if (isCollapsed || !(event.target instanceof Element)) {
             return;
         }
 
         if (
             event.target.closest(
-                "button, input, a, label, select, textarea, [role='button'], [data-player-queue-item], [data-player-title], [data-player-artist], [data-player-state], [data-player-artwork]"
+                "button, input, a, label, select, textarea, [role='button'], [data-player-queue], [data-player-queue-item]"
+            )
+        ) {
+            return;
+        }
+
+        beginDrag(event, "panel");
+    });
+
+    shell.addEventListener("click", (event) => {
+        if (isCollapsed || !(event.target instanceof Element)) {
+            return;
+        }
+
+        if (suppressPanelClick) {
+            suppressPanelClick = false;
+            event.preventDefault();
+            return;
+        }
+
+        if (
+            event.target.closest(
+                "button, input, a, label, select, textarea, [role='button'], [data-player-queue], [data-player-queue-item], [data-player-title], [data-player-artist], [data-player-state], [data-player-artwork]"
             )
         ) {
             return;
@@ -2389,6 +2442,19 @@ function initRemotePlayerShell(shell, elements) {
 
     queueToggle.addEventListener("click", () => {
         queueOpen = !queueOpen;
+        renderShell();
+    });
+
+    document.addEventListener("click", (event) => {
+        if (!queueOpen || !(event.target instanceof Node)) {
+            return;
+        }
+
+        if (shell.contains(event.target)) {
+            return;
+        }
+
+        queueOpen = false;
         renderShell();
     });
 
@@ -2548,6 +2614,9 @@ function initRemotePlayerShell(shell, elements) {
             if (customPosition) {
                 applyDockPosition();
             }
+            if (queueOpen) {
+                updateQueuePlacement();
+            }
             return;
         }
 
@@ -2573,6 +2642,9 @@ function initRemotePlayerShell(shell, elements) {
         shell.style.right = "auto";
         shell.style.bottom = "auto";
         customPosition = nextPosition;
+        if (queueOpen) {
+            updateQueuePlacement();
+        }
     });
 
     window.addEventListener("pointerup", (event) => {
@@ -2598,6 +2670,7 @@ function initRemotePlayerShell(shell, elements) {
         if (didMove && customPosition) {
             persistDockPosition(customPosition);
             suppressBubbleClick = source === "bubble";
+            suppressPanelClick = source === "panel";
         }
     });
 
@@ -2608,6 +2681,9 @@ function initRemotePlayerShell(shell, elements) {
         }
         if (!shell.hidden) {
             applyDockPosition();
+            if (queueOpen) {
+                updateQueuePlacement();
+            }
         }
     });
 
