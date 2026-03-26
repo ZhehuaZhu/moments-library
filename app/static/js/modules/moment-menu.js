@@ -12,6 +12,8 @@ function closeAllMenus(except = null) {
     });
 }
 
+let menuGlobalsBound = false;
+
 export function initMomentMenus() {
     const toggles = document.querySelectorAll("[data-menu-toggle]");
     if (!toggles.length) {
@@ -19,6 +21,10 @@ export function initMomentMenus() {
     }
 
     toggles.forEach((button) => {
+        if (button.dataset.menuBound === "true") {
+            return;
+        }
+        button.dataset.menuBound = "true";
         button.addEventListener("click", (event) => {
             event.stopPropagation();
             const menu = button.parentElement?.querySelector("[data-card-menu]");
@@ -33,10 +39,13 @@ export function initMomentMenus() {
         });
     });
 
-    document.addEventListener("click", (event) => {
-        if (event.target instanceof Element && event.target.closest("[data-menu-root]")) {
-            return;
-        }
-        closeAllMenus();
-    });
+    if (!menuGlobalsBound) {
+        menuGlobalsBound = true;
+        document.addEventListener("click", (event) => {
+            if (event.target instanceof Element && event.target.closest("[data-menu-root]")) {
+                return;
+            }
+            closeAllMenus();
+        });
+    }
 }

@@ -39,6 +39,10 @@ function initFolderUpdates() {
 
 function initDeleteMoments() {
     document.querySelectorAll("[data-delete-moment]").forEach((button) => {
+        if (button.dataset.deleteBound === "true") {
+            return;
+        }
+        button.dataset.deleteBound = "true";
         button.addEventListener("click", async () => {
             const card = button.closest("[data-moment-card]");
             if (!card) {
@@ -64,6 +68,10 @@ function initDeleteMoments() {
 
 function initRestoreMoments() {
     document.querySelectorAll("[data-restore-moment]").forEach((button) => {
+        if (button.dataset.restoreBound === "true") {
+            return;
+        }
+        button.dataset.restoreBound = "true";
         button.addEventListener("click", async () => {
             const card = button.closest("[data-moment-card]");
             if (!card) {
