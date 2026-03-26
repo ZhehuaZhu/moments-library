@@ -343,12 +343,24 @@
         align-items: stretch;
     }
 
+    .folder-map__branch-main {
+        width: 100%;
+    }
+
+    .folder-map__toggle,
+    .folder-map__toggle-spacer {
+        width: 38px;
+        height: 38px;
+    }
+
     .folder-map__node {
         grid-template-columns: auto minmax(0, 1fr);
+        gap: 12px;
     }
 
     .folder-map__node em {
         grid-column: 2;
+        justify-self: start;
     }
 
     .folder-map__delete {
@@ -793,8 +805,12 @@
     }
 
     .folder-map__children {
-        margin-left: 14px;
-        padding-left: 12px;
+        margin-left: 6px;
+        padding-left: 28px;
+    }
+
+    .folder-map__children::before {
+        left: 10px;
     }
 
     .home-modules {
