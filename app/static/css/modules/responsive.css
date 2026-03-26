@@ -337,10 +337,19 @@
         border-radius: 24px;
     }
 
+    .folder-panel--map {
+        gap: 12px;
+        padding: 18px 16px 20px;
+    }
+
     .folder-panel__header,
     .folder-map__row {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .folder-panel--map .folder-panel__header {
+        align-items: flex-start;
     }
 
     .folder-map__branch-main {
@@ -349,8 +358,8 @@
 
     .folder-map__toggle,
     .folder-map__toggle-spacer {
-        width: 38px;
-        height: 38px;
+        width: 34px;
+        height: 34px;
     }
 
     .folder-map__node {
@@ -365,6 +374,9 @@
 
     .folder-map__delete {
         align-self: flex-end;
+        opacity: 1;
+        pointer-events: auto;
+        transform: none;
     }
 
     .home-modules {
@@ -795,22 +807,37 @@
     }
 
     .folder-map__shortcuts {
-        flex-direction: column;
+        gap: 6px;
     }
 
     .folder-map__shortcut,
     .folder-map__node {
-        padding: 12px 14px;
+        padding: 10px 12px;
         border-radius: 18px;
+    }
+
+    .folder-map__shortcut {
+        width: auto;
+        max-width: 100%;
     }
 
     .folder-map__children {
         margin-left: 6px;
-        padding-left: 28px;
+        padding-left: 22px;
     }
 
     .folder-map__children::before {
-        left: 10px;
+        left: 8px;
+    }
+
+    .folder-map__children > .folder-map__branch::before {
+        left: -14px;
+        width: 12px;
+    }
+
+    .folder-map__delete .icon-button {
+        width: 32px;
+        height: 32px;
     }
 
     .home-modules {
