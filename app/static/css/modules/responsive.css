@@ -702,9 +702,10 @@
     }
 
     .atlas-map .leaflet-control-attribution {
-        padding: 3px 7px;
-        font-size: 0.62rem;
-        opacity: 0.6;
+        padding: 1px 3px;
+        font-size: 0.52rem;
+        line-height: 1.15;
+        opacity: 0.42;
         box-shadow: none;
     }
 
