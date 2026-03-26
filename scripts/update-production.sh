@@ -32,4 +32,16 @@ systemctl restart moments
 systemctl status moments --no-pager
 
 echo "Health check..."
-curl -I http://127.0.0.1:8000
+for attempt in 1 2 3 4 5; do
+  if curl -I http://127.0.0.1:8000; then
+    exit 0
+  fi
+
+  if [[ "$attempt" -lt 5 ]]; then
+    echo "Health check not ready yet, retrying in 2 seconds..."
+    sleep 2
+  fi
+done
+
+echo "Health check failed after multiple attempts." >&2
+exit 1
