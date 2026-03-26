@@ -80,6 +80,72 @@ function syncFolderParentField() {
     }
 }
 
+function getFolderBranchChildren(branch) {
+    return (
+        Array.from(branch.children).find((child) => child.matches("[data-folder-branch-children]")) ?? null
+    );
+}
+
+function getFolderBranchToggle(branch) {
+    const row = Array.from(branch.children).find((child) => child.classList.contains("folder-map__row"));
+    return row ? row.querySelector("[data-folder-branch-toggle]") : null;
+}
+
+function setFolderBranchExpanded(branch, expanded) {
+    const children = getFolderBranchChildren(branch);
+    const toggle = getFolderBranchToggle(branch);
+
+    if (!children || !toggle) {
+        return;
+    }
+
+    branch.dataset.folderBranchState = expanded ? "expanded" : "collapsed";
+    children.hidden = !expanded;
+    toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+
+    const label = expanded ? toggle.dataset.folderCollapseLabel : toggle.dataset.folderExpandLabel;
+    if (label) {
+        toggle.setAttribute("aria-label", label);
+    }
+}
+
+function expandFolderBranchPath(activeLink) {
+    let currentBranch = activeLink.closest("[data-folder-branch]");
+
+    while (currentBranch) {
+        setFolderBranchExpanded(currentBranch, true);
+        currentBranch = currentBranch.parentElement?.closest("[data-folder-branch]") ?? null;
+    }
+}
+
+function initFolderTree() {
+    const branches = document.querySelectorAll("[data-folder-branch]");
+    if (!branches.length) {
+        return;
+    }
+
+    branches.forEach((branch) => {
+        const toggle = getFolderBranchToggle(branch);
+        const children = getFolderBranchChildren(branch);
+
+        if (!toggle || !children) {
+            return;
+        }
+
+        const initiallyExpanded = branch.dataset.folderBranchInitiallyExpanded === "true";
+        setFolderBranchExpanded(branch, initiallyExpanded);
+
+        toggle.addEventListener("click", () => {
+            const expanded = toggle.getAttribute("aria-expanded") === "true";
+            setFolderBranchExpanded(branch, !expanded);
+        });
+    });
+
+    document.querySelectorAll(".folder-map__node.is-active").forEach((link) => {
+        expandFolderBranchPath(link);
+    });
+}
+
 function syncToggleState() {
     const isOpen = document.body.classList.contains("is-sidebar-open");
     document.querySelectorAll("[data-toggle-sidebar]").forEach((button) => {
@@ -229,6 +295,7 @@ export function initNavigation() {
     });
     syncFolderParentField();
     syncFolderPanelState();
+    initFolderTree();
 
     document.querySelectorAll("[data-language-switch]").forEach((switcher) => {
         if (switcher.dataset.navigationBound === "true") {

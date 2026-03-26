@@ -90,8 +90,88 @@ function initRestoreMoments() {
     });
 }
 
+async function copyText(text) {
+    if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+    }
+
+    const field = document.createElement("textarea");
+    field.value = text;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.opacity = "0";
+    document.body.append(field);
+    field.select();
+    document.execCommand("copy");
+    field.remove();
+}
+
+function initCrossPostCopy() {
+    document.querySelectorAll("[data-copy-cross-post-caption]").forEach((button) => {
+        if (button.dataset.crossPostCopyBound === "true") {
+            return;
+        }
+
+        button.dataset.crossPostCopyBound = "true";
+        button.addEventListener("click", async () => {
+            const card = button.closest("[data-cross-post-card]");
+            const captionField = card?.querySelector("[data-cross-post-caption]");
+            if (!(captionField instanceof HTMLTextAreaElement)) {
+                return;
+            }
+
+            try {
+                await copyText(captionField.value);
+                const copiedLabel = button.dataset.copiedLabel || "Copied";
+                const copyLabel = button.dataset.copyLabel || "Copy Caption";
+                button.textContent = copiedLabel;
+                window.setTimeout(() => {
+                    button.textContent = copyLabel;
+                }, 1200);
+            } catch (error) {
+                window.alert(error instanceof Error ? error.message : "Copy failed.");
+            }
+        });
+    });
+}
+
+function initCrossPostActions() {
+    document.querySelectorAll("[data-cross-post-action]").forEach((button) => {
+        if (button.dataset.crossPostBound === "true") {
+            return;
+        }
+
+        button.dataset.crossPostBound = "true";
+        button.addEventListener("click", async () => {
+            const card = button.closest("[data-moment-card]");
+            if (!card) {
+                return;
+            }
+
+            try {
+                await requestJson(
+                    `/api/moments/${card.dataset.momentId}/cross-post/${button.dataset.crossPostPlatform}`,
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            action: button.dataset.crossPostAction,
+                        }),
+                    },
+                );
+                window.location.reload();
+            } catch (error) {
+                window.alert(error.message);
+            }
+        });
+    });
+}
+
 export function initFeedInteractions() {
     initFolderUpdates();
     initDeleteMoments();
     initRestoreMoments();
+    initCrossPostCopy();
+    initCrossPostActions();
 }

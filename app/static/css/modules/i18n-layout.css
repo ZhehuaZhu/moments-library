@@ -22,9 +22,27 @@ html[lang="zh-CN"] .sidebar__brand-copy h2,
 html[lang="zh-CN"] .page-header h1,
 html[lang="zh-CN"] .auth-card h1,
 html[lang="zh-CN"] .folder-panel__header h2,
-html[lang="zh-CN"] .reader-notes-sheet__header h2 {
+html[lang="zh-CN"] .reader-notes-sheet__header h2,
+html[lang="zh-CN"] .atlas-inspector__header h2 {
     letter-spacing: -0.01em;
     line-height: 1.25;
+}
+
+html[lang="zh-CN"] .atlas-inspector__header h2 {
+    font-size: clamp(1.72rem, 1.1rem + 0.9vw, 2.18rem);
+    line-height: 1.18;
+    word-break: break-word;
+}
+
+html[lang="zh-CN"] .atlas-inspector__subtitle,
+html[lang="zh-CN"] .atlas-inspector__hint,
+html[lang="zh-CN"] .atlas-peek__excerpt {
+    line-height: 1.62;
+}
+
+html[lang="zh-CN"] .atlas-peek__location {
+    font-size: 0.78rem;
+    line-height: 1.4;
 }
 
 html[lang="zh-CN"] .eyebrow,

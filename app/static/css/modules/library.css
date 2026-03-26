@@ -1157,6 +1157,669 @@
     padding-right: 4px;
 }
 
+.app-body.book-reader-page {
+    background:
+        radial-gradient(circle at top left, rgba(196, 146, 38, 0.18), transparent 30%),
+        radial-gradient(circle at top right, rgba(63, 111, 100, 0.18), transparent 24%),
+        linear-gradient(150deg, #efe6d6 0%, #f6f1e8 38%, #e7edf1 100%);
+}
+
+.app-body.book-reader-page .page-frame {
+    width: min(100%, 1520px);
+}
+
+.app-body.book-reader-page .main-panel {
+    padding: 0 0 132px;
+}
+
+.app-body.book-reader-page .reader-layout--immersive {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+}
+
+.app-body.book-reader-page .reader-layout--immersive::before {
+    content: "";
+    position: absolute;
+    inset: 28px 7% auto;
+    height: min(54vw, 560px);
+    border-radius: 999px;
+    background-image: var(--reader-cover-image, none);
+    background-position: center;
+    background-size: cover;
+    opacity: 0.14;
+    filter: blur(72px) saturate(1.08);
+    transform: translateY(-14%);
+    pointer-events: none;
+}
+
+.app-body.book-reader-page .reader-layout--immersive::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at top, rgba(255, 252, 246, 0.86), rgba(255, 252, 246, 0) 42%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0));
+    pointer-events: none;
+}
+
+.app-body.book-reader-page .reader-surface--immersive {
+    min-height: calc(100vh - 36px);
+    border-radius: 36px;
+    border-color: rgba(115, 100, 75, 0.12);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(250, 244, 234, 0.94)),
+        rgba(255, 255, 255, 0.78);
+    box-shadow:
+        0 40px 80px rgba(88, 73, 48, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.68);
+}
+
+.app-body.book-reader-page .reader-surface--immersive::before {
+    content: "";
+    position: absolute;
+    inset: 18px;
+    border-radius: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.56);
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0)),
+        radial-gradient(circle at top right, rgba(63, 111, 100, 0.08), transparent 32%);
+    pointer-events: none;
+}
+
+.app-body.book-reader-page .reader-surface__stage {
+    position: relative;
+    min-height: calc(100vh - 36px);
+}
+
+.app-body.book-reader-page .reader-overlay {
+    width: min(calc(100% - 52px), 920px);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    display: grid;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 22px;
+    border-color: rgba(115, 100, 75, 0.14);
+    background: rgba(250, 246, 239, 0.8);
+    box-shadow: 0 16px 28px rgba(88, 73, 48, 0.12);
+    backdrop-filter: blur(16px);
+}
+
+.app-body.book-reader-page .reader-overlay--top {
+    top: 26px;
+    transform: translate(-50%, -10px);
+}
+
+.app-body.book-reader-page .reader-overlay--bottom {
+    width: min(calc(100% - 52px), 760px);
+    bottom: 26px;
+    gap: 12px;
+    transform: translate(-50%, 10px);
+}
+
+.app-body.book-reader-page .reader-overlay__row {
+    display: grid;
+    gap: 10px;
+    align-items: center;
+}
+
+.app-body.book-reader-page .reader-layout--immersive.is-reader-top-visible [data-reader-top-panel] {
+    transform: translate(-50%, 0);
+}
+
+.app-body.book-reader-page .reader-layout--immersive.is-reader-bottom-visible [data-reader-bottom-panel],
+.app-body.book-reader-page .reader-layout--immersive.is-reader-notes-visible [data-reader-bottom-panel] {
+    transform: translate(-50%, 0);
+}
+
+.app-body.book-reader-page .reader-overlay__row--top {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.app-body.book-reader-page .reader-overlay__row--status {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+}
+
+.app-body.book-reader-page .reader-overlay__edge {
+    gap: 10px;
+}
+
+.app-body.book-reader-page .reader-overlay__edge--trailing {
+    justify-content: flex-end;
+}
+
+.app-body.book-reader-page .reader-book-badge {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+}
+
+.app-body.book-reader-page .reader-book-badge__cover {
+    width: 42px;
+    height: 58px;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid rgba(115, 100, 75, 0.16);
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.36), transparent 38%),
+        linear-gradient(145deg, rgba(110, 151, 139, 0.92), rgba(51, 92, 85, 1));
+    box-shadow: 0 18px 30px rgba(88, 73, 48, 0.16);
+}
+
+.app-body.book-reader-page .reader-book-badge__cover img,
+.app-body.book-reader-page .reader-notes-summary__cover img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.app-body.book-reader-page .reader-book-badge__placeholder,
+.app-body.book-reader-page .reader-notes-summary__placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 12px;
+    color: #fff8ee;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.app-body.book-reader-page .reader-book-badge__copy,
+.app-body.book-reader-page .reader-notes-summary__copy {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.app-body.book-reader-page .reader-book-badge__copy .eyebrow {
+    margin-bottom: 0;
+    font-size: 0.66rem;
+    letter-spacing: 0.14em;
+}
+
+.app-body.book-reader-page .reader-book-badge__copy strong,
+.app-body.book-reader-page .reader-notes-summary__copy strong {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.98rem;
+    letter-spacing: -0.04em;
+}
+
+.app-body.book-reader-page .reader-book-badge__copy > span,
+.app-body.book-reader-page .reader-notes-summary__copy > span {
+    overflow: hidden;
+    color: var(--muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.88rem;
+}
+
+.app-body.book-reader-page .reader-overlay__progress {
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid rgba(196, 146, 38, 0.22);
+    background: rgba(249, 241, 221, 0.94);
+    color: #8f6115;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
+    font-size: 0.84rem;
+}
+
+.app-body.book-reader-page .reader-overlay__count {
+    min-width: 22px;
+    height: 22px;
+    background: linear-gradient(135deg, #d69d39, #a9691f);
+    color: #fffef9;
+    box-shadow: 0 8px 16px rgba(169, 105, 31, 0.18);
+    font-size: 0.76rem;
+}
+
+.app-body.book-reader-page .reader-overlay .button {
+    min-height: 36px;
+    padding: 8px 12px;
+    border-color: rgba(115, 100, 75, 0.14);
+    background: rgba(255, 255, 255, 0.78);
+    color: var(--accent-strong);
+    font-size: 0.84rem;
+}
+
+.app-body.book-reader-page .reader-overlay .button:hover {
+    background: rgba(63, 111, 100, 0.12);
+    border-color: rgba(63, 111, 100, 0.18);
+}
+
+.app-body.book-reader-page .reader-chip-row {
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.app-body.book-reader-page .reader-chip-row--compact {
+    gap: 8px;
+}
+
+.app-body.book-reader-page .reader-chip {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 0 11px;
+    border: 1px solid rgba(115, 100, 75, 0.12);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.68);
+    color: #55656e;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.app-body.book-reader-page .reader-chip--ghost {
+    background: rgba(255, 255, 255, 0.52);
+    color: var(--accent-strong);
+}
+
+.app-body.book-reader-page .reader-progress-meter {
+    position: relative;
+    width: 100%;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(63, 111, 100, 0.1);
+    box-shadow: inset 0 1px 2px rgba(34, 48, 60, 0.08);
+    overflow: hidden;
+}
+
+.app-body.book-reader-page .reader-progress-meter__fill {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, rgba(196, 146, 38, 0.96), rgba(63, 111, 100, 0.96));
+    box-shadow: 0 0 18px rgba(63, 111, 100, 0.18);
+    transition: width var(--transition);
+}
+
+.app-body.book-reader-page .reader-progress-summary {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.app-body.book-reader-page .reader-progress-summary__labels {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.app-body.book-reader-page .reader-progress-summary__title {
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-body.book-reader-page .reader-progress-summary__labels strong {
+    color: #284d45;
+    font-size: 0.86rem;
+    letter-spacing: -0.02em;
+}
+
+.app-body.book-reader-page .reader-progress-summary__track {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.app-body.book-reader-page .reader-progress-summary__percent {
+    min-width: 42px;
+    color: #8f6115;
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-align: right;
+}
+
+.app-body.book-reader-page .reader-surface__embed {
+    border-radius: 36px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(238, 241, 243, 0.94)),
+        #dfe5e9;
+    box-shadow: inset 0 0 0 1px rgba(34, 48, 60, 0.06);
+}
+
+.app-body.book-reader-page .reader-surface__content {
+    position: relative;
+    min-height: calc(100vh - 36px);
+    padding: 58px 56px 110px;
+    border-radius: 36px;
+    background:
+        linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(250, 245, 236, 0.94)),
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0));
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.75),
+        inset 0 0 0 1px rgba(115, 100, 75, 0.06);
+}
+
+.app-body.book-reader-page .reader-surface__content:not(.reader-surface__content--book) > * {
+    max-width: 74ch;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.app-body.book-reader-page .reader-surface__content:not(.reader-surface__content--book) p,
+.app-body.book-reader-page .reader-surface__content:not(.reader-surface__content--book) li,
+.app-body.book-reader-page .reader-surface__content:not(.reader-surface__content--book) blockquote {
+    font-size: 1.04rem;
+    line-height: 1.92;
+    color: #314149;
+}
+
+.app-body.book-reader-page .reader-surface__content--book {
+    height: calc(100vh - 36px);
+    padding: 26px;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(153, 132, 98, 0.08) 0,
+            rgba(255, 255, 255, 0) 9%,
+            rgba(255, 255, 255, 0) 91%,
+            rgba(153, 132, 98, 0.08) 100%
+        ),
+        linear-gradient(180deg, rgba(252, 248, 240, 0.98), rgba(248, 242, 231, 0.96));
+    scrollbar-width: thin;
+    scrollbar-color: rgba(115, 100, 75, 0.44) transparent;
+}
+
+.app-body.book-reader-page .reader-surface__content--book::-webkit-scrollbar,
+.app-body.book-reader-page .reader-notes-sheet__body::-webkit-scrollbar {
+    width: 10px;
+}
+
+.app-body.book-reader-page .reader-surface__content--book::-webkit-scrollbar-thumb,
+.app-body.book-reader-page .reader-notes-sheet__body::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(115, 100, 75, 0.32);
+}
+
+.app-body.book-reader-page .reader-surface__content--book::-webkit-scrollbar-track,
+.app-body.book-reader-page .reader-notes-sheet__body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.app-body.book-reader-page .reader-bottom-bar {
+    grid-template-columns: auto minmax(240px, 1fr) auto;
+    gap: 10px;
+    padding: 8px;
+    border: 1px solid rgba(115, 100, 75, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.46);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.54);
+}
+
+.app-body.book-reader-page .reader-bottom-bar__toc {
+    gap: 8px;
+}
+
+.app-body.book-reader-page .reader-bottom-bar__toc span {
+    color: rgba(85, 101, 110, 0.9);
+}
+
+.app-body.book-reader-page .reader-bottom-bar__toc .input {
+    min-height: 40px;
+    border-color: rgba(115, 100, 75, 0.12);
+    background: rgba(255, 255, 255, 0.84);
+    font-size: 0.9rem;
+}
+
+.app-body.book-reader-page .reader-bottom-actions {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.app-body.book-reader-page .reader-bottom-actions__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.app-body.book-reader-page .book-reader-article {
+    display: grid;
+    gap: 24px;
+}
+
+.app-body.book-reader-page .book-reader-section {
+    max-width: 880px;
+    min-height: calc(100% - 52px);
+    margin: 0 auto;
+    padding: clamp(48px, 6vw, 72px) clamp(30px, 6vw, 82px) clamp(88px, 12vw, 124px);
+    border: 1px solid rgba(115, 100, 75, 0.08);
+    border-radius: 28px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 252, 247, 0.98) 16%, rgba(248, 242, 231, 0.98) 100%);
+    box-shadow: 0 30px 48px rgba(104, 88, 63, 0.12);
+}
+
+.app-body.book-reader-page .reader-layout--immersive .book-reader-section {
+    max-width: 880px;
+    padding: clamp(52px, 6vw, 78px) clamp(30px, 6vw, 84px) clamp(92px, 12vw, 128px);
+}
+
+.app-body.book-reader-page .book-reader-section__header {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 34px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(115, 100, 75, 0.12);
+}
+
+.app-body.book-reader-page .book-reader-section__header h2 {
+    font-size: clamp(1.32rem, 2vw, 1.86rem);
+    letter-spacing: -0.04em;
+    color: #1c3834;
+}
+
+.app-body.book-reader-page .book-reader-section h1,
+.app-body.book-reader-page .book-reader-section h2,
+.app-body.book-reader-page .book-reader-section h3,
+.app-body.book-reader-page .book-reader-section h4 {
+    max-width: 28ch;
+    margin-top: 0;
+    color: #1d3733;
+    letter-spacing: -0.03em;
+}
+
+.app-body.book-reader-page .book-reader-section h3,
+.app-body.book-reader-page .book-reader-section h4 {
+    margin-bottom: 0.85em;
+    font-size: 1.16rem;
+}
+
+.app-body.book-reader-page .book-reader-section p,
+.app-body.book-reader-page .book-reader-section li,
+.app-body.book-reader-page .book-reader-section blockquote {
+    max-width: 66ch;
+    font-size: 1.06rem;
+    line-height: 1.95;
+    color: #2f3d45;
+    hyphens: auto;
+}
+
+.app-body.book-reader-page .book-reader-section ul,
+.app-body.book-reader-page .book-reader-section ol {
+    padding-left: 1.3em;
+}
+
+.app-body.book-reader-page .book-reader-section blockquote {
+    margin: 1.8rem 0;
+    padding: 1rem 1.2rem;
+    border-left: 3px solid rgba(63, 111, 100, 0.32);
+    border-radius: 0 18px 18px 0;
+    background: rgba(63, 111, 100, 0.05);
+    color: #41525b;
+}
+
+.app-body.book-reader-page .book-reader-section hr {
+    height: 1px;
+    margin: 2.4rem 0;
+    border: 0;
+    background: linear-gradient(90deg, rgba(115, 100, 75, 0), rgba(115, 100, 75, 0.3), rgba(115, 100, 75, 0));
+}
+
+.app-body.book-reader-page .book-reader-section a {
+    color: var(--accent-strong);
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.18em;
+}
+
+.app-body.book-reader-page .book-reader-image-placeholder {
+    max-width: 52ch;
+    display: grid;
+    place-items: center;
+    min-height: 84px;
+    margin: 24px auto;
+    padding: 18px 20px;
+    border: 1px dashed rgba(115, 100, 75, 0.28);
+    border-radius: 20px;
+    background: rgba(249, 244, 231, 0.82);
+    color: var(--muted);
+    text-align: center;
+}
+
+.app-body.book-reader-page .book-reader-section [data-reader-paragraph-id] {
+    scroll-margin-top: 44px;
+}
+
+.app-body.book-reader-page .reader-highlight {
+    padding: 0.1em 0.08em;
+    border-radius: 0.45em;
+    background: rgba(236, 205, 120, 0.32);
+    box-shadow:
+        inset 0 -0.18em 0 rgba(196, 146, 38, 0.36),
+        0 2px 8px rgba(196, 146, 38, 0.08);
+}
+
+.app-body.book-reader-page .reader-highlight.is-active,
+.app-body.book-reader-page .reader-highlight:hover,
+.app-body.book-reader-page .reader-highlight:focus-visible {
+    background: rgba(236, 205, 120, 0.52);
+    box-shadow:
+        inset 0 -0.18em 0 rgba(196, 146, 38, 0.56),
+        0 0 0 2px rgba(196, 146, 38, 0.18),
+        0 12px 18px rgba(196, 146, 38, 0.1);
+}
+
+.app-body.book-reader-page .reader-annotation-peek {
+    gap: 12px;
+    padding: 18px;
+    border-radius: 22px;
+    border-color: rgba(196, 146, 38, 0.22);
+    background:
+        linear-gradient(135deg, rgba(255, 250, 235, 0.98), rgba(247, 241, 220, 0.86)),
+        rgba(255, 255, 255, 0.92);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.56);
+}
+
+.app-body.book-reader-page .reader-notes-backdrop {
+    background: rgba(31, 39, 44, 0.24);
+    backdrop-filter: blur(10px);
+}
+
+.app-body.book-reader-page .reader-notes-sheet {
+    top: 24px;
+    right: 24px;
+    bottom: 24px;
+    width: min(440px, calc(100vw - 48px));
+    gap: 18px;
+    padding: 22px;
+    border-radius: 32px;
+    border-color: rgba(115, 100, 75, 0.14);
+    background: linear-gradient(180deg, rgba(253, 250, 244, 0.98), rgba(246, 241, 233, 0.98));
+    box-shadow: 0 34px 56px rgba(67, 56, 35, 0.22);
+}
+
+.app-body.book-reader-page .reader-notes-sheet__header {
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(115, 100, 75, 0.12);
+}
+
+.app-body.book-reader-page .reader-notes-sheet__body {
+    gap: 18px;
+    padding-right: 6px;
+}
+
+.app-body.book-reader-page .reader-notes-summary {
+    display: grid;
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 14px;
+    align-items: center;
+    padding: 16px;
+    border: 1px solid rgba(115, 100, 75, 0.1);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.62);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+.app-body.book-reader-page .reader-notes-summary__cover {
+    width: 78px;
+    height: 104px;
+    overflow: hidden;
+    border-radius: 20px;
+    border: 1px solid rgba(115, 100, 75, 0.14);
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.32), transparent 38%),
+        linear-gradient(145deg, rgba(110, 151, 139, 0.92), rgba(51, 92, 85, 1));
+    box-shadow: 0 16px 28px rgba(88, 73, 48, 0.14);
+}
+
+.app-body.book-reader-page .reader-notes-card {
+    padding: 16px;
+    border: 1px solid rgba(115, 100, 75, 0.1);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.62);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+.app-body.book-reader-page .reader-notes-form {
+    gap: 14px;
+}
+
+.app-body.book-reader-page .reader-notes-sheet .input,
+.app-body.book-reader-page .reader-notes-sheet .textarea {
+    border-color: rgba(115, 100, 75, 0.14);
+    background: rgba(255, 255, 255, 0.84);
+}
+
+.app-body.book-reader-page .reader-notes-sheet .note-list {
+    gap: 12px;
+}
+
+.app-body.book-reader-page .reader-notes-sheet .note-card {
+    background: rgba(255, 255, 255, 0.76);
+    border-color: rgba(115, 100, 75, 0.12);
+    box-shadow: 0 12px 24px rgba(88, 73, 48, 0.08);
+}
+
+.app-body.book-reader-page .reader-notes-sheet .note-card__quote {
+    background: rgba(63, 111, 100, 0.06);
+    border-left-color: rgba(63, 111, 100, 0.38);
+}
+
 .audio-player {
     --player-panel-width: 392px;
     --player-panel-height: 332px;

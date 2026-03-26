@@ -97,6 +97,7 @@ class Moment(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=True)
+    cross_post_targets = db.Column(db.Text, nullable=True)
     location_label = db.Column(db.String(255), nullable=True)
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
@@ -345,6 +346,9 @@ class Book(db.Model):
     cover_stored_name = db.Column(db.String(255), nullable=True)
     cover_relative_path = db.Column(db.String(255), nullable=True)
     cover_mime_type = db.Column(db.String(120), nullable=True)
+    last_read_section_index = db.Column(db.Integer, nullable=True)
+    last_read_scroll_ratio = db.Column(db.Float, nullable=True)
+    last_read_at = db.Column(db.DateTime, nullable=True)
     size_bytes = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
     updated_at = db.Column(

@@ -1,13 +1,28 @@
 import { ensureEpubJs, ensureMammoth } from "./vendor-loader.js";
 import { t } from "./i18n.js";
+import { requestJson } from "./http.js";
+import { initTimestampHelpers, initTrackLyrics } from "./library-audio-helpers.js";
+import { secondsToClock } from "./library-time-utils.js";
+import {
+    animateMediaVolume,
+    applyPlayerAppearance,
+    applyPlayerSize,
+    playerDockPositionKey,
+    playerDockStateKey,
+    playerStorageKey,
+    readPlayerAppearance,
+    readPlayerSize,
+    readStoredJson,
+    readStoredPlayerState,
+    readTrackCatalog,
+    writePlayerAppearance,
+    writePlayerSize,
+    writeStoredPlayerState,
+    normalizePlayerState,
+} from "./library-player-utils.js";
+import { initVideoCardPreviews } from "./library-video-previews.js";
 
-const playerStorageKey = "moments-global-player";
-const playerDockStateKey = "moments-global-player-dock-state";
-const playerDockPositionKey = "moments-global-player-dock-position";
-const playerAppearanceKey = "moments-global-player-appearance";
-const playerSizeKey = "moments-global-player-size";
 const readerUiTimers = new WeakMap();
-let timestampHelpersInitialized = false;
 let libraryPageController = null;
 let immersiveReaderGlobalsBound = false;
 let sectionReaderGlobalsBound = false;
@@ -116,30 +131,98 @@ function closeReaderNotesDrawer(scope, { keepPanels = false } = {}) {
     }
 }
 
-function secondsToClock(totalSeconds) {
-    const total = Math.max(Math.floor(totalSeconds || 0), 0);
-    const hours = Math.floor(total / 3600);
-    const minutes = Math.floor((total % 3600) / 60);
-    const seconds = total % 60;
-
-    if (hours) {
-        return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+function clampReaderScrollRatio(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+        return 0;
     }
-    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    return Math.max(0, Math.min(numericValue, 1));
 }
 
-function readTrackCatalog() {
-    const script = document.querySelector("[data-track-catalog]");
-    if (!script) {
-        return [];
+function getElementScrollRatio(element) {
+    if (!(element instanceof HTMLElement)) {
+        return 0;
     }
 
-    try {
-        const payload = JSON.parse(script.textContent || "[]");
-        return Array.isArray(payload) ? payload : [];
-    } catch {
-        return [];
+    const maxScroll = Math.max(element.scrollHeight - element.clientHeight, 0);
+    if (!maxScroll) {
+        return 0;
     }
+    return clampReaderScrollRatio(element.scrollTop / maxScroll);
+}
+
+function setElementScrollRatio(element, ratio) {
+    if (!(element instanceof HTMLElement)) {
+        return;
+    }
+
+    const normalizedRatio = clampReaderScrollRatio(ratio);
+    const maxScroll = Math.max(element.scrollHeight - element.clientHeight, 0);
+    if (!maxScroll) {
+        return;
+    }
+    element.scrollTop = maxScroll * normalizedRatio;
+}
+
+function createReaderProgressSaver(endpoint, buildPayload) {
+    if (!endpoint || typeof buildPayload !== "function") {
+        return {
+            schedule() {},
+            flush() {},
+        };
+    }
+
+    let timerId = 0;
+    let lastSavedSnapshot = "";
+
+    const persist = async ({ immediate = false } = {}) => {
+        if (timerId) {
+            window.clearTimeout(timerId);
+            timerId = 0;
+        }
+
+        const payload = buildPayload();
+        if (!payload) {
+            return;
+        }
+
+        const snapshot = JSON.stringify(payload);
+        if (snapshot === lastSavedSnapshot) {
+            return;
+        }
+
+        const send = async () => {
+            try {
+                await requestJson(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                lastSavedSnapshot = snapshot;
+            } catch {
+                // Ignore transient progress save failures to keep reading uninterrupted.
+            }
+        };
+
+        if (immediate) {
+            await send();
+            return;
+        }
+
+        timerId = window.setTimeout(() => {
+            timerId = 0;
+            void send();
+        }, 420);
+    };
+
+    return {
+        schedule() {
+            void persist();
+        },
+        flush() {
+            void persist({ immediate: true });
+        },
+    };
 }
 
 function initBookReaderSelection() {
@@ -266,46 +349,73 @@ async function initDocxReaders() {
     }
 }
 
-function initVideoCardPreviews() {
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const previewVideos = document.querySelectorAll("[data-video-card-preview]");
-    if (!previewVideos.length) {
+function initLinearReaderProgress() {
+    const readers = document.querySelectorAll(
+        "[data-reader-progress-source]:not([data-section-reader])",
+    );
+    if (!readers.length) {
         return;
     }
 
-    previewVideos.forEach((video) => {
-        if (!(video instanceof HTMLVideoElement) || video.dataset.previewBound === "true") {
+    readers.forEach((reader) => {
+        if (!(reader instanceof HTMLElement)) {
             return;
         }
 
-        const shell = video.closest("[data-video-card-link]");
-        if (!(shell instanceof HTMLElement)) {
+        const shell = getReaderShell(reader);
+        const endpoint = shell?.getAttribute("data-reader-progress-endpoint") || "";
+        if (!endpoint) {
             return;
         }
 
-        video.dataset.previewBound = "true";
-        video.muted = true;
-        video.loop = true;
-        video.playsInline = true;
+        const initialRatio = clampReaderScrollRatio(
+            Number.parseFloat(reader.getAttribute("data-reader-resume-scroll-ratio") || "0"),
+        );
+        let hasRestoredInitialPosition = initialRatio <= 0;
 
-        const playPreview = () => {
-            if (prefersReducedMotion) {
+        const saver = createReaderProgressSaver(endpoint, () => ({
+            scroll_ratio: getElementScrollRatio(reader),
+        }));
+
+        const restoreInitialPosition = () => {
+            if (hasRestoredInitialPosition) {
                 return;
             }
-            void video.play().catch(() => {});
-        };
 
-        const pausePreview = () => {
-            video.pause();
-            if (video.currentTime > 0) {
-                video.currentTime = 0;
+            const maxScroll = Math.max(reader.scrollHeight - reader.clientHeight, 0);
+            if (!maxScroll) {
+                return;
             }
+
+            hasRestoredInitialPosition = true;
+            window.requestAnimationFrame(() => {
+                setElementScrollRatio(reader, initialRatio);
+            });
         };
 
-        shell.addEventListener("mouseenter", playPreview);
-        shell.addEventListener("mouseleave", pausePreview);
-        shell.addEventListener("focusin", playPreview);
-        shell.addEventListener("focusout", pausePreview);
+        restoreInitialPosition();
+        window.setTimeout(restoreInitialPosition, 180);
+        window.setTimeout(restoreInitialPosition, 480);
+
+        const observer = new MutationObserver(() => {
+            restoreInitialPosition();
+        });
+        observer.observe(reader, { childList: true, subtree: true });
+
+        const flushProgress = () => {
+            saver.flush();
+        };
+
+        reader.addEventListener("scroll", () => {
+            saver.schedule();
+        }, { passive: true });
+
+        window.addEventListener("pagehide", flushProgress);
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden") {
+                flushProgress();
+            }
+        });
     });
 }
 
@@ -363,7 +473,7 @@ function openReaderNotesDrawer(scope) {
 
     const drawer = shell.querySelector("[data-reader-notes-drawer]");
     if (drawer instanceof HTMLElement) {
-        shell.classList.add("is-reader-bottom-visible", "is-reader-notes-visible");
+        shell.classList.add("is-reader-top-visible", "is-reader-bottom-visible", "is-reader-notes-visible");
         drawer.setAttribute("aria-hidden", "false");
         clearReaderUiTimer(shell);
         return drawer;
@@ -417,6 +527,8 @@ function initImmersiveReaderShells() {
         notesBackdrop?.addEventListener("click", () => {
             closeReaderNotesDrawer(shell);
         }, { signal });
+
+        shell.classList.add("is-reader-top-visible");
 
         stage?.addEventListener("click", (event) => {
             if (!(event.target instanceof Element)) {
@@ -591,6 +703,11 @@ function initSectionReaders() {
         const peekQuote = readerLayout.querySelector("[data-reader-annotation-peek-quote]");
         const peekComment = readerLayout.querySelector("[data-reader-annotation-peek-comment]");
         const annotationCards = Array.from(readerLayout.querySelectorAll("[data-annotation-card]"));
+        const progressMeters = Array.from(readerLayout.querySelectorAll("[data-reader-progress-meter]"));
+        const progressFills = Array.from(readerLayout.querySelectorAll("[data-reader-progress-fill]"));
+        const sectionLabels = Array.from(readerLayout.querySelectorAll("[data-reader-current-section-label]"));
+        const progressTexts = Array.from(readerLayout.querySelectorAll("[data-reader-progress-text]"));
+        const progressPercents = Array.from(readerLayout.querySelectorAll("[data-reader-progress-percent]"));
 
         if (
             !(reader instanceof HTMLElement) ||
@@ -644,6 +761,17 @@ function initSectionReaders() {
         let pendingAnnotationId = Number.isInteger(initialFocusAnnotationId)
             ? initialFocusAnnotationId
             : null;
+        let pendingResumeScrollRatio = clampReaderScrollRatio(
+            Number.parseFloat(reader.getAttribute("data-reader-resume-scroll-ratio") || "0"),
+        );
+        const saveProgressEndpoint =
+            (readerLayout instanceof Element
+                ? readerLayout.getAttribute("data-reader-progress-endpoint")
+                : "") || "";
+        const progressSaver = createReaderProgressSaver(saveProgressEndpoint, () => ({
+            section_index: activeIndex,
+            scroll_ratio: getElementScrollRatio(reader),
+        }));
 
         const clearAnnotationLocation = () => {
             const url = new URL(window.location.href);
@@ -768,6 +896,23 @@ function initSectionReaders() {
             showPeek(annotation);
         };
 
+        const restoreReaderScroll = () => {
+            if (pendingResumeScrollRatio <= 0) {
+                return;
+            }
+
+            const targetRatio = pendingResumeScrollRatio;
+            pendingResumeScrollRatio = 0;
+
+            window.requestAnimationFrame(() => {
+                setElementScrollRatio(reader, targetRatio);
+            });
+        };
+
+        const flushProgressSave = () => {
+            progressSaver.flush();
+        };
+
         const renderHighlights = () => {
             unwrapReaderHighlights(reader);
             clearActiveAnnotationState();
@@ -811,18 +956,41 @@ function initSectionReaders() {
             }
 
             hidePeek();
+            restoreReaderScroll();
         };
 
         const sync = (index) => {
             activeIndex = Math.max(0, Math.min(index, manifest.length - 1));
             const section = manifest[activeIndex];
             const label = section?.label || `Section ${activeIndex + 1}`;
-            const optionLabel = section?.is_front_matter ? `${label} (Front matter)` : label;
+            const optionLabel = section?.is_front_matter
+                ? `${label} (${t("books.front_matter", {}, "Front matter")})`
+                : label;
+            const percent = manifest.length ? ((activeIndex + 1) / manifest.length) * 100 : 0;
+            const progressLabel = `${activeIndex + 1} / ${manifest.length}`;
+            const topProgressLabel = section?.is_front_matter
+                ? `${t("books.front_matter", {}, "Front matter")} - ${t("books.section", {}, "Section")} ${progressLabel}`
+                : `${t("books.section", {}, "Section")} ${progressLabel}`;
 
             title.textContent = label;
-            progress.textContent = section?.is_front_matter
-                ? `Front matter - ${activeIndex + 1} / ${manifest.length}`
-                : `${activeIndex + 1} / ${manifest.length}`;
+            progress.textContent = topProgressLabel;
+            sectionLabels.forEach((node) => {
+                node.textContent = label;
+                node.setAttribute("title", label);
+            });
+            progressTexts.forEach((node) => {
+                node.textContent = progressLabel;
+            });
+            progressPercents.forEach((node) => {
+                node.textContent = `${Math.round(percent)}%`;
+            });
+            progressFills.forEach((fill) => {
+                fill.style.width = `${percent}%`;
+            });
+            progressMeters.forEach((meter) => {
+                meter.setAttribute("aria-valuemax", String(manifest.length));
+                meter.setAttribute("aria-valuenow", String(activeIndex + 1));
+            });
             toc.value = String(activeIndex);
             if (toc.options[activeIndex]) {
                 toc.options[activeIndex].textContent = optionLabel;
@@ -860,6 +1028,7 @@ function initSectionReaders() {
                 reader.innerHTML = cache.get(activeIndex) || "";
                 reader.scrollTop = 0;
                 renderHighlights();
+                progressSaver.schedule();
                 return;
             }
 
@@ -894,6 +1063,7 @@ function initSectionReaders() {
                 reader.scrollTop = 0;
                 sync(activeIndex);
                 renderHighlights();
+                progressSaver.schedule();
             } catch {
                 reader.innerHTML =
                     "<p class='helper-text'>This section could not be loaded right now.</p>";
@@ -1010,6 +1180,9 @@ function initSectionReaders() {
             }
         }, { signal });
 
+        reader.addEventListener("scroll", () => {
+            progressSaver.schedule();
+        }, { passive: true, signal });
         reader.addEventListener("mouseup", syncSelection, { signal });
         reader.addEventListener("touchend", syncSelection, { signal });
         reader.addEventListener("click", (event) => {
@@ -1064,9 +1237,17 @@ function initSectionReaders() {
             }, { signal });
         });
 
+        window.addEventListener("pagehide", flushProgressSave, { signal });
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden") {
+                flushProgressSave();
+            }
+        }, { signal });
+
         sync(activeIndex);
         writeLocation();
         renderHighlights();
+        progressSaver.schedule();
 
         if (!sectionReaderGlobalsBound) {
             sectionReaderGlobalsBound = true;
@@ -1368,283 +1549,6 @@ async function initEpubReaders() {
         }
     }
 }
-
-function initTimestampHelpers() {
-    if (timestampHelpersInitialized) {
-        return;
-    }
-    timestampHelpersInitialized = true;
-    document.addEventListener("click", (event) => {
-        if (!(event.target instanceof Element)) {
-            return;
-        }
-
-        const useCurrentTime = event.target.closest("[data-use-current-time]");
-        if (useCurrentTime) {
-            const scope =
-                useCurrentTime.closest(".detail-card") ||
-                useCurrentTime.closest(".library-detail-grid") ||
-                document;
-            const media = scope.querySelector("[data-timestamp-media]");
-            const input = scope.querySelector("[data-timestamp-input]");
-            if (media instanceof HTMLMediaElement && input instanceof HTMLInputElement) {
-                input.value = secondsToClock(media.currentTime);
-            }
-            return;
-        }
-
-        const seekButton = event.target.closest("[data-seek-to]");
-        if (!seekButton) {
-            return;
-        }
-
-        const scope =
-            seekButton.closest(".library-detail-grid") ||
-            seekButton.closest(".detail-card") ||
-            document;
-        const media = scope.querySelector("[data-timestamp-media]");
-        const seconds = Number(seekButton.getAttribute("data-seek-to"));
-        if (media instanceof HTMLMediaElement && !Number.isNaN(seconds)) {
-            media.currentTime = seconds;
-            media.play().catch(() => {});
-        }
-    });
-}
-
-function initTrackLyrics() {
-    const shells = document.querySelectorAll("[data-lyrics-shell]");
-    if (!shells.length) {
-        return;
-    }
-
-    shells.forEach((shell) => {
-        if (!(shell instanceof HTMLElement) || shell.dataset.lyricsBound === "true") {
-            return;
-        }
-        shell.dataset.lyricsBound = "true";
-
-        const scope = shell.closest(".library-detail-grid") || shell;
-        const media = scope.querySelector("[data-timestamp-media]");
-        const lines = Array.from(shell.querySelectorAll("[data-lyrics-line]")).filter(
-            (line) => line instanceof HTMLButtonElement
-        );
-        if (!(media instanceof HTMLMediaElement) || !lines.length) {
-            return;
-        }
-
-        let activeLine = null;
-
-        const setActiveLine = (nextLine) => {
-            if (activeLine === nextLine) {
-                return;
-            }
-
-            if (activeLine instanceof HTMLElement) {
-                activeLine.classList.remove("is-active");
-            }
-
-            activeLine = nextLine instanceof HTMLElement ? nextLine : null;
-            if (!(activeLine instanceof HTMLElement)) {
-                return;
-            }
-
-            activeLine.classList.add("is-active");
-            activeLine.scrollIntoView({
-                behavior: "smooth",
-                block: "nearest",
-            });
-        };
-
-        const syncLyrics = () => {
-            const currentTime = media.currentTime;
-            let matchedLine = null;
-
-            lines.forEach((line) => {
-                const start = Number(line.getAttribute("data-lyrics-start"));
-                const next = Number(line.getAttribute("data-lyrics-next"));
-                if (!Number.isFinite(start) || currentTime < start) {
-                    return;
-                }
-
-                if (!Number.isFinite(next) || currentTime < next) {
-                    matchedLine = line;
-                }
-            });
-
-            setActiveLine(matchedLine);
-        };
-
-        media.addEventListener("loadedmetadata", syncLyrics);
-        media.addEventListener("timeupdate", syncLyrics);
-        media.addEventListener("seeked", syncLyrics);
-        media.addEventListener("emptied", () => {
-            setActiveLine(null);
-        });
-
-        syncLyrics();
-    });
-}
-
-function readStoredJson(key) {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) {
-        return null;
-    }
-
-    try {
-        return JSON.parse(raw);
-    } catch {
-        return null;
-    }
-}
-
-function normalizePlayerQueue(rawQueue, fallbackQueue = []) {
-    const source = Array.isArray(rawQueue) && rawQueue.length ? rawQueue : fallbackQueue;
-    return source.filter(
-        (track) =>
-            track &&
-            typeof track === "object" &&
-            typeof track.title === "string" &&
-            typeof track.src === "string"
-    );
-}
-
-function normalizePlayerState(rawState, fallbackQueue = []) {
-    const queue = normalizePlayerQueue(rawState?.queue, fallbackQueue);
-    let currentIndex = Number.isInteger(rawState?.currentIndex) ? rawState.currentIndex : -1;
-    if (currentIndex >= queue.length) {
-        currentIndex = queue.length - 1;
-    }
-    if (currentIndex < -1) {
-        currentIndex = -1;
-    }
-
-    const currentTime = Number(rawState?.currentTime);
-    const duration = Number(rawState?.duration);
-    const repeatMode = rawState?.repeatMode === "one" ? "one" : "off";
-
-    return {
-        queue,
-        currentIndex,
-        currentTime: Number.isFinite(currentTime) ? Math.max(currentTime, 0) : 0,
-        duration: Number.isFinite(duration) ? Math.max(duration, 0) : 0,
-        wasPlaying: Boolean(rawState?.wasPlaying),
-        repeatMode,
-    };
-}
-
-function readStoredPlayerState(fallbackQueue = []) {
-    return normalizePlayerState(readStoredJson(playerStorageKey), fallbackQueue);
-}
-
-function writeStoredPlayerState(state, fallbackQueue = []) {
-    const normalized = normalizePlayerState(state, fallbackQueue);
-    window.localStorage.setItem(playerStorageKey, JSON.stringify(normalized));
-    return normalized;
-}
-
-function normalizePlayerAppearance(rawAppearance) {
-    const opacity = Number(rawAppearance?.opacity);
-    return {
-        opacity: Number.isFinite(opacity) ? Math.min(Math.max(opacity, 70), 100) : 92,
-    };
-}
-
-function readPlayerAppearance() {
-    return normalizePlayerAppearance(readStoredJson(playerAppearanceKey));
-}
-
-function writePlayerAppearance(appearance) {
-    const normalized = normalizePlayerAppearance(appearance);
-    window.localStorage.setItem(playerAppearanceKey, JSON.stringify(normalized));
-    return normalized;
-}
-
-function applyPlayerAppearance(shell, appearance, controls = {}) {
-    if (!(shell instanceof HTMLElement)) {
-        return appearance;
-    }
-
-    const normalized = normalizePlayerAppearance(appearance);
-    shell.style.setProperty("--player-panel-opacity", `${normalized.opacity / 100}`);
-
-    if (controls.opacityInput instanceof HTMLInputElement) {
-        controls.opacityInput.value = String(normalized.opacity);
-    }
-    return normalized;
-}
-
-function getPlayerSizeBounds() {
-    return {
-        minWidth: 320,
-        minHeight: 250,
-        maxWidth: Math.max(320, window.innerWidth - 24),
-        maxHeight: Math.max(250, window.innerHeight - 24),
-    };
-}
-
-function normalizePlayerSize(rawSize) {
-    const width = Number(rawSize?.width);
-    const height = Number(rawSize?.height);
-    const bounds = getPlayerSizeBounds();
-    return {
-        width: Number.isFinite(width)
-            ? Math.min(Math.max(Math.round(width), bounds.minWidth), bounds.maxWidth)
-            : Math.min(392, bounds.maxWidth),
-        height: Number.isFinite(height)
-            ? Math.min(Math.max(Math.round(height), bounds.minHeight), bounds.maxHeight)
-            : Math.min(332, bounds.maxHeight),
-    };
-}
-
-function readPlayerSize() {
-    return normalizePlayerSize(readStoredJson(playerSizeKey));
-}
-
-function writePlayerSize(size) {
-    const normalized = normalizePlayerSize(size);
-    window.localStorage.setItem(playerSizeKey, JSON.stringify(normalized));
-    return normalized;
-}
-
-function applyPlayerSize(shell, size) {
-    if (!(shell instanceof HTMLElement)) {
-        return size;
-    }
-
-    const normalized = normalizePlayerSize(size);
-    shell.style.setProperty("--player-panel-width", `${normalized.width}px`);
-    shell.style.setProperty("--player-panel-height", `${normalized.height}px`);
-    return normalized;
-}
-
-function animateMediaVolume(media, from, to, duration = 220) {
-    if (!(media instanceof HTMLMediaElement)) {
-        return Promise.resolve();
-    }
-
-    media.volume = Math.min(Math.max(from, 0), 1);
-    if (duration <= 0) {
-        media.volume = Math.min(Math.max(to, 0), 1);
-        return Promise.resolve();
-    }
-
-    return new Promise((resolve) => {
-        const startTime = performance.now();
-        const tick = (now) => {
-            const progress = Math.min((now - startTime) / duration, 1);
-            media.volume = from + (to - from) * progress;
-            if (progress >= 1) {
-                resolve();
-                return;
-            }
-            window.requestAnimationFrame(tick);
-        };
-
-        window.requestAnimationFrame(tick);
-    });
-}
-
 function getPlayerLabel(track) {
     return track?.artist ? `${track.title} - ${track.artist}` : track?.title || "";
 }
@@ -2754,6 +2658,7 @@ export function initLibraryFeatures() {
     initImmersiveReaderShells();
     initBookReaderSelection();
     initDocxReaders();
+    initLinearReaderProgress();
     initSectionReaders();
     initEpubReaders();
     initTimestampHelpers();
