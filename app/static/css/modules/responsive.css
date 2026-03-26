@@ -209,9 +209,13 @@
     }
 
     .app-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        width: 100%;
         padding: 10px 10px 12px;
         border-radius: 18px;
-        align-items: stretch;
+        align-items: center;
+        overflow: hidden;
         box-shadow: 0 6px 14px rgba(21, 33, 42, 0.08);
         backdrop-filter: none;
     }
@@ -220,10 +224,11 @@
         flex-direction: row;
         align-items: center;
         gap: 8px;
+        min-width: 0;
     }
 
     .app-header__copy {
-        min-height: 34px;
+        display: none;
     }
 
     .app-header__label {
@@ -231,7 +236,9 @@
     }
 
     .app-header__quicknav {
+        grid-column: 1 / -1;
         width: 100%;
+        max-width: 100%;
         overflow-x: auto;
         flex-wrap: nowrap;
         margin-inline: 0;
@@ -254,7 +261,9 @@
 
     .app-header__compose,
     .app-header__login {
+        display: inline-flex;
         flex: 0 0 auto;
+        align-self: center;
     }
 
     .sidebar {
@@ -292,7 +301,14 @@
         border-radius: 20px;
     }
 
+    .moment-card__header {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
     .page-header.page-header--home {
+        width: 100%;
         padding: 16px 14px;
         gap: 12px;
     }
@@ -554,11 +570,12 @@
 
     .moment-card__header-main {
         width: 100%;
+        gap: 6px;
     }
 
     .moment-card__content {
         max-width: none;
-        margin-top: 12px;
+        margin-top: 8px;
         font-size: 0.98rem;
         line-height: 1.62;
     }
@@ -639,6 +656,30 @@
 
     .composer-file-list {
         grid-template-columns: 1fr;
+    }
+
+    .composer-disclosure__summary {
+        padding: 12px 14px;
+    }
+
+    .composer-disclosure__body {
+        padding: 0 14px 14px;
+    }
+
+    .composer-disclosure__body .section-title-row,
+    .composer-disclosure__body .location-card strong {
+        display: none;
+    }
+
+    .composer-disclosure__body .composer-citation,
+    .composer-disclosure__body .composer-cross-post {
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    .composer-disclosure__body .folder-picker {
+        max-height: 180px;
     }
 
     .composer-preview,
@@ -846,8 +887,7 @@
     }
 
     .app-header__copy {
-        display: flex;
-        min-width: 0;
+        display: none;
     }
 
     .app-header__label {
@@ -858,6 +898,13 @@
         min-height: 32px;
         padding-inline: 12px;
         font-size: 0.8rem;
+    }
+
+    .app-header__compose,
+    .app-header__login {
+        min-height: 34px;
+        padding-inline: 12px;
+        font-size: 0.82rem;
     }
 
     .page-header h1 {
@@ -960,7 +1007,7 @@
 
     .media-cluster--grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        width: min(100%, 304px);
+        width: min(100%, 288px);
     }
 
     .media-cluster--single .media-tile {

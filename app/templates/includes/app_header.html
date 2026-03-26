@@ -26,13 +26,13 @@
     {% if can_manage %}
         <button
             type="button"
-            class="icon-button app-header__compose"
+            class="button button--ghost button--compact app-header__compose"
             data-open-composer
             data-mobile-compose
             aria-label="{{ t('nav.publish_new_moment') }}"
             title="{{ t('nav.publish_new_moment') }}"
         >
-            +
+            {{ t('common.publish') }}
         </button>
     {% else %}
         <a

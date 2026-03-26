@@ -44,6 +44,7 @@ export function initComposerModal() {
     const contentField = form?.querySelector('textarea[name="content"]');
     const crossPostShell = modal.querySelector("[data-cross-post-shell]");
     const crossPostOptions = modal.querySelectorAll("[data-cross-post-option]");
+    const disclosureSections = modal.querySelectorAll("[data-composer-disclosure]");
 
     let fileController;
     let citationController;
@@ -83,6 +84,11 @@ export function initComposerModal() {
 
     const openModal = () => {
         document.body.classList.remove("is-sidebar-open");
+        if (window.matchMedia("(max-width: 720px)").matches) {
+            disclosureSections.forEach((section) => {
+                section.removeAttribute("open");
+            });
+        }
         modal.hidden = false;
         document.body.classList.add("is-modal-open");
         modal.querySelector("textarea")?.focus();

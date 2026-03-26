@@ -203,17 +203,7 @@ body.is-sidebar-open .sidebar-overlay {
 }
 
 .app-header__compose {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 42px;
-    min-width: 42px;
-    height: 42px;
-    padding: 0;
-    border-radius: 14px;
-    font-size: 1.35rem;
-    font-weight: 700;
-    line-height: 1;
+    display: none;
 }
 
 .app-header__login {

@@ -12,8 +12,6 @@
                     {% for folder in moment.assigned_categories %}
                         <span class="badge badge--category">{{ folder.name }}</span>
                     {% endfor %}
-                {% else %}
-                    <span class="badge badge--category">{{ t('feed.uncategorized') }}</span>
                 {% endif %}
                 {% if moment.is_edited and not recycle_view %}
                     <span class="badge badge--edit">{{ t('feed.edited') }}</span>
