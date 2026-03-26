@@ -4,7 +4,7 @@ from flask import Blueprint, abort, current_app, flash, redirect, render_templat
 from flask_login import current_user
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import load_only, selectinload
 
 from ..extensions import db
 from ..models import (
@@ -226,7 +226,7 @@ def load_feed_query(*, include_deleted: bool = False):
         selectinload(Moment.category),
         selectinload(Moment.categories),
         selectinload(Moment.author),
-        selectinload(Moment.revisions),
+        selectinload(Moment.revisions).load_only(MomentRevision.id),
     )
     query = query.filter(Moment.is_deleted.is_(include_deleted))
 
@@ -272,7 +272,7 @@ def get_moment_or_404(moment_id: int, *, allow_deleted: bool = False) -> Moment:
             selectinload(Moment.category),
             selectinload(Moment.categories),
             selectinload(Moment.author),
-            selectinload(Moment.revisions),
+            selectinload(Moment.revisions).load_only(MomentRevision.id),
         )
         .filter(Moment.id == moment_id)
         .first()
