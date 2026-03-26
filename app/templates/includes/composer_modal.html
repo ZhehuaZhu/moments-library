@@ -23,89 +23,96 @@
                 ></textarea>
             </label>
 
-            <section class="composer-citation" data-citation-shell>
-                <div class="section-title-row section-title-row--compact">
-                    <div><h3>{{ t('composer.cite') }}</h3></div>
-                    <button
-                        type="button"
-                        class="button button--ghost button--compact"
-                        data-citation-toggle
-                        aria-expanded="false"
-                    >
-                        {{ t('composer.add_citation') }}
-                    </button>
+            <div class="field">
+                <span>{{ t('common.attachments') }}</span>
+                <input
+                    type="file"
+                    name="files"
+                    class="composer-input-hidden"
+                    data-file-input
+                    multiple
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
+                >
+                <div class="composer-attachment-actions">
+                    <label class="button button--ghost composer-attachment-trigger">
+                        <input
+                            type="file"
+                            class="composer-input-hidden"
+                            data-library-input
+                            multiple
+                            accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
+                        >
+                        <span>{{ t('composer.choose_media') }}</span>
+                    </label>
+                    <label class="button composer-attachment-trigger">
+                        <input
+                            type="file"
+                            class="composer-input-hidden"
+                            data-camera-input
+                            accept="image/*,video/*"
+                            capture="environment"
+                        >
+                        <span>{{ t('composer.open_camera') }}</span>
+                    </label>
                 </div>
+                <small class="helper-text">{{ t('composer.attachments_hint') }}</small>
+                <small class="helper-text" data-file-summary hidden></small>
+            </div>
 
-                <input type="hidden" name="citation_kind" data-citation-kind>
-                <input type="hidden" name="citation_target_id" data-citation-target-id>
-
-                <div class="composer-citation__selected" data-selected-citation hidden></div>
-
-                <div class="composer-citation__panel" data-citation-panel hidden>
-                    <div class="composer-citation__scopes" role="tablist" aria-label="{{ t('composer.citation_scope') }}">
-                        <button type="button" class="composer-citation__scope is-active" data-citation-scope="all">{{ t('common.all') }}</button>
-                        <button type="button" class="composer-citation__scope" data-citation-scope="books">{{ module_labels.books }}</button>
-                        <button type="button" class="composer-citation__scope" data-citation-scope="quotes">{{ t('citation.book_quote') }}</button>
-                        <button type="button" class="composer-citation__scope" data-citation-scope="music">{{ module_labels.music }}</button>
-                        <button type="button" class="composer-citation__scope" data-citation-scope="videos">{{ module_labels.videos }}</button>
+            <details class="composer-disclosure" data-composer-disclosure>
+                <summary class="composer-disclosure__summary">
+                    <span>{{ t('composer.cite') }}</span>
+                </summary>
+                <section class="composer-citation composer-disclosure__body" data-citation-shell>
+                    <div class="section-title-row section-title-row--compact">
+                        <div><h3>{{ t('composer.cite') }}</h3></div>
+                        <button
+                            type="button"
+                            class="button button--ghost button--compact"
+                            data-citation-toggle
+                            aria-expanded="false"
+                        >
+                            {{ t('composer.add_citation') }}
+                        </button>
                     </div>
 
-                    <label class="field">
-                        <span>{{ t('composer.search_library') }}</span>
-                        <input
-                            type="search"
-                            class="input"
-                            placeholder="{{ t('composer.search_placeholder') }}"
-                            data-citation-search
-                        >
-                    </label>
+                    <input type="hidden" name="citation_kind" data-citation-kind>
+                    <input type="hidden" name="citation_target_id" data-citation-target-id>
 
-                    <div class="composer-citation__results" data-citation-results></div>
-                </div>
-            </section>
+                    <div class="composer-citation__selected" data-selected-citation hidden></div>
 
-            <div class="composer-grid">
-                <div class="field">
+                    <div class="composer-citation__panel" data-citation-panel hidden>
+                        <div class="composer-citation__scopes" role="tablist" aria-label="{{ t('composer.citation_scope') }}">
+                            <button type="button" class="composer-citation__scope is-active" data-citation-scope="all">{{ t('common.all') }}</button>
+                            <button type="button" class="composer-citation__scope" data-citation-scope="books">{{ module_labels.books }}</button>
+                            <button type="button" class="composer-citation__scope" data-citation-scope="quotes">{{ t('citation.book_quote') }}</button>
+                            <button type="button" class="composer-citation__scope" data-citation-scope="music">{{ module_labels.music }}</button>
+                            <button type="button" class="composer-citation__scope" data-citation-scope="videos">{{ module_labels.videos }}</button>
+                        </div>
+
+                        <label class="field">
+                            <span>{{ t('composer.search_library') }}</span>
+                            <input
+                                type="search"
+                                class="input"
+                                placeholder="{{ t('composer.search_placeholder') }}"
+                                data-citation-search
+                            >
+                        </label>
+
+                        <div class="composer-citation__results" data-citation-results></div>
+                    </div>
+                </section>
+            </details>
+
+            <details class="composer-disclosure" data-composer-disclosure>
+                <summary class="composer-disclosure__summary">
                     <span>{{ t('composer.collections') }}</span>
+                </summary>
+                <div class="composer-disclosure__body">
                     {% include "includes/folder_picker.html" %}
                 </div>
-
-                <div class="field">
-                    <span>{{ t('common.attachments') }}</span>
-                    <input
-                        type="file"
-                        name="files"
-                        class="composer-input-hidden"
-                        data-file-input
-                        multiple
-                        accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
-                    >
-                    <div class="composer-attachment-actions">
-                        <label class="button button--ghost composer-attachment-trigger">
-                            <input
-                                type="file"
-                                class="composer-input-hidden"
-                                data-library-input
-                                multiple
-                                accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
-                            >
-                            <span>{{ t('composer.choose_media') }}</span>
-                        </label>
-                        <label class="button composer-attachment-trigger">
-                            <input
-                                type="file"
-                                class="composer-input-hidden"
-                                data-camera-input
-                                accept="image/*,video/*"
-                                capture="environment"
-                            >
-                            <span>{{ t('composer.open_camera') }}</span>
-                        </label>
-                    </div>
-                    <small class="helper-text">{{ t('composer.attachments_hint') }}</small>
-                    <small class="helper-text" data-file-summary hidden></small>
-                </div>
-            </div>
+            </details>
 
             <section class="composer-preview" data-composer-preview hidden>
                 <div class="section-title-row section-title-row--compact">
@@ -116,58 +123,70 @@
                 <div class="composer-file-list" data-composer-file-list></div>
             </section>
 
-            <section
-                class="composer-cross-post"
-                data-cross-post-shell
-                data-waiting-label="{{ t('cross_post.status.waiting') }}"
-                data-ready-label="{{ t('cross_post.status.ready') }}"
-                data-blocked-label="{{ t('cross_post.status.blocked') }}"
-                data-waiting-hint="{{ t('cross_post.waiting_hint') }}"
-                data-reason-documents="{{ t('cross_post.reason.documents') }}"
-                data-reason-mixed-media="{{ t('cross_post.reason.mixed_media') }}"
-                data-reason-wechat-image-limit="{{ t('cross_post.reason.wechat_image_limit') }}"
-                data-reason-single-video-only="{{ t('cross_post.reason.single_video_only') }}"
-                data-reason-need-text-or-supported-media="{{ t('cross_post.reason.need_text_or_supported_media') }}"
-                data-reason-need-media="{{ t('cross_post.reason.need_media') }}"
-                data-reason-instagram-limit="{{ t('cross_post.reason.instagram_limit') }}"
-                data-reason-xiaohongshu-image-limit="{{ t('cross_post.reason.xiaohongshu_image_limit') }}"
-            >
-                <div class="section-title-row section-title-row--compact">
-                    <div>
-                        <h3>{{ t('cross_post.title') }}</h3>
-                        <p>{{ t('cross_post.description') }}</p>
+            <details class="composer-disclosure" data-composer-disclosure>
+                <summary class="composer-disclosure__summary">
+                    <span>{{ t('common.current_location') }}</span>
+                </summary>
+                <div class="composer-disclosure__body">
+                    <div class="location-card">
+                        <div>
+                            <strong>{{ t('common.current_location') }}</strong>
+                            <p class="helper-text" data-location-status hidden></p>
+                        </div>
+                        <button type="button" class="button button--ghost" data-action="resolve-location">{{ t('common.use_current_location') }}</button>
                     </div>
                 </div>
-                <p class="helper-text">{{ t('cross_post.select_targets') }}</p>
-                <div class="cross-post-grid">
-                    {% for platform in cross_post_platforms %}
-                        <label class="cross-post-option" data-cross-post-option data-platform="{{ platform.key }}">
-                            <div class="cross-post-option__top">
-                                <span class="cross-post-option__check">
-                                    <input
-                                        type="checkbox"
-                                        name="cross_post_targets"
-                                        value="{{ platform.key }}"
-                                        data-cross-post-checkbox
-                                    >
-                                    <strong>{{ t(platform.label_key) }}</strong>
-                                </span>
-                                <span class="cross-post-status" data-cross-post-status>{{ t('cross_post.status.waiting') }}</span>
-                            </div>
-                            <small class="helper-text" data-cross-post-requirement>{{ t(platform.requirements_key) }}</small>
-                            <p class="helper-text" data-cross-post-hint>{{ t('cross_post.waiting_hint') }}</p>
-                        </label>
-                    {% endfor %}
-                </div>
-            </section>
+            </details>
 
-            <div class="location-card">
-                <div>
-                    <strong>{{ t('common.current_location') }}</strong>
-                    <p class="helper-text" data-location-status hidden></p>
-                </div>
-                <button type="button" class="button button--ghost" data-action="resolve-location">{{ t('common.use_current_location') }}</button>
-            </div>
+            <details class="composer-disclosure" data-composer-disclosure>
+                <summary class="composer-disclosure__summary">
+                    <span>{{ t('cross_post.title') }}</span>
+                </summary>
+                <section
+                    class="composer-cross-post composer-disclosure__body"
+                    data-cross-post-shell
+                    data-waiting-label="{{ t('cross_post.status.waiting') }}"
+                    data-ready-label="{{ t('cross_post.status.ready') }}"
+                    data-blocked-label="{{ t('cross_post.status.blocked') }}"
+                    data-waiting-hint="{{ t('cross_post.waiting_hint') }}"
+                    data-reason-documents="{{ t('cross_post.reason.documents') }}"
+                    data-reason-mixed-media="{{ t('cross_post.reason.mixed_media') }}"
+                    data-reason-wechat-image-limit="{{ t('cross_post.reason.wechat_image_limit') }}"
+                    data-reason-single-video-only="{{ t('cross_post.reason.single_video_only') }}"
+                    data-reason-need-text-or-supported-media="{{ t('cross_post.reason.need_text_or_supported_media') }}"
+                    data-reason-need-media="{{ t('cross_post.reason.need_media') }}"
+                    data-reason-instagram-limit="{{ t('cross_post.reason.instagram_limit') }}"
+                    data-reason-xiaohongshu-image-limit="{{ t('cross_post.reason.xiaohongshu_image_limit') }}"
+                >
+                    <div class="section-title-row section-title-row--compact">
+                        <div>
+                            <h3>{{ t('cross_post.title') }}</h3>
+                            <p>{{ t('cross_post.description') }}</p>
+                        </div>
+                    </div>
+                    <p class="helper-text">{{ t('cross_post.select_targets') }}</p>
+                    <div class="cross-post-grid">
+                        {% for platform in cross_post_platforms %}
+                            <label class="cross-post-option" data-cross-post-option data-platform="{{ platform.key }}">
+                                <div class="cross-post-option__top">
+                                    <span class="cross-post-option__check">
+                                        <input
+                                            type="checkbox"
+                                            name="cross_post_targets"
+                                            value="{{ platform.key }}"
+                                            data-cross-post-checkbox
+                                        >
+                                        <strong>{{ t(platform.label_key) }}</strong>
+                                    </span>
+                                    <span class="cross-post-status" data-cross-post-status>{{ t('cross_post.status.waiting') }}</span>
+                                </div>
+                                <small class="helper-text" data-cross-post-requirement>{{ t(platform.requirements_key) }}</small>
+                                <p class="helper-text" data-cross-post-hint>{{ t('cross_post.waiting_hint') }}</p>
+                            </label>
+                        {% endfor %}
+                    </div>
+                </section>
+            </details>
 
             <input type="hidden" name="latitude" data-location-latitude>
             <input type="hidden" name="longitude" data-location-longitude>
@@ -180,7 +199,7 @@
             <input type="hidden" name="location_place_key" data-location-place-key>
             <input type="hidden" name="location_source" data-location-source>
 
-            <div class="composer-actions">
+            <div class="composer-actions composer-actions--sticky">
                 <button type="submit" class="button">{{ t('common.publish') }}</button>
                 <button type="button" class="button button--subtle" data-close-composer>{{ t('common.cancel') }}</button>
             </div>
