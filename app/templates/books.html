@@ -2,33 +2,46 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="page-header page-header--shelf">
-    <div>
-        <p class="eyebrow">{{ t('common.library') }}</p>
-        <h1>{{ module_labels.books }}</h1>
+<section class="page-header page-header--shelf page-header--bookshelf">
+    <div class="bookshelf-header__hero">
+        <span class="bookshelf-header__mark" aria-hidden="true">
+            <span class="nav-link__glyph nav-link__glyph--books"></span>
+        </span>
+        <div class="bookshelf-header__copy">
+            <p class="eyebrow">{{ t('common.library') }}</p>
+            <h1>{{ module_labels.books }}</h1>
+        </div>
     </div>
-    <div class="page-header__stats">
-        <span class="stat-chip">{{ t('counts.titles', count=result_count) }}</span>
-        <span class="stat-chip">{{ t('book_status.reading') }} {{ reading_count }}</span>
-        <span class="stat-chip stat-chip--accent">{{ t('book_status.finished') }} {{ finished_count }}</span>
+    <div class="page-header__stats page-header__stats--bookshelf">
+        <span class="stat-chip stat-chip--bookshelf stat-chip--books-total" data-count="{{ result_count }}" aria-label="{{ t('counts.titles', count=result_count) }}">
+            {{ t('counts.titles', count=result_count) }}
+        </span>
+        <span class="stat-chip stat-chip--bookshelf stat-chip--books-reading" data-count="{{ reading_count }}" aria-label="{{ t('book_status.reading') }} {{ reading_count }}">
+            {{ t('book_status.reading') }} {{ reading_count }}
+        </span>
+        <span class="stat-chip stat-chip--accent stat-chip--bookshelf stat-chip--books-finished" data-count="{{ finished_count }}" aria-label="{{ t('book_status.finished') }} {{ finished_count }}">
+            {{ t('book_status.finished') }} {{ finished_count }}
+        </span>
         {% if can_manage %}
             <button
                 type="button"
-                class="button button--subtle button--compact"
+                class="button button--subtle button--compact bookshelf-header__action bookshelf-header__action--collection"
                 data-open-folder-panel="create"
                 aria-haspopup="dialog"
                 aria-controls="folder-create-panel"
                 aria-expanded="false"
+                aria-label="{{ t('books.new_collection') }}"
             >
                 {{ t('books.new_collection') }}
             </button>
             <button
                 type="button"
-                class="button button--ghost button--compact"
+                class="button button--ghost button--compact bookshelf-header__action bookshelf-header__action--add"
                 data-open-folder-panel="book-create"
                 aria-haspopup="dialog"
                 aria-controls="book-create-panel"
                 aria-expanded="false"
+                aria-label="{{ t('books.add_book') }}"
             >
                 {{ t('books.add_book') }}
             </button>
@@ -144,7 +157,7 @@
                     <div class="bookshelf-card__meta">
                         <span class="badge">{{ book.source_format|upper }}</span>
                         {% if book.category %}
-                            <span class="badge badge--category">{{ t('common.collection') }} 路 {{ book.category.name }}</span>
+                            <span class="badge badge--category">{{ t('common.collection') }} / {{ book.category.name }}</span>
                         {% endif %}
                         {% if book.finished_at %}
                             <span class="badge badge--edit">{{ t('common.finished') }} {{ book.finished_at|dateformat }}</span>

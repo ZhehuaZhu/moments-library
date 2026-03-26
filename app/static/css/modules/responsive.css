@@ -241,6 +241,122 @@
         flex: 0 0 auto;
     }
 
+    .app-body.books-page .app-header {
+        padding: 8px 10px;
+        gap: 8px;
+        border-radius: 18px;
+    }
+
+    .app-body.books-page .app-header__copy {
+        display: none;
+    }
+
+    .app-body.books-page .app-header__main {
+        gap: 8px;
+    }
+
+    .app-body.books-page .app-header .icon-button {
+        width: 40px;
+        height: 40px;
+        min-height: 40px;
+        border-radius: 14px;
+    }
+
+    .app-body.books-page .app-header__quicknav {
+        flex: 1;
+        width: auto;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
+    .app-body.books-page .app-header__quicklink {
+        min-width: 40px;
+        min-height: 40px;
+        padding: 0;
+        border-radius: 14px;
+        font-size: 0;
+    }
+
+    .app-body.books-page .app-header__quickglyph {
+        display: inline-block;
+    }
+
+    .app-body.books-page .app-header__quicktext {
+        display: none;
+    }
+
+    .app-body.books-page .app-header__quicklink--music,
+    .app-body.books-page .app-header__quicklink--videos {
+        display: none;
+    }
+
+    .app-body.books-page .page-header--bookshelf {
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 22px;
+    }
+
+    .app-body.books-page .bookshelf-header__hero {
+        grid-template-columns: 44px minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .app-body.books-page .bookshelf-header__mark {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+    }
+
+    .app-body.books-page .bookshelf-header__mark .nav-link__glyph {
+        width: 18px;
+        height: 18px;
+    }
+
+    .app-body.books-page .bookshelf-header__copy .eyebrow {
+        margin-bottom: 4px;
+        font-size: 0.66rem;
+        letter-spacing: 0.12em;
+    }
+
+    .app-body.books-page .page-header--bookshelf h1 {
+        font-size: 1.48rem;
+    }
+
+    .app-body.books-page .page-header__stats--bookshelf {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, max-content)) 1fr auto auto;
+        align-items: center;
+        gap: 8px;
+        overflow: visible;
+        margin: 0;
+        padding: 0;
+    }
+
+    .app-body.books-page .stat-chip--bookshelf {
+        min-height: 34px;
+        padding: 0 10px;
+        font-size: 0;
+    }
+
+    .app-body.books-page .stat-chip--bookshelf::after {
+        content: attr(data-count);
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: inherit;
+    }
+
+    .app-body.books-page .bookshelf-header__action {
+        width: 40px;
+        min-height: 40px;
+        padding: 0;
+        border-radius: 14px;
+        font-size: 0;
+        box-shadow: none;
+    }
+
     .sidebar {
         top: 12px;
         left: 12px;
@@ -1374,6 +1490,65 @@
     .app-body.book-reader-page .reader-layout--immersive.is-reader-bottom-visible [data-reader-bottom-panel],
     .app-body.book-reader-page .reader-layout--immersive.is-reader-notes-visible [data-reader-bottom-panel] {
         transform: translateY(0);
+    }
+}
+
+@media (max-width: 480px) {
+    .app-body.books-page .app-header {
+        top: 8px;
+        padding: 7px 8px;
+        border-radius: 16px;
+    }
+
+    .app-body.books-page .app-header .icon-button,
+    .app-body.books-page .app-header__quicklink,
+    .app-body.books-page .bookshelf-header__action {
+        width: 36px;
+        height: 36px;
+        min-height: 36px;
+        border-radius: 12px;
+    }
+
+    .app-body.books-page .app-header__quicknav {
+        gap: 5px;
+    }
+
+    .app-body.books-page .page-header--bookshelf {
+        padding: 12px 14px;
+        border-radius: 18px;
+    }
+
+    .app-body.books-page .bookshelf-header__hero {
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .app-body.books-page .bookshelf-header__mark {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+    }
+
+    .app-body.books-page .page-header--bookshelf h1 {
+        font-size: 1.28rem;
+    }
+
+    .app-body.books-page .page-header__stats--bookshelf {
+        gap: 6px;
+    }
+
+    .app-body.books-page .stat-chip--bookshelf {
+        min-height: 30px;
+        padding: 0 9px;
+    }
+
+    .app-body.books-page .stat-chip--bookshelf::before {
+        width: 12px;
+        height: 12px;
+    }
+
+    .app-body.books-page .stat-chip--bookshelf::after {
+        font-size: 0.74rem;
     }
 }
 

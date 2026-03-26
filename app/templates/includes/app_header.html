@@ -1,4 +1,4 @@
-<header class="app-header">
+<header class="app-header{% if active_nav == 'books' %} app-header--bookshelf{% endif %}">
     <div class="app-header__main">
         {% if request.endpoint != "main.index" %}
             <button
@@ -26,34 +26,39 @@
     {% if module_labels is defined %}
         <nav class="app-header__quicknav" aria-label="{{ t('nav.quick_navigation') }}">
             <a
-                class="app-header__quicklink {% if request.endpoint == 'main.index' %}is-active{% endif %}"
+                class="app-header__quicklink app-header__quicklink--home {% if request.endpoint == 'main.index' %}is-active{% endif %}"
                 href="{{ url_for('main.index') }}"
             >
-                {{ t('common.home') }}
+                <span class="app-header__quickglyph app-header__quickglyph--home" aria-hidden="true"></span>
+                <span class="app-header__quicktext">{{ t('common.home') }}</span>
             </a>
             <a
-                class="app-header__quicklink {% if request.endpoint == 'main.footprints' %}is-active{% endif %}"
+                class="app-header__quicklink app-header__quicklink--footprints {% if request.endpoint == 'main.footprints' %}is-active{% endif %}"
                 href="{{ url_for('main.footprints') }}"
             >
-                {{ t('nav.footprints') }}
+                <span class="app-header__quickglyph app-header__quickglyph--footprints" aria-hidden="true"></span>
+                <span class="app-header__quicktext">{{ t('nav.footprints') }}</span>
             </a>
             <a
-                class="app-header__quicklink {% if active_nav == 'books' %}is-active{% endif %}"
+                class="app-header__quicklink app-header__quicklink--books {% if active_nav == 'books' %}is-active{% endif %}"
                 href="{{ url_for('library.books') }}"
             >
-                {{ module_labels.books }}
+                <span class="app-header__quickglyph app-header__quickglyph--books" aria-hidden="true"></span>
+                <span class="app-header__quicktext">{{ module_labels.books }}</span>
             </a>
             <a
-                class="app-header__quicklink {% if active_nav == 'music' %}is-active{% endif %}"
+                class="app-header__quicklink app-header__quicklink--music {% if active_nav == 'music' %}is-active{% endif %}"
                 href="{{ url_for('library.tracks') }}"
             >
-                {{ module_labels.music }}
+                <span class="app-header__quickglyph app-header__quickglyph--music" aria-hidden="true"></span>
+                <span class="app-header__quicktext">{{ module_labels.music }}</span>
             </a>
             <a
-                class="app-header__quicklink {% if active_nav == 'videos' %}is-active{% endif %}"
+                class="app-header__quicklink app-header__quicklink--videos {% if active_nav == 'videos' %}is-active{% endif %}"
                 href="{{ url_for('library.videos') }}"
             >
-                {{ module_labels.videos }}
+                <span class="app-header__quickglyph app-header__quickglyph--videos" aria-hidden="true"></span>
+                <span class="app-header__quicktext">{{ module_labels.videos }}</span>
             </a>
             {% set language_switcher_compact = true %}
             {% include "includes/language_switcher.html" %}
