@@ -20,6 +20,13 @@ from ..models import (
 )
 from ..permissions import admin_required
 from ..services.citations import resolve_citation_payload
+from ..services.cross_post import (
+    build_cross_post_plan,
+    clear_cross_post_publication_marks,
+    get_cross_post_platform_options,
+    normalize_cross_post_targets,
+    set_cross_post_targets,
+)
 from ..services.folders import (
     build_folder_tree,
     calculate_folder_counts,
@@ -159,6 +166,7 @@ def build_sidebar_context(
         "workspace_tagline": workspace_tagline,
         "module_labels": module_labels,
         "track_catalog_payload": track_catalog_payload,
+        "cross_post_platforms": get_cross_post_platform_options(),
     }
 
 
@@ -182,6 +190,11 @@ def ensure_feed_media_previews(moments: list[Moment]) -> None:
 
     if changed:
         db.session.commit()
+
+
+def attach_cross_post_plans(moments: list[Moment]) -> None:
+    for moment in moments:
+        moment.cross_post_plan = build_cross_post_plan(moment)
 
 
 def parse_optional_coordinate(value: str | None) -> float | None:
@@ -333,6 +346,8 @@ def index():
 
     moments = moments_query.all()
     ensure_feed_media_previews(moments)
+    if current_user.is_authenticated and current_user.is_admin:
+        attach_cross_post_plans(moments)
     context = build_sidebar_context(
         active_nav="feed",
         selected_folder_key=selected_folder_key,
@@ -472,6 +487,7 @@ def delete_category(category_id: int):
 def create_moment():
     content = (request.form.get("content") or "").strip()
     files = [file for file in request.files.getlist("files") if file and file.filename]
+    requested_cross_posts = normalize_cross_post_targets(request.form.getlist("cross_post_targets"))
 
     try:
         folders = resolve_folders(extract_folder_values(request.form))
@@ -517,6 +533,7 @@ def create_moment():
     )
     apply_place_fields(moment, place_fields if latitude is not None else {})
     moment.set_categories(folders)
+    set_cross_post_targets(moment, requested_cross_posts)
 
     saved_paths: list[str] = []
 
@@ -626,9 +643,13 @@ def update_moment(moment_id: int):
     moment.longitude = longitude
     apply_place_fields(moment, place_fields if latitude is not None else {})
     moment.set_categories(folders)
+    cross_post_reset = clear_cross_post_publication_marks(moment)
     db.session.commit()
 
-    flash("Moment updated. A revision snapshot was saved.", "success")
+    if cross_post_reset:
+        flash("Moment updated. A revision snapshot was saved, and cross-post publish marks were reset.", "success")
+    else:
+        flash("Moment updated. A revision snapshot was saved.", "success")
     return redirect(url_for("main.index"))
 
 

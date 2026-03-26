@@ -1,6 +1,20 @@
 import { t } from "./i18n.js";
 import { ensureLeaflet } from "./vendor-loader.js";
 
+let footprintsPageController = null;
+
+function getFootprintsSignal() {
+    if (!(footprintsPageController instanceof AbortController) || footprintsPageController.signal.aborted) {
+        footprintsPageController = new AbortController();
+    }
+    return footprintsPageController.signal;
+}
+
+document.addEventListener("app:before-swap", () => {
+    footprintsPageController?.abort();
+    footprintsPageController = null;
+});
+
 function escapeHtml(value = "") {
     return String(value)
         .replaceAll("&", "&amp;")
@@ -499,9 +513,11 @@ export async function initFootprintsMap() {
     const mapElement = document.querySelector("[data-footprints-map]");
     const payloadScript = document.querySelector("[data-footprints-payload]");
 
-    if (!shell || !mapElement || !payloadScript) {
+    if (!shell || !mapElement || !payloadScript || shell.dataset.footprintsBound === "true") {
         return;
     }
+    shell.dataset.footprintsBound = "true";
+    const signal = getFootprintsSignal();
 
     let payload = {};
     try {
@@ -598,6 +614,14 @@ export async function initFootprintsMap() {
     let selectedPlaceId = null;
     let isMenuOpen = false;
     const cityClusterBaseRadius = 72;
+
+    signal.addEventListener("abort", () => {
+        try {
+            map.remove();
+        } catch {
+            // Ignore teardown issues during navigation.
+        }
+    }, { once: true });
 
     const allCountryPlaces = Array.isArray(views.country?.places) ? views.country.places : [];
     const allCountryLookup = buildCountryLookup(allCountryPlaces);
@@ -1036,13 +1060,13 @@ export async function initFootprintsMap() {
             event.preventDefault();
             event.stopPropagation();
             setMenuOpen(!isMenuOpen);
-        });
+        }, { signal });
     }
 
     if (menuPanel instanceof HTMLElement) {
         menuPanel.addEventListener("click", (event) => {
             event.stopPropagation();
-        });
+        }, { signal });
     }
 
     document.addEventListener("click", (event) => {
@@ -1055,36 +1079,40 @@ export async function initFootprintsMap() {
         }
 
         setMenuOpen(false);
-    });
+    }, { signal });
 
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && isMenuOpen) {
             setMenuOpen(false);
         }
-    });
+    }, { signal });
 
     viewSelect.addEventListener("change", () => {
         state.view = viewSelect.value;
         refresh({ fit: true });
-    });
+    }, { signal });
 
     filterSelect.addEventListener("change", () => {
         state.filter = filterSelect.value;
         refresh({ fit: true });
-    });
+    }, { signal });
 
     visitSelect.addEventListener("change", () => {
         state.visitMode = visitSelect.value;
         refresh({ fit: true });
-    });
+    }, { signal });
 
     sortSelect.addEventListener("change", () => {
         state.sort = sortSelect.value;
         refresh();
-    });
+    }, { signal });
 
     setMenuOpen(false);
     refresh({ fit: true });
-    map.on("zoomend", () => refresh());
-    window.addEventListener("resize", () => map.invalidateSize());
+    const handleZoomEnd = () => refresh();
+    map.on("zoomend", handleZoomEnd);
+    signal.addEventListener("abort", () => {
+        map.off("zoomend", handleZoomEnd);
+    }, { once: true });
+    window.addEventListener("resize", () => map.invalidateSize(), { signal });
 }

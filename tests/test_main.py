@@ -279,6 +279,90 @@ def test_admin_feed_includes_composer_preview_workspace(admin_client):
     assert b"vendor/mammoth.browser.min.js" not in response.data
     assert b"vendor/epub.min.js" not in response.data
     assert b"Add Citation" in response.data
+    assert b"Cross-Post Assistant" in response.data
+    assert b'name="cross_post_targets"' in response.data
+    assert b"WeChat Moments" in response.data
+
+
+def test_admin_can_prepare_cross_post_targets_for_moment(admin_client, app):
+    response = admin_client.post(
+        "/moments",
+        data={
+            "content": "Ready for other channels.",
+            "cross_post_targets": ["wechat_moments", "instagram", "xiaohongshu"],
+            "files": (BytesIO(build_photo_bytes()), "sunrise.jpg"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Moment published." in response.data
+    assert b"Copy Caption" in response.data
+    assert b"Mark Published" in response.data
+
+    with app.app_context():
+        moment = Moment.query.filter_by(content="Ready for other channels.").one()
+        payload = json.loads(moment.cross_post_targets)
+        assert payload["wechat_moments"]["selected"] is True
+        assert payload["instagram"]["selected"] is True
+        assert payload["xiaohongshu"]["selected"] is True
+
+
+def test_cross_post_rules_block_instagram_for_text_only_moment(admin_client):
+    response = admin_client.post(
+        "/moments",
+        data={
+            "content": "Text only moment.",
+            "cross_post_targets": "instagram",
+        },
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Instagram" in response.data
+    assert b"Blocked" in response.data
+    assert b"This channel needs at least one image or video." in response.data
+
+
+def test_admin_can_mark_and_reset_cross_post_publication(admin_client, app):
+    create_response = admin_client.post(
+        "/moments",
+        data={
+            "content": "Mark this as published elsewhere.",
+            "cross_post_targets": ["instagram"],
+            "files": (BytesIO(build_photo_bytes()), "publish.jpg"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+    assert create_response.status_code == 200
+
+    with app.app_context():
+        moment = Moment.query.filter_by(content="Mark this as published elsewhere.").one()
+        moment_id = moment.id
+
+    publish_response = admin_client.post(
+        f"/api/moments/{moment_id}/cross-post/instagram",
+        json={"action": "publish"},
+    )
+    assert publish_response.status_code == 200
+
+    with app.app_context():
+        moment = db.session.get(Moment, moment_id)
+        payload = json.loads(moment.cross_post_targets)
+        assert payload["instagram"]["published_at"]
+
+    reset_response = admin_client.post(
+        f"/api/moments/{moment_id}/cross-post/instagram",
+        json={"action": "reset"},
+    )
+    assert reset_response.status_code == 200
+
+    with app.app_context():
+        moment = db.session.get(Moment, moment_id)
+        payload = json.loads(moment.cross_post_targets)
+        assert payload["instagram"]["published_at"] is None
 
 
 def test_admin_can_create_book_and_open_reader(admin_client, app):
@@ -513,6 +597,48 @@ def test_html_reader_skips_front_matter_by_default(admin_client, app):
     assert b'"is_front_matter": true' in reader_response.data
     assert b"First Night" in reader_response.data
     assert b"(Front matter)" in reader_response.data
+
+
+def test_html_reader_resumes_from_saved_progress(admin_client, app):
+    response = admin_client.post(
+        "/books",
+        data={
+            "title": "Resume Draft",
+            "status": "reading",
+            "source_file": (
+                BytesIO(build_epub_with_front_matter_bytes("Resume Draft")),
+                "resume.epub",
+            ),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+
+    with app.app_context():
+        book = Book.query.filter_by(title="Resume Draft").one()
+        book_id = book.id
+
+    progress_response = admin_client.post(
+        f"/books/{book_id}/reader/progress",
+        data=json.dumps({"section_index": 1, "scroll_ratio": 0.35}),
+        content_type="application/json",
+    )
+    assert progress_response.status_code == 200
+    assert progress_response.get_json()["ok"] is True
+
+    with app.app_context():
+        book = db.session.get(Book, book_id)
+        assert book.last_read_section_index == 1
+        assert book.last_read_scroll_ratio == 0.35
+        assert book.last_read_at is not None
+
+    reader_response = admin_client.get(f"/books/{book_id}/reader")
+    assert reader_response.status_code == 200
+    assert b'data-section-initial-index="1"' in reader_response.data
+    assert b'data-reader-resume-scroll-ratio="0.350000"' in reader_response.data
+    assert b'data-reader-progress-endpoint="/books/' in reader_response.data
 
 
 def test_html_reader_annotation_persists_precise_anchor(admin_client, app):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
@@ -74,6 +74,24 @@ def parse_optional_int(raw_value: str | None, *, minimum: int | None = None) -> 
 
     parsed = int(value)
     if minimum is not None and parsed < minimum:
+        raise ValueError
+    return parsed
+
+
+def parse_optional_float(
+    raw_value: str | None,
+    *,
+    minimum: float | None = None,
+    maximum: float | None = None,
+) -> float | None:
+    value = (raw_value or "").strip()
+    if not value:
+        return None
+
+    parsed = float(value)
+    if minimum is not None and parsed < minimum:
+        raise ValueError
+    if maximum is not None and parsed > maximum:
         raise ValueError
     return parsed
 
@@ -354,6 +372,7 @@ def book_reader(book_id: int):
     current_section_markup = None
     reader_annotations = []
     reader_focus_annotation_id = None
+    reader_resume_scroll_ratio = 0.0
     requested_annotation_id = request.args.get("annotation", type=int)
     focus_annotation = next(
         (
@@ -365,6 +384,7 @@ def book_reader(book_id: int):
     )
     if book.reader_kind == "text":
         text_content = read_text_asset(current_app.config["UPLOAD_FOLDER"], book.reader_asset_path)
+        reader_resume_scroll_ratio = max(0.0, min(book.last_read_scroll_ratio or 0.0, 1.0))
     elif book.reader_kind == "html":
         sections = read_reader_sections(current_app.config["UPLOAD_FOLDER"], book.reader_asset_path)
         section_manifest = [
@@ -382,11 +402,23 @@ def book_reader(book_id: int):
                 len(section_manifest),
                 one_based=True,
             )
+            if (
+                book.last_read_section_index is not None
+                and active_section_index
+                == parse_section_index(str(book.last_read_section_index), len(section_manifest))
+            ):
+                reader_resume_scroll_ratio = max(0.0, min(book.last_read_scroll_ratio or 0.0, 1.0))
         elif focus_annotation is not None and focus_annotation.section_index is not None:
             active_section_index = parse_section_index(
                 str(focus_annotation.section_index),
                 len(section_manifest),
             )
+        elif book.last_read_section_index is not None:
+            active_section_index = parse_section_index(
+                str(book.last_read_section_index),
+                len(section_manifest),
+            )
+            reader_resume_scroll_ratio = max(0.0, min(book.last_read_scroll_ratio or 0.0, 1.0))
         else:
             active_section_index = pick_default_reader_section_index(sections)
         if sections:
@@ -396,6 +428,8 @@ def book_reader(book_id: int):
                 reader_focus_annotation_id = focus_annotation.id
         else:
             html_content = f'<p class="helper-text">{translate("books.reader_preparing")}</p>'
+    elif book.reader_kind == "docx":
+        reader_resume_scroll_ratio = max(0.0, min(book.last_read_scroll_ratio or 0.0, 1.0))
 
     context = build_sidebar_context(active_nav="books", search_action="library.books")
     return render_template(
@@ -414,6 +448,7 @@ def book_reader(book_id: int):
         reader_annotations=reader_annotations,
         reader_focus_annotation_id=reader_focus_annotation_id,
         reader_source_path=book.reader_asset_path,
+        reader_resume_scroll_ratio=reader_resume_scroll_ratio,
         reader_return_target=(
             url_for("library.book_reader", book_id=book.id, section=active_section_index + 1)
             if book.reader_kind == "html" and section_manifest
@@ -447,6 +482,50 @@ def book_reader_section(book_id: int):
             "label": section["label"],
             "is_front_matter": bool(section.get("is_front_matter")),
             "html": render_reader_section_markup(section),
+        }
+    )
+
+
+@library_bp.route("/books/<int:book_id>/reader/progress", methods=["POST"])
+def save_book_reader_progress(book_id: int):
+    if not current_user.is_authenticated:
+        return jsonify({"error": "Sign in required."}), 401
+
+    book = get_book_or_404(book_id)
+    if not current_user.is_admin and book.owner_id != current_user.id:
+        return jsonify({"error": "You cannot update this reading progress."}), 403
+
+    payload = request.get_json(silent=True) or {}
+    try:
+        section_index = parse_optional_int(
+            str(payload.get("section_index")) if payload.get("section_index") is not None else None,
+            minimum=0,
+        )
+        scroll_ratio = parse_optional_float(
+            str(payload.get("scroll_ratio")) if payload.get("scroll_ratio") is not None else None,
+            minimum=0.0,
+            maximum=1.0,
+        )
+    except (TypeError, ValueError):
+        return jsonify({"error": "Reader progress is invalid."}), 400
+
+    if scroll_ratio is None:
+        return jsonify({"error": "Reader progress is incomplete."}), 400
+
+    if book.reader_kind == "html":
+        book.last_read_section_index = section_index if section_index is not None else 0
+    else:
+        book.last_read_section_index = None
+
+    book.last_read_scroll_ratio = scroll_ratio
+    book.last_read_at = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify(
+        {
+            "ok": True,
+            "section_index": book.last_read_section_index,
+            "scroll_ratio": book.last_read_scroll_ratio,
         }
     )
 
@@ -595,31 +674,6 @@ def tracks():
         tracks=tracks_list,
         result_count=len(tracks_list),
         **context,
-    )
-
-
-@library_bp.route("/music/player-window")
-def music_player_window():
-    track_catalog_payload = [
-        {
-            "id": track.id,
-            "title": track.title,
-            "artist": track.artist_name or "",
-            "src": url_for("static", filename=track.relative_path),
-            "cover": (
-                url_for("static", filename=track.cover_relative_path)
-                if track.cover_relative_path
-                else None
-            ),
-        }
-        for track in Track.query.order_by(Track.created_at.desc()).all()
-    ]
-    return render_template(
-        "music_player_window.html",
-        title=translate("player.mini_player"),
-        body_class="floating-player-page",
-        show_sidebar=False,
-        track_catalog_payload=track_catalog_payload,
     )
 
 

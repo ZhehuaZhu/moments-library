@@ -1,14 +1,44 @@
 import { ensureEpubJs, ensureMammoth } from "./vendor-loader.js";
 import { t } from "./i18n.js";
+import { requestJson } from "./http.js";
+import { initTimestampHelpers, initTrackLyrics } from "./library-audio-helpers.js";
+import { secondsToClock } from "./library-time-utils.js";
+import {
+    applyPlayerAppearance,
+    applyPlayerSize,
+    playerDockPositionKey,
+    playerDockStateKey,
+    playerStorageKey,
+    readPlayerAppearance,
+    readPlayerSize,
+    readStoredJson,
+    readStoredPlayerState,
+    readTrackCatalog,
+    writePlayerAppearance,
+    writePlayerSize,
+    writeStoredPlayerState,
+    normalizePlayerState,
+} from "./library-player-utils.js";
+import { initVideoCardPreviews } from "./library-video-previews.js";
 
-const playerStorageKey = "moments-global-player";
-const playerCommandKey = "moments-global-player-command";
-const playerDockStateKey = "moments-global-player-dock-state";
-const playerDockPositionKey = "moments-global-player-dock-position";
-const playerAppearanceKey = "moments-global-player-appearance";
-const playerWindowName = "moments-global-player-window";
-const playerWindowFeatures = "popup=yes,width=420,height=260,resizable=yes,scrollbars=no";
 const readerUiTimers = new WeakMap();
+let libraryPageController = null;
+let immersiveReaderGlobalsBound = false;
+let sectionReaderGlobalsBound = false;
+
+function getLibraryPageSignal() {
+    if (!(libraryPageController instanceof AbortController) || libraryPageController.signal.aborted) {
+        libraryPageController = new AbortController();
+    }
+    return libraryPageController.signal;
+}
+
+document.addEventListener("app:before-swap", () => {
+    libraryPageController?.abort();
+    libraryPageController = null;
+    immersiveReaderGlobalsBound = false;
+    sectionReaderGlobalsBound = false;
+});
 
 function getReaderShell(scope) {
     if (scope instanceof Element) {
@@ -100,30 +130,98 @@ function closeReaderNotesDrawer(scope, { keepPanels = false } = {}) {
     }
 }
 
-function secondsToClock(totalSeconds) {
-    const total = Math.max(Math.floor(totalSeconds || 0), 0);
-    const hours = Math.floor(total / 3600);
-    const minutes = Math.floor((total % 3600) / 60);
-    const seconds = total % 60;
-
-    if (hours) {
-        return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+function clampReaderScrollRatio(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+        return 0;
     }
-    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    return Math.max(0, Math.min(numericValue, 1));
 }
 
-function readTrackCatalog() {
-    const script = document.querySelector("[data-track-catalog]");
-    if (!script) {
-        return [];
+function getElementScrollRatio(element) {
+    if (!(element instanceof HTMLElement)) {
+        return 0;
     }
 
-    try {
-        const payload = JSON.parse(script.textContent || "[]");
-        return Array.isArray(payload) ? payload : [];
-    } catch {
-        return [];
+    const maxScroll = Math.max(element.scrollHeight - element.clientHeight, 0);
+    if (!maxScroll) {
+        return 0;
     }
+    return clampReaderScrollRatio(element.scrollTop / maxScroll);
+}
+
+function setElementScrollRatio(element, ratio) {
+    if (!(element instanceof HTMLElement)) {
+        return;
+    }
+
+    const normalizedRatio = clampReaderScrollRatio(ratio);
+    const maxScroll = Math.max(element.scrollHeight - element.clientHeight, 0);
+    if (!maxScroll) {
+        return;
+    }
+    element.scrollTop = maxScroll * normalizedRatio;
+}
+
+function createReaderProgressSaver(endpoint, buildPayload) {
+    if (!endpoint || typeof buildPayload !== "function") {
+        return {
+            schedule() {},
+            flush() {},
+        };
+    }
+
+    let timerId = 0;
+    let lastSavedSnapshot = "";
+
+    const persist = async ({ immediate = false } = {}) => {
+        if (timerId) {
+            window.clearTimeout(timerId);
+            timerId = 0;
+        }
+
+        const payload = buildPayload();
+        if (!payload) {
+            return;
+        }
+
+        const snapshot = JSON.stringify(payload);
+        if (snapshot === lastSavedSnapshot) {
+            return;
+        }
+
+        const send = async () => {
+            try {
+                await requestJson(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                lastSavedSnapshot = snapshot;
+            } catch {
+                // Ignore transient progress save failures to keep reading uninterrupted.
+            }
+        };
+
+        if (immediate) {
+            await send();
+            return;
+        }
+
+        timerId = window.setTimeout(() => {
+            timerId = 0;
+            void send();
+        }, 420);
+    };
+
+    return {
+        schedule() {
+            void persist();
+        },
+        flush() {
+            void persist({ immediate: true });
+        },
+    };
 }
 
 function initBookReaderSelection() {
@@ -133,6 +231,10 @@ function initBookReaderSelection() {
     }
 
     sources.forEach((source) => {
+        if (!(source instanceof HTMLElement) || source.dataset.selectionBound === "true") {
+            return;
+        }
+        source.dataset.selectionBound = "true";
         const scope = source.closest(".reader-layout") || document;
         const quoteField = scope.querySelector("[data-book-quote]");
         const chapterField = scope.querySelector("[data-book-chapter-field]");
@@ -219,6 +321,12 @@ async function initDocxReaders() {
     }
 
     for (const reader of readers) {
+        if (reader instanceof HTMLElement && reader.dataset.docxBound === "true") {
+            continue;
+        }
+        if (reader instanceof HTMLElement) {
+            reader.dataset.docxBound = "true";
+        }
         const src = reader.getAttribute("data-docx-src");
         if (!src) {
             continue;
@@ -240,46 +348,73 @@ async function initDocxReaders() {
     }
 }
 
-function initVideoCardPreviews() {
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const previewVideos = document.querySelectorAll("[data-video-card-preview]");
-    if (!previewVideos.length) {
+function initLinearReaderProgress() {
+    const readers = document.querySelectorAll(
+        "[data-reader-progress-source]:not([data-section-reader])",
+    );
+    if (!readers.length) {
         return;
     }
 
-    previewVideos.forEach((video) => {
-        if (!(video instanceof HTMLVideoElement) || video.dataset.previewBound === "true") {
+    readers.forEach((reader) => {
+        if (!(reader instanceof HTMLElement)) {
             return;
         }
 
-        const shell = video.closest("[data-video-card-link]");
-        if (!(shell instanceof HTMLElement)) {
+        const shell = getReaderShell(reader);
+        const endpoint = shell?.getAttribute("data-reader-progress-endpoint") || "";
+        if (!endpoint) {
             return;
         }
 
-        video.dataset.previewBound = "true";
-        video.muted = true;
-        video.loop = true;
-        video.playsInline = true;
+        const initialRatio = clampReaderScrollRatio(
+            Number.parseFloat(reader.getAttribute("data-reader-resume-scroll-ratio") || "0"),
+        );
+        let hasRestoredInitialPosition = initialRatio <= 0;
 
-        const playPreview = () => {
-            if (prefersReducedMotion) {
+        const saver = createReaderProgressSaver(endpoint, () => ({
+            scroll_ratio: getElementScrollRatio(reader),
+        }));
+
+        const restoreInitialPosition = () => {
+            if (hasRestoredInitialPosition) {
                 return;
             }
-            void video.play().catch(() => {});
-        };
 
-        const pausePreview = () => {
-            video.pause();
-            if (video.currentTime > 0) {
-                video.currentTime = 0;
+            const maxScroll = Math.max(reader.scrollHeight - reader.clientHeight, 0);
+            if (!maxScroll) {
+                return;
             }
+
+            hasRestoredInitialPosition = true;
+            window.requestAnimationFrame(() => {
+                setElementScrollRatio(reader, initialRatio);
+            });
         };
 
-        shell.addEventListener("mouseenter", playPreview);
-        shell.addEventListener("mouseleave", pausePreview);
-        shell.addEventListener("focusin", playPreview);
-        shell.addEventListener("focusout", pausePreview);
+        restoreInitialPosition();
+        window.setTimeout(restoreInitialPosition, 180);
+        window.setTimeout(restoreInitialPosition, 480);
+
+        const observer = new MutationObserver(() => {
+            restoreInitialPosition();
+        });
+        observer.observe(reader, { childList: true, subtree: true });
+
+        const flushProgress = () => {
+            saver.flush();
+        };
+
+        reader.addEventListener("scroll", () => {
+            saver.schedule();
+        }, { passive: true });
+
+        window.addEventListener("pagehide", flushProgress);
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden") {
+                flushProgress();
+            }
+        });
     });
 }
 
@@ -337,7 +472,7 @@ function openReaderNotesDrawer(scope) {
 
     const drawer = shell.querySelector("[data-reader-notes-drawer]");
     if (drawer instanceof HTMLElement) {
-        shell.classList.add("is-reader-bottom-visible", "is-reader-notes-visible");
+        shell.classList.add("is-reader-top-visible", "is-reader-bottom-visible", "is-reader-notes-visible");
         drawer.setAttribute("aria-hidden", "false");
         clearReaderUiTimer(shell);
         return drawer;
@@ -351,10 +486,13 @@ function initImmersiveReaderShells() {
         return;
     }
 
+    const signal = getLibraryPageSignal();
+
     shells.forEach((shell) => {
-        if (!(shell instanceof HTMLElement)) {
+        if (!(shell instanceof HTMLElement) || shell.dataset.readerShellBound === "true") {
             return;
         }
+        shell.dataset.readerShellBound = "true";
 
         const stage = shell.querySelector("[data-reader-stage]");
         const topToggle = shell.querySelector("[data-reader-toggle-top]");
@@ -364,30 +502,32 @@ function initImmersiveReaderShells() {
         topToggle?.addEventListener("click", (event) => {
             event.preventDefault();
             toggleReaderPanel(shell, "top");
-        });
+        }, { signal });
 
         bottomToggle?.addEventListener("click", (event) => {
             event.preventDefault();
             toggleReaderPanel(shell, "bottom");
-        });
+        }, { signal });
 
         shell.querySelectorAll("[data-reader-open-notes]").forEach((button) => {
             button.addEventListener("click", (event) => {
                 event.preventDefault();
                 openReaderNotesDrawer(shell);
-            });
+            }, { signal });
         });
 
         shell.querySelectorAll("[data-reader-close-notes]").forEach((button) => {
             button.addEventListener("click", (event) => {
                 event.preventDefault();
                 closeReaderNotesDrawer(shell);
-            });
+            }, { signal });
         });
 
         notesBackdrop?.addEventListener("click", () => {
             closeReaderNotesDrawer(shell);
-        });
+        }, { signal });
+
+        shell.classList.add("is-reader-top-visible");
 
         stage?.addEventListener("click", (event) => {
             if (!(event.target instanceof Element)) {
@@ -418,32 +558,35 @@ function initImmersiveReaderShells() {
             ) {
                 closeReaderPanels(shell);
             }
-        });
+        }, { signal });
     });
 
-    document.addEventListener("keydown", (event) => {
-        if (event.key !== "Escape") {
-            return;
-        }
-
-        document.querySelectorAll("[data-reader-shell]").forEach((shell) => {
-            if (!(shell instanceof HTMLElement)) {
+    if (!immersiveReaderGlobalsBound) {
+        immersiveReaderGlobalsBound = true;
+        document.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape") {
                 return;
             }
 
-            if (shell.classList.contains("is-reader-notes-visible")) {
-                closeReaderNotesDrawer(shell);
-                return;
-            }
+            document.querySelectorAll("[data-reader-shell]").forEach((shell) => {
+                if (!(shell instanceof HTMLElement)) {
+                    return;
+                }
 
-            if (
-                shell.classList.contains("is-reader-top-visible") ||
-                shell.classList.contains("is-reader-bottom-visible")
-            ) {
-                closeReaderPanels(shell);
-            }
-        });
-    });
+                if (shell.classList.contains("is-reader-notes-visible")) {
+                    closeReaderNotesDrawer(shell);
+                    return;
+                }
+
+                if (
+                    shell.classList.contains("is-reader-top-visible") ||
+                    shell.classList.contains("is-reader-bottom-visible")
+                ) {
+                    closeReaderPanels(shell);
+                }
+            });
+        }, { signal });
+    }
 }
 
 function getClosestElement(node) {
@@ -531,7 +674,13 @@ function initSectionReaders() {
         return;
     }
 
+    const signal = getLibraryPageSignal();
+
     shells.forEach((shell) => {
+        if (!(shell instanceof HTMLElement) || shell.dataset.sectionReaderBound === "true") {
+            return;
+        }
+        shell.dataset.sectionReaderBound = "true";
         const reader = shell.querySelector("[data-section-reader]");
         const previous = shell.querySelector("[data-section-prev]");
         const next = shell.querySelector("[data-section-next]");
@@ -553,6 +702,11 @@ function initSectionReaders() {
         const peekQuote = readerLayout.querySelector("[data-reader-annotation-peek-quote]");
         const peekComment = readerLayout.querySelector("[data-reader-annotation-peek-comment]");
         const annotationCards = Array.from(readerLayout.querySelectorAll("[data-annotation-card]"));
+        const progressMeters = Array.from(readerLayout.querySelectorAll("[data-reader-progress-meter]"));
+        const progressFills = Array.from(readerLayout.querySelectorAll("[data-reader-progress-fill]"));
+        const sectionLabels = Array.from(readerLayout.querySelectorAll("[data-reader-current-section-label]"));
+        const progressTexts = Array.from(readerLayout.querySelectorAll("[data-reader-progress-text]"));
+        const progressPercents = Array.from(readerLayout.querySelectorAll("[data-reader-progress-percent]"));
 
         if (
             !(reader instanceof HTMLElement) ||
@@ -606,6 +760,17 @@ function initSectionReaders() {
         let pendingAnnotationId = Number.isInteger(initialFocusAnnotationId)
             ? initialFocusAnnotationId
             : null;
+        let pendingResumeScrollRatio = clampReaderScrollRatio(
+            Number.parseFloat(reader.getAttribute("data-reader-resume-scroll-ratio") || "0"),
+        );
+        const saveProgressEndpoint =
+            (readerLayout instanceof Element
+                ? readerLayout.getAttribute("data-reader-progress-endpoint")
+                : "") || "";
+        const progressSaver = createReaderProgressSaver(saveProgressEndpoint, () => ({
+            section_index: activeIndex,
+            scroll_ratio: getElementScrollRatio(reader),
+        }));
 
         const clearAnnotationLocation = () => {
             const url = new URL(window.location.href);
@@ -730,6 +895,23 @@ function initSectionReaders() {
             showPeek(annotation);
         };
 
+        const restoreReaderScroll = () => {
+            if (pendingResumeScrollRatio <= 0) {
+                return;
+            }
+
+            const targetRatio = pendingResumeScrollRatio;
+            pendingResumeScrollRatio = 0;
+
+            window.requestAnimationFrame(() => {
+                setElementScrollRatio(reader, targetRatio);
+            });
+        };
+
+        const flushProgressSave = () => {
+            progressSaver.flush();
+        };
+
         const renderHighlights = () => {
             unwrapReaderHighlights(reader);
             clearActiveAnnotationState();
@@ -773,18 +955,41 @@ function initSectionReaders() {
             }
 
             hidePeek();
+            restoreReaderScroll();
         };
 
         const sync = (index) => {
             activeIndex = Math.max(0, Math.min(index, manifest.length - 1));
             const section = manifest[activeIndex];
             const label = section?.label || `Section ${activeIndex + 1}`;
-            const optionLabel = section?.is_front_matter ? `${label} (Front matter)` : label;
+            const optionLabel = section?.is_front_matter
+                ? `${label} (${t("books.front_matter", {}, "Front matter")})`
+                : label;
+            const percent = manifest.length ? ((activeIndex + 1) / manifest.length) * 100 : 0;
+            const progressLabel = `${activeIndex + 1} / ${manifest.length}`;
+            const topProgressLabel = section?.is_front_matter
+                ? `${t("books.front_matter", {}, "Front matter")} - ${t("books.section", {}, "Section")} ${progressLabel}`
+                : `${t("books.section", {}, "Section")} ${progressLabel}`;
 
             title.textContent = label;
-            progress.textContent = section?.is_front_matter
-                ? `Front matter - ${activeIndex + 1} / ${manifest.length}`
-                : `${activeIndex + 1} / ${manifest.length}`;
+            progress.textContent = topProgressLabel;
+            sectionLabels.forEach((node) => {
+                node.textContent = label;
+                node.setAttribute("title", label);
+            });
+            progressTexts.forEach((node) => {
+                node.textContent = progressLabel;
+            });
+            progressPercents.forEach((node) => {
+                node.textContent = `${Math.round(percent)}%`;
+            });
+            progressFills.forEach((fill) => {
+                fill.style.width = `${percent}%`;
+            });
+            progressMeters.forEach((meter) => {
+                meter.setAttribute("aria-valuemax", String(manifest.length));
+                meter.setAttribute("aria-valuenow", String(activeIndex + 1));
+            });
             toc.value = String(activeIndex);
             if (toc.options[activeIndex]) {
                 toc.options[activeIndex].textContent = optionLabel;
@@ -822,6 +1027,7 @@ function initSectionReaders() {
                 reader.innerHTML = cache.get(activeIndex) || "";
                 reader.scrollTop = 0;
                 renderHighlights();
+                progressSaver.schedule();
                 return;
             }
 
@@ -856,6 +1062,7 @@ function initSectionReaders() {
                 reader.scrollTop = 0;
                 sync(activeIndex);
                 renderHighlights();
+                progressSaver.schedule();
             } catch {
                 reader.innerHTML =
                     "<p class='helper-text'>This section could not be loaded right now.</p>";
@@ -957,23 +1164,26 @@ function initSectionReaders() {
             if (activeIndex > 0) {
                 void loadSection(activeIndex - 1);
             }
-        });
+        }, { signal });
 
         next.addEventListener("click", () => {
             if (activeIndex < manifest.length - 1) {
                 void loadSection(activeIndex + 1);
             }
-        });
+        }, { signal });
 
         toc.addEventListener("change", () => {
             const nextIndex = Number.parseInt(toc.value, 10);
             if (Number.isInteger(nextIndex)) {
                 void loadSection(nextIndex);
             }
-        });
+        }, { signal });
 
-        reader.addEventListener("mouseup", syncSelection);
-        reader.addEventListener("touchend", syncSelection);
+        reader.addEventListener("scroll", () => {
+            progressSaver.schedule();
+        }, { passive: true, signal });
+        reader.addEventListener("mouseup", syncSelection, { signal });
+        reader.addEventListener("touchend", syncSelection, { signal });
         reader.addEventListener("click", (event) => {
             if (!(event.target instanceof Element)) {
                 return;
@@ -993,7 +1203,7 @@ function initSectionReaders() {
             if (annotation) {
                 focusAnnotation(annotation, { scrollCard: true });
             }
-        });
+        }, { signal });
 
         annotationCards.forEach((card) => {
             const openCardAnnotation = () => {
@@ -1017,34 +1227,50 @@ function initSectionReaders() {
                 focusAnnotation(annotation, { scrollReader: true });
             };
 
-            card.addEventListener("click", openCardAnnotation);
+            card.addEventListener("click", openCardAnnotation, { signal });
             card.addEventListener("keydown", (event) => {
                 if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
                     openCardAnnotation();
                 }
-            });
+            }, { signal });
         });
+
+        window.addEventListener("pagehide", flushProgressSave, { signal });
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden") {
+                flushProgressSave();
+            }
+        }, { signal });
 
         sync(activeIndex);
         writeLocation();
         renderHighlights();
+        progressSaver.schedule();
 
-        document.addEventListener("keydown", (event) => {
-            const activeTag = document.activeElement?.tagName || "";
-            if (["INPUT", "TEXTAREA", "SELECT"].includes(activeTag)) {
-                return;
-            }
+        if (!sectionReaderGlobalsBound) {
+            sectionReaderGlobalsBound = true;
+            document.addEventListener("keydown", (event) => {
+                const activeShell = document.querySelector("[data-section-shell]");
+                if (!(activeShell instanceof HTMLElement) || !activeShell.contains(reader)) {
+                    return;
+                }
 
-            if (event.key === "ArrowLeft" && activeIndex > 0) {
-                event.preventDefault();
-                void loadSection(activeIndex - 1);
-            }
-            if (event.key === "ArrowRight" && activeIndex < manifest.length - 1) {
-                event.preventDefault();
-                void loadSection(activeIndex + 1);
-            }
-        });
+                const activeTag = document.activeElement?.tagName || "";
+                if (["INPUT", "TEXTAREA", "SELECT"].includes(activeTag)) {
+                    return;
+                }
+
+                if (event.key === "ArrowLeft" && activeIndex > 0) {
+                    event.preventDefault();
+                    void loadSection(activeIndex - 1);
+                }
+                if (event.key === "ArrowRight" && activeIndex < manifest.length - 1) {
+                    event.preventDefault();
+                    void loadSection(activeIndex + 1);
+                }
+            }, { signal });
+        }
     });
 }
 
@@ -1095,6 +1321,8 @@ async function initEpubReaders() {
         return;
     }
 
+    const signal = getLibraryPageSignal();
+
     let ePubFactory;
     try {
         ePubFactory = await ensureEpubJs();
@@ -1113,6 +1341,12 @@ async function initEpubReaders() {
     }
 
     for (const shell of shells) {
+        if (shell instanceof HTMLElement && shell.dataset.epubBound === "true") {
+            continue;
+        }
+        if (shell instanceof HTMLElement) {
+            shell.dataset.epubBound = "true";
+        }
         const mount = shell.querySelector("[data-epub-reader]");
         const previous = shell.querySelector("[data-epub-prev]");
         const next = shell.querySelector("[data-epub-next]");
@@ -1213,17 +1447,17 @@ async function initEpubReaders() {
 
             previous.addEventListener("click", () => {
                 rendition.prev();
-            });
+            }, { signal });
 
             next.addEventListener("click", () => {
                 rendition.next();
-            });
+            }, { signal });
 
             toc.addEventListener("change", () => {
                 if (toc.value) {
                     rendition.display(toc.value);
                 }
-            });
+            }, { signal });
 
             await rendition.display();
 
@@ -1313,239 +1547,6 @@ async function initEpubReaders() {
             )}</p>`;
         }
     }
-}
-
-function initTimestampHelpers() {
-    document.addEventListener("click", (event) => {
-        if (!(event.target instanceof Element)) {
-            return;
-        }
-
-        const useCurrentTime = event.target.closest("[data-use-current-time]");
-        if (useCurrentTime) {
-            const scope =
-                useCurrentTime.closest(".detail-card") ||
-                useCurrentTime.closest(".library-detail-grid") ||
-                document;
-            const media = scope.querySelector("[data-timestamp-media]");
-            const input = scope.querySelector("[data-timestamp-input]");
-            if (media instanceof HTMLMediaElement && input instanceof HTMLInputElement) {
-                input.value = secondsToClock(media.currentTime);
-            }
-            return;
-        }
-
-        const seekButton = event.target.closest("[data-seek-to]");
-        if (!seekButton) {
-            return;
-        }
-
-        const scope =
-            seekButton.closest(".library-detail-grid") ||
-            seekButton.closest(".detail-card") ||
-            document;
-        const media = scope.querySelector("[data-timestamp-media]");
-        const seconds = Number(seekButton.getAttribute("data-seek-to"));
-        if (media instanceof HTMLMediaElement && !Number.isNaN(seconds)) {
-            media.currentTime = seconds;
-            media.play().catch(() => {});
-        }
-    });
-}
-
-function initTrackLyrics() {
-    const shells = document.querySelectorAll("[data-lyrics-shell]");
-    if (!shells.length) {
-        return;
-    }
-
-    shells.forEach((shell) => {
-        if (!(shell instanceof HTMLElement)) {
-            return;
-        }
-
-        const scope = shell.closest(".library-detail-grid") || shell;
-        const media = scope.querySelector("[data-timestamp-media]");
-        const lines = Array.from(shell.querySelectorAll("[data-lyrics-line]")).filter(
-            (line) => line instanceof HTMLButtonElement
-        );
-        if (!(media instanceof HTMLMediaElement) || !lines.length) {
-            return;
-        }
-
-        let activeLine = null;
-
-        const setActiveLine = (nextLine) => {
-            if (activeLine === nextLine) {
-                return;
-            }
-
-            if (activeLine instanceof HTMLElement) {
-                activeLine.classList.remove("is-active");
-            }
-
-            activeLine = nextLine instanceof HTMLElement ? nextLine : null;
-            if (!(activeLine instanceof HTMLElement)) {
-                return;
-            }
-
-            activeLine.classList.add("is-active");
-            activeLine.scrollIntoView({
-                behavior: "smooth",
-                block: "nearest",
-            });
-        };
-
-        const syncLyrics = () => {
-            const currentTime = media.currentTime;
-            let matchedLine = null;
-
-            lines.forEach((line) => {
-                const start = Number(line.getAttribute("data-lyrics-start"));
-                const next = Number(line.getAttribute("data-lyrics-next"));
-                if (!Number.isFinite(start) || currentTime < start) {
-                    return;
-                }
-
-                if (!Number.isFinite(next) || currentTime < next) {
-                    matchedLine = line;
-                }
-            });
-
-            setActiveLine(matchedLine);
-        };
-
-        media.addEventListener("loadedmetadata", syncLyrics);
-        media.addEventListener("timeupdate", syncLyrics);
-        media.addEventListener("seeked", syncLyrics);
-        media.addEventListener("emptied", () => {
-            setActiveLine(null);
-        });
-
-        syncLyrics();
-    });
-}
-
-function readStoredJson(key) {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) {
-        return null;
-    }
-
-    try {
-        return JSON.parse(raw);
-    } catch {
-        return null;
-    }
-}
-
-function normalizePlayerQueue(rawQueue, fallbackQueue = []) {
-    const source = Array.isArray(rawQueue) && rawQueue.length ? rawQueue : fallbackQueue;
-    return source.filter(
-        (track) =>
-            track &&
-            typeof track === "object" &&
-            typeof track.title === "string" &&
-            typeof track.src === "string"
-    );
-}
-
-function normalizePlayerState(rawState, fallbackQueue = []) {
-    const queue = normalizePlayerQueue(rawState?.queue, fallbackQueue);
-    let currentIndex = Number.isInteger(rawState?.currentIndex) ? rawState.currentIndex : -1;
-    if (currentIndex >= queue.length) {
-        currentIndex = queue.length - 1;
-    }
-    if (currentIndex < -1) {
-        currentIndex = -1;
-    }
-
-    const currentTime = Number(rawState?.currentTime);
-    const duration = Number(rawState?.duration);
-
-    return {
-        queue,
-        currentIndex,
-        currentTime: Number.isFinite(currentTime) ? Math.max(currentTime, 0) : 0,
-        duration: Number.isFinite(duration) ? Math.max(duration, 0) : 0,
-        wasPlaying: Boolean(rawState?.wasPlaying),
-    };
-}
-
-function readStoredPlayerState(fallbackQueue = []) {
-    return normalizePlayerState(readStoredJson(playerStorageKey), fallbackQueue);
-}
-
-function writeStoredPlayerState(state, fallbackQueue = []) {
-    const normalized = normalizePlayerState(state, fallbackQueue);
-    window.localStorage.setItem(playerStorageKey, JSON.stringify(normalized));
-    return normalized;
-}
-
-function sendPlayerCommand(command) {
-    window.localStorage.setItem(
-        playerCommandKey,
-        JSON.stringify({
-            ...command,
-            issuedAt: Date.now(),
-        })
-    );
-}
-
-function openFloatingPlayerWindow(shell, { focus = false } = {}) {
-    const url = shell.getAttribute("data-player-window-url") || "/music/player-window";
-    const popup = window.open(url, playerWindowName, playerWindowFeatures);
-    if (popup && !focus) {
-        window.setTimeout(() => {
-            try {
-                popup.blur();
-                window.focus();
-            } catch {
-                // Ignore focus handoff issues across browsers.
-            }
-        }, 0);
-    }
-    return popup;
-}
-
-function normalizePlayerAppearance(rawAppearance) {
-    const opacity = Number(rawAppearance?.opacity);
-    const scale = Number(rawAppearance?.scale);
-    return {
-        opacity: Number.isFinite(opacity) ? Math.min(Math.max(opacity, 70), 100) : 92,
-        scale: Number.isFinite(scale) ? Math.min(Math.max(scale, 78), 112) : 92,
-    };
-}
-
-function readPlayerAppearance() {
-    return normalizePlayerAppearance(readStoredJson(playerAppearanceKey));
-}
-
-function writePlayerAppearance(appearance) {
-    const normalized = normalizePlayerAppearance(appearance);
-    window.localStorage.setItem(playerAppearanceKey, JSON.stringify(normalized));
-    return normalized;
-}
-
-function applyPlayerAppearance(shell, appearance, controls = {}) {
-    if (!(shell instanceof HTMLElement)) {
-        return appearance;
-    }
-
-    const normalized = normalizePlayerAppearance(appearance);
-    const width = Math.round(348 * (normalized.scale / 100));
-    const bubbleSize = Math.round(70 * (normalized.scale / 100));
-    shell.style.setProperty("--player-panel-width", `${width}px`);
-    shell.style.setProperty("--player-bubble-size", `${bubbleSize}px`);
-    shell.style.setProperty("--player-panel-opacity", `${normalized.opacity / 100}`);
-
-    if (controls.opacityInput instanceof HTMLInputElement) {
-        controls.opacityInput.value = String(normalized.opacity);
-    }
-    if (controls.scaleInput instanceof HTMLInputElement) {
-        controls.scaleInput.value = String(normalized.scale);
-    }
-    return normalized;
 }
 
 function getPlayerLabel(track) {
@@ -1656,9 +1657,10 @@ function renderPlayerQueue(queuePanel, queue, currentIndex, onSelect) {
     });
 }
 
-function initFloatingPlayerShell(shell, elements) {
+function initRemotePlayerShell(shell, elements) {
     const {
         audio,
+        stateLabel,
         title,
         artist,
         toggle,
@@ -1669,9 +1671,19 @@ function initFloatingPlayerShell(shell, elements) {
         duration,
         queueToggle,
         queuePanel,
+        panel,
+        bubble,
+        collapseToggle,
+        dragHandle,
+        settings,
+        settingsToggle,
+        opacityInput,
+        resetSizeButton,
+        resizeHandle,
     } = elements;
     if (
         !(audio instanceof HTMLAudioElement) ||
+        !(stateLabel instanceof HTMLElement) ||
         !(title instanceof HTMLElement) ||
         !(artist instanceof HTMLElement) ||
         !(toggle instanceof HTMLButtonElement) ||
@@ -1681,16 +1693,40 @@ function initFloatingPlayerShell(shell, elements) {
         !(current instanceof HTMLElement) ||
         !(duration instanceof HTMLElement) ||
         !(queueToggle instanceof HTMLButtonElement) ||
-        !(queuePanel instanceof HTMLElement)
+        !(queuePanel instanceof HTMLElement) ||
+        !(panel instanceof HTMLElement) ||
+        !(bubble instanceof HTMLButtonElement) ||
+        !(collapseToggle instanceof HTMLButtonElement) ||
+        !(dragHandle instanceof HTMLButtonElement) ||
+        !(settingsToggle instanceof HTMLButtonElement) ||
+        !(settings instanceof HTMLElement) ||
+        !(opacityInput instanceof HTMLInputElement) ||
+        !(resetSizeButton instanceof HTMLButtonElement) ||
+        !(resizeHandle instanceof HTMLButtonElement)
     ) {
         return;
     }
 
+    if (shell.dataset.playerInitialized === "true") {
+        return;
+    }
+    shell.dataset.playerInitialized = "true";
+
     const pageCatalog = readTrackCatalog();
     let playerState = readStoredPlayerState(pageCatalog);
     let queueOpen = false;
-    let lastCommandAt = 0;
+    let settingsOpen = false;
+    let isCollapsed = readStoredJson(playerDockStateKey)?.collapsed;
+    if (typeof isCollapsed !== "boolean") {
+        isCollapsed = true;
+    }
+    let customPosition = readStoredJson(playerDockPositionKey);
+    let dragState = null;
+    let resizeState = null;
+    let suppressBubbleClick = false;
     let lastPersistAt = 0;
+    let playerAppearance = applyPlayerAppearance(shell, readPlayerAppearance(), { opacityInput });
+    let playerSize = applyPlayerSize(shell, readPlayerSize());
 
     const persistState = ({ force = false } = {}) => {
         const now = Date.now();
@@ -1709,381 +1745,6 @@ function initFloatingPlayerShell(shell, elements) {
             pageCatalog
         );
     };
-
-    const renderShell = () => {
-        const track = playerState.queue[playerState.currentIndex];
-        shell.hidden = false;
-        previous.disabled = playerState.currentIndex <= 0;
-        next.disabled =
-            playerState.currentIndex < 0 || playerState.currentIndex >= playerState.queue.length - 1;
-
-        if (!track) {
-            title.textContent = t("player.ready", {}, "Ready");
-            artist.textContent = t("player.choose_track", {}, "Choose a track");
-            setPlayerToggleIcon(toggle, false);
-            progress.value = "0";
-            current.textContent = "00:00";
-            duration.textContent = "00:00";
-            queuePanel.hidden = true;
-            renderPlayerQueue(queuePanel, playerState.queue, playerState.currentIndex, () => {});
-            updatePlayerArtwork(shell, null);
-            document.title = t("player.mini_player", {}, "Mini Player");
-            return;
-        }
-
-        title.textContent = track.title;
-        artist.textContent = track.artist || "Personal music library";
-        setPlayerToggleIcon(toggle, playerState.wasPlaying);
-        current.textContent = secondsToClock(audio.currentTime);
-        duration.textContent = secondsToClock(audio.duration || playerState.duration);
-        if (Number.isFinite(audio.duration) && audio.duration > 0) {
-            progress.value = String((audio.currentTime / audio.duration) * 100);
-        } else if (playerState.duration > 0) {
-            progress.value = String((playerState.currentTime / playerState.duration) * 100);
-        } else {
-            progress.value = "0";
-        }
-
-        queuePanel.hidden = !queueOpen;
-        renderPlayerQueue(queuePanel, playerState.queue, playerState.currentIndex, (index) => {
-            void loadTrack(index, true, 0);
-            queueOpen = false;
-            renderShell();
-        });
-        updatePlayerArtwork(shell, track);
-        document.title = `${track.title} - Mini Player`;
-    };
-
-    const clearAudio = () => {
-        audio.pause();
-        audio.removeAttribute("src");
-        audio.load();
-        playerState = writeStoredPlayerState(
-            {
-                ...playerState,
-                currentIndex: -1,
-                currentTime: 0,
-                duration: 0,
-                wasPlaying: false,
-            },
-            pageCatalog
-        );
-        renderShell();
-    };
-
-    const waitForAudioReady = () =>
-        new Promise((resolve) => {
-            if (audio.readyState >= 1) {
-                resolve();
-                return;
-            }
-
-            const finish = () => {
-                audio.removeEventListener("loadedmetadata", finish);
-                audio.removeEventListener("error", finish);
-                resolve();
-            };
-
-            audio.addEventListener("loadedmetadata", finish);
-            audio.addEventListener("error", finish);
-        });
-
-    const loadTrack = async (index, autoplay, time = 0) => {
-        const track = playerState.queue[index];
-        if (!track) {
-            clearAudio();
-            return;
-        }
-
-        playerState = {
-            ...playerState,
-            currentIndex: index,
-            currentTime: Math.max(Number(time) || 0, 0),
-        };
-
-        audio.pause();
-        audio.src = track.src;
-        audio.load();
-        renderShell();
-
-        await waitForAudioReady();
-        if (playerState.currentTime > 0) {
-            audio.currentTime = Math.min(playerState.currentTime, audio.duration || playerState.currentTime);
-        }
-
-        if (autoplay) {
-            try {
-                await audio.play();
-            } catch {
-                // Autoplay can be blocked in some browsers; keep state visible anyway.
-            }
-        }
-
-        playerState = writeStoredPlayerState(
-            {
-                ...playerState,
-                currentTime: audio.currentTime || playerState.currentTime,
-                duration: Number.isFinite(audio.duration) ? audio.duration : playerState.duration,
-                wasPlaying: !audio.paused,
-            },
-            pageCatalog
-        );
-        renderShell();
-    };
-
-    const hydrateFromState = async (state) => {
-        playerState = normalizePlayerState(state, pageCatalog);
-        if (playerState.currentIndex >= 0 && playerState.queue[playerState.currentIndex]) {
-            await loadTrack(playerState.currentIndex, playerState.wasPlaying, playerState.currentTime);
-            return;
-        }
-
-        clearAudio();
-    };
-
-    const handleCommand = async (command) => {
-        if (!command || typeof command !== "object") {
-            return;
-        }
-
-        const commandIssuedAt = Number(command.issuedAt) || 0;
-        if (commandIssuedAt && commandIssuedAt <= lastCommandAt) {
-            return;
-        }
-        lastCommandAt = commandIssuedAt || Date.now();
-
-        if (command.type === "hydrate" && command.state) {
-            await hydrateFromState(command.state);
-            return;
-        }
-
-        if (command.type === "toggle") {
-            if (!playerState.queue[playerState.currentIndex] && pageCatalog.length) {
-                await hydrateFromState({
-                    queue: pageCatalog,
-                    currentIndex: 0,
-                    currentTime: 0,
-                    wasPlaying: true,
-                });
-                return;
-            }
-
-            if (audio.paused) {
-                try {
-                    await audio.play();
-                } catch {
-                    return;
-                }
-            } else {
-                audio.pause();
-            }
-            persistState({ force: true });
-            renderShell();
-            return;
-        }
-
-        if (command.type === "pause") {
-            audio.pause();
-            persistState({ force: true });
-            renderShell();
-            return;
-        }
-
-        if (command.type === "previous" && playerState.currentIndex > 0) {
-            await loadTrack(playerState.currentIndex - 1, true, 0);
-            return;
-        }
-
-        if (
-            command.type === "next" &&
-            playerState.currentIndex >= 0 &&
-            playerState.currentIndex < playerState.queue.length - 1
-        ) {
-            await loadTrack(playerState.currentIndex + 1, true, 0);
-            return;
-        }
-        if (command.type === "play-index") {
-            const targetIndex = Number(command.index);
-            if (!Number.isInteger(targetIndex)) {
-                return;
-            }
-
-            if (Array.isArray(command.queue) && command.queue.length) {
-                playerState = normalizePlayerState(
-                    {
-                        ...playerState,
-                        queue: command.queue,
-                        currentIndex: targetIndex,
-                        currentTime: 0,
-                        wasPlaying: true,
-                    },
-                    pageCatalog
-                );
-            }
-            await loadTrack(targetIndex, true, 0);
-            return;
-        }
-
-        if (command.type === "seek") {
-            const nextTime = Number(command.seconds);
-            if (!Number.isFinite(nextTime) || !playerState.queue[playerState.currentIndex]) {
-                return;
-            }
-
-            audio.currentTime = Math.max(nextTime, 0);
-            if (command.autoplay && audio.paused) {
-                try {
-                    await audio.play();
-                } catch {
-                    // Keep the seek even when autoplay is blocked.
-                }
-            }
-            persistState({ force: true });
-            renderShell();
-        }
-    };
-
-    toggle.addEventListener("click", () => {
-        void handleCommand({ type: "toggle", issuedAt: Date.now() });
-    });
-    previous.addEventListener("click", () => {
-        void handleCommand({ type: "previous", issuedAt: Date.now() });
-    });
-    next.addEventListener("click", () => {
-        void handleCommand({ type: "next", issuedAt: Date.now() });
-    });
-    queueToggle.addEventListener("click", () => {
-        queueOpen = !queueOpen;
-        renderShell();
-    });
-    progress.addEventListener("input", () => {
-        if (!Number.isFinite(audio.duration) || audio.duration <= 0) {
-            return;
-        }
-        void handleCommand({
-            type: "seek",
-            seconds: (Number(progress.value) / 100) * audio.duration,
-            autoplay: !audio.paused,
-            issuedAt: Date.now(),
-        });
-    });
-
-    audio.addEventListener("timeupdate", () => {
-        playerState.currentTime = audio.currentTime || 0;
-        playerState.duration = Number.isFinite(audio.duration) ? audio.duration : playerState.duration;
-        playerState.wasPlaying = !audio.paused;
-        renderShell();
-        persistState();
-    });
-    audio.addEventListener("play", () => {
-        playerState.wasPlaying = true;
-        renderShell();
-        persistState({ force: true });
-    });
-    audio.addEventListener("pause", () => {
-        playerState.wasPlaying = false;
-        renderShell();
-        persistState({ force: true });
-    });
-    audio.addEventListener("ended", () => {
-        if (playerState.currentIndex < playerState.queue.length - 1) {
-            void loadTrack(playerState.currentIndex + 1, true, 0);
-            return;
-        }
-
-        playerState = writeStoredPlayerState(
-            {
-                ...playerState,
-                currentTime: 0,
-                wasPlaying: false,
-            },
-            pageCatalog
-        );
-        renderShell();
-    });
-
-    window.addEventListener("storage", (event) => {
-        if (event.key !== playerCommandKey || !event.newValue) {
-            return;
-        }
-
-        try {
-            void handleCommand(JSON.parse(event.newValue));
-        } catch {
-            // Ignore malformed cross-window commands.
-        }
-    });
-
-    const initialCommand = readStoredJson(playerCommandKey);
-    if (initialCommand?.type === "hydrate") {
-        void handleCommand(initialCommand);
-    } else if (playerState.currentIndex >= 0 && playerState.queue[playerState.currentIndex]) {
-        void loadTrack(playerState.currentIndex, playerState.wasPlaying, playerState.currentTime);
-    } else {
-        renderShell();
-    }
-}
-
-function initRemotePlayerShell(shell, elements) {
-    const {
-        title,
-        artist,
-        toggle,
-        previous,
-        next,
-        progress,
-        current,
-        duration,
-        queueToggle,
-        queuePanel,
-        popout,
-        panel,
-        bubble,
-        collapseToggle,
-        dragHandle,
-        settings,
-        settingsToggle,
-        opacityInput,
-        scaleInput,
-    } = elements;
-    if (
-        !(title instanceof HTMLElement) ||
-        !(artist instanceof HTMLElement) ||
-        !(toggle instanceof HTMLButtonElement) ||
-        !(previous instanceof HTMLButtonElement) ||
-        !(next instanceof HTMLButtonElement) ||
-        !(progress instanceof HTMLInputElement) ||
-        !(current instanceof HTMLElement) ||
-        !(duration instanceof HTMLElement) ||
-        !(queueToggle instanceof HTMLButtonElement) ||
-        !(queuePanel instanceof HTMLElement) ||
-        !(panel instanceof HTMLElement) ||
-        !(bubble instanceof HTMLButtonElement) ||
-        !(collapseToggle instanceof HTMLButtonElement) ||
-        !(dragHandle instanceof HTMLButtonElement) ||
-        !(settingsToggle instanceof HTMLButtonElement) ||
-        !(settings instanceof HTMLElement) ||
-        !(opacityInput instanceof HTMLInputElement) ||
-        !(scaleInput instanceof HTMLInputElement)
-    ) {
-        return;
-    }
-
-    const pageCatalog = readTrackCatalog();
-    let playerState = readStoredPlayerState(pageCatalog);
-    let queueOpen = false;
-    let settingsOpen = false;
-    let isCollapsed = readStoredJson(playerDockStateKey)?.collapsed;
-    if (typeof isCollapsed !== "boolean") {
-        isCollapsed = true;
-    }
-    let customPosition = readStoredJson(playerDockPositionKey);
-    let dragState = null;
-    let suppressBubbleClick = false;
-    let playerAppearance = applyPlayerAppearance(shell, readPlayerAppearance(), {
-        opacityInput,
-        scaleInput,
-    });
 
     const persistDockState = () => {
         window.localStorage.setItem(
@@ -2134,6 +1795,15 @@ function initRemotePlayerShell(shell, elements) {
         customPosition = nextPosition;
     };
 
+    const pinShellToRect = (rect) => {
+        const nextPosition = clampDockPosition(rect.left, rect.top);
+        shell.style.left = `${nextPosition.left}px`;
+        shell.style.top = `${nextPosition.top}px`;
+        shell.style.right = "auto";
+        shell.style.bottom = "auto";
+        customPosition = nextPosition;
+    };
+
     const applyCollapsedState = () => {
         shell.classList.toggle("is-audio-player-collapsed", isCollapsed);
         bubble.setAttribute("aria-expanded", String(!isCollapsed));
@@ -2143,15 +1813,32 @@ function initRemotePlayerShell(shell, elements) {
                 ? t("player.open_mini_player", {}, "Open mini player")
                 : t("player.collapse_mini_player", {}, "Collapse mini player")
         );
+        resizeHandle.hidden = isCollapsed;
+        if (isCollapsed) {
+            shell.style.removeProperty("--player-panel-width");
+            shell.style.removeProperty("--player-panel-height");
+        } else {
+            playerSize = applyPlayerSize(shell, playerSize);
+        }
         panel.hidden = isCollapsed;
         settings.hidden = isCollapsed || !settingsOpen;
         settingsToggle.setAttribute("aria-expanded", String(!isCollapsed && settingsOpen));
         if (!shell.hidden) {
             window.requestAnimationFrame(() => {
+                if (!isCollapsed) {
+                    playerSize = applyPlayerSize(shell, playerSize);
+                }
                 applyDockPosition();
             });
         }
         persistDockState();
+    };
+
+    const persistBeforeNavigation = () => {
+        if (shell.hidden) {
+            return;
+        }
+        persistState({ force: true });
     };
 
     const beginDrag = (event, source) => {
@@ -2174,6 +1861,42 @@ function initRemotePlayerShell(shell, elements) {
         event.preventDefault();
     };
 
+    const beginResize = (event) => {
+        if (!(event instanceof PointerEvent) || event.button !== 0 || isCollapsed || shell.hidden) {
+            return;
+        }
+
+        const rect = shell.getBoundingClientRect();
+        pinShellToRect(rect);
+        resizeState = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+            originWidth: rect.width,
+            originHeight: rect.height,
+        };
+        shell.classList.add("is-audio-player-resizing");
+        event.currentTarget?.setPointerCapture?.(event.pointerId);
+        event.preventDefault();
+    };
+
+    const waitForAudioReady = () =>
+        new Promise((resolve) => {
+            if (audio.readyState >= 1) {
+                resolve();
+                return;
+            }
+
+            const finish = () => {
+                audio.removeEventListener("loadedmetadata", finish);
+                audio.removeEventListener("error", finish);
+                resolve();
+            };
+
+            audio.addEventListener("loadedmetadata", finish);
+            audio.addEventListener("error", finish);
+        });
+
     const renderShell = () => {
         const track = playerState.queue[playerState.currentIndex];
         shell.hidden = !track;
@@ -2184,6 +1907,7 @@ function initRemotePlayerShell(shell, elements) {
 
         if (!track) {
             queueOpen = false;
+            stateLabel.textContent = t("player.ready", {}, "Ready");
             title.textContent = t("player.ready", {}, "Ready");
             artist.textContent = t("player.ready", {}, "Ready");
             setPlayerToggleIcon(toggle, false);
@@ -2196,8 +1920,11 @@ function initRemotePlayerShell(shell, elements) {
             return;
         }
 
+        stateLabel.textContent = playerState.wasPlaying
+            ? t("player.now_playing", {}, "Now playing")
+            : t("player.paused", {}, "Paused");
         title.textContent = track.title;
-        artist.textContent = track.artist || "";
+        artist.textContent = track.artist || t("music.personal_library", {}, "Personal music library");
         setPlayerToggleIcon(toggle, playerState.wasPlaying);
         current.textContent = secondsToClock(playerState.currentTime);
         duration.textContent = secondsToClock(playerState.duration);
@@ -2208,63 +1935,161 @@ function initRemotePlayerShell(shell, elements) {
         queuePanel.hidden = !queueOpen;
         renderPlayerQueue(queuePanel, playerState.queue, playerState.currentIndex, (index) => {
             queueOpen = false;
+            void loadTrack(index, true, 0);
             renderShell();
-            openFloatingPlayerWindow(shell);
-            sendPlayerCommand({
-                type: "play-index",
-                index,
-                queue: playerState.queue,
-            });
         });
         updatePlayerArtwork(shell, track);
         applyCollapsedState();
     };
-    const hydratePlayer = (state, { focus = false } = {}) => {
-        playerState = writeStoredPlayerState(state, pageCatalog);
-        openFloatingPlayerWindow(shell, { focus });
-        sendPlayerCommand({
-            type: "hydrate",
-            state: playerState,
-        });
+
+    const clearAudio = () => {
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+        playerState = writeStoredPlayerState(
+            {
+                ...playerState,
+                currentIndex: -1,
+                currentTime: 0,
+                duration: 0,
+                wasPlaying: false,
+            },
+            pageCatalog
+        );
         renderShell();
     };
 
-    const openCurrentPlayer = ({ focus = true } = {}) => {
-        const currentTrack = playerState.queue[playerState.currentIndex];
-        if (!currentTrack) {
-            if (!pageCatalog.length) {
-                return;
-            }
-            hydratePlayer(
-                {
-                    queue: pageCatalog,
-                    currentIndex: 0,
-                    currentTime: 0,
-                    wasPlaying: false,
-                    duration: 0,
-                },
-                { focus }
-            );
+    const loadTrack = async (index, autoplay, time = 0) => {
+        const track = playerState.queue[index];
+        if (!track) {
+            clearAudio();
             return;
         }
 
-        hydratePlayer(playerState, { focus });
+        playerState = {
+            ...playerState,
+            currentIndex: index,
+            currentTime: Math.max(Number(time) || 0, 0),
+        };
+
+        audio.pause();
+        audio.src = track.src;
+        audio.load();
+        renderShell();
+
+        await waitForAudioReady();
+        if (playerState.currentTime > 0) {
+            audio.currentTime = Math.min(playerState.currentTime, audio.duration || playerState.currentTime);
+        }
+
+        if (autoplay) {
+            try {
+                await audio.play();
+            } catch {
+                // Some browsers block autoplay after a navigation; keep the player state visible.
+            }
+        }
+
+        playerState = writeStoredPlayerState(
+            {
+                ...playerState,
+                currentTime: audio.currentTime || playerState.currentTime,
+                duration: Number.isFinite(audio.duration) ? audio.duration : playerState.duration,
+                wasPlaying: !audio.paused,
+            },
+            pageCatalog
+        );
+        renderShell();
     };
 
-    const playTrackFromCatalog = (trackId, startTime = 0) => {
+    const playTrackFromCatalog = async (trackId, startTime = 0) => {
         const catalog = pageCatalog.length ? pageCatalog : playerState.queue;
         const trackIndex = catalog.findIndex((track) => track.id === trackId);
         if (trackIndex < 0) {
             return;
         }
 
-        hydratePlayer({
-            queue: catalog,
-            currentIndex: trackIndex,
-            currentTime: startTime,
-            wasPlaying: true,
-            duration: 0,
+        if (!playerState.queue[playerState.currentIndex]) {
+            isCollapsed = false;
+        }
+
+        playerState = normalizePlayerState(
+            {
+                queue: catalog,
+                currentIndex: trackIndex,
+                currentTime: startTime,
+                wasPlaying: true,
+                duration: 0,
+            },
+            pageCatalog
+        );
+        await loadTrack(trackIndex, true, startTime);
+    };
+
+    const togglePlayback = async () => {
+        const currentTrack = playerState.queue[playerState.currentIndex];
+        if (!currentTrack) {
+            if (!pageCatalog.length) {
+                return;
+            }
+
+            isCollapsed = false;
+            playerState = normalizePlayerState(
+                {
+                    queue: pageCatalog,
+                    currentIndex: 0,
+                    currentTime: 0,
+                    wasPlaying: true,
+                    duration: 0,
+                },
+                pageCatalog
+            );
+            await loadTrack(0, true, 0);
+            return;
+        }
+
+        if (audio.paused) {
+            try {
+                await audio.play();
+            } catch {
+                return;
+            }
+        } else {
+            audio.pause();
+        }
+
+        persistState({ force: true });
+        renderShell();
+    };
+
+    const seekTo = async (seconds, { autoplay = !audio.paused } = {}) => {
+        if (!Number.isFinite(seconds) || !playerState.queue[playerState.currentIndex]) {
+            return;
+        }
+
+        audio.currentTime = Math.max(seconds, 0);
+        if (autoplay && audio.paused) {
+            try {
+                await audio.play();
+            } catch {
+                // Keep the new position even if autoplay is blocked.
+            }
+        }
+
+        persistState({ force: true });
+        renderShell();
+    };
+
+    const resetPlayerSize = () => {
+        playerSize = writePlayerSize({
+            width: 392,
+            height: 332,
         });
+        playerSize = applyPlayerSize(shell, playerSize);
+        if (customPosition) {
+            applyDockPosition();
+            persistDockPosition(customPosition);
+        }
     };
 
     document.addEventListener("click", (event) => {
@@ -2277,7 +2102,7 @@ function initRemotePlayerShell(shell, elements) {
             return;
         }
 
-        playTrackFromCatalog(Number(trigger.getAttribute("data-track-id")));
+        void playTrackFromCatalog(Number(trigger.getAttribute("data-track-id")));
     });
 
     bubble.addEventListener("pointerdown", (event) => {
@@ -2314,47 +2139,39 @@ function initRemotePlayerShell(shell, elements) {
             ...playerAppearance,
             opacity: Number(opacityInput.value),
         });
-        applyPlayerAppearance(shell, playerAppearance, { opacityInput, scaleInput });
+        applyPlayerAppearance(shell, playerAppearance, { opacityInput });
         applyCollapsedState();
     });
 
-    scaleInput.addEventListener("input", () => {
-        playerAppearance = writePlayerAppearance({
-            ...playerAppearance,
-            scale: Number(scaleInput.value),
-        });
-        applyPlayerAppearance(shell, playerAppearance, { opacityInput, scaleInput });
-        applyCollapsedState();
+    resetSizeButton.addEventListener("click", () => {
+        resetPlayerSize();
+    });
+
+    resizeHandle.addEventListener("pointerdown", (event) => {
+        beginResize(event);
     });
 
     toggle.addEventListener("click", () => {
-        const currentTrack = playerState.queue[playerState.currentIndex];
-        if (!currentTrack) {
-            openCurrentPlayer({ focus: true });
-            if (pageCatalog.length) {
-                sendPlayerCommand({ type: "toggle" });
-            }
-            return;
-        }
-
-        openFloatingPlayerWindow(shell);
-        sendPlayerCommand({ type: "toggle" });
+        void togglePlayback();
     });
 
     previous.addEventListener("click", () => {
-        if (!playerState.queue[playerState.currentIndex]) {
+        if (playerState.currentIndex <= 0) {
             return;
         }
-        openFloatingPlayerWindow(shell);
-        sendPlayerCommand({ type: "previous" });
+
+        void loadTrack(playerState.currentIndex - 1, true, 0);
     });
 
     next.addEventListener("click", () => {
-        if (!playerState.queue[playerState.currentIndex]) {
+        if (
+            playerState.currentIndex < 0 ||
+            playerState.currentIndex >= playerState.queue.length - 1
+        ) {
             return;
         }
-        openFloatingPlayerWindow(shell);
-        sendPlayerCommand({ type: "next" });
+
+        void loadTrack(playerState.currentIndex + 1, true, 0);
     });
 
     queueToggle.addEventListener("click", () => {
@@ -2366,27 +2183,94 @@ function initRemotePlayerShell(shell, elements) {
         if (playerState.duration <= 0 || !playerState.queue[playerState.currentIndex]) {
             return;
         }
-        openFloatingPlayerWindow(shell);
-        sendPlayerCommand({
-            type: "seek",
-            seconds: (Number(progress.value) / 100) * playerState.duration,
+
+        void seekTo((Number(progress.value) / 100) * playerState.duration, {
             autoplay: playerState.wasPlaying,
         });
     });
 
-    popout?.addEventListener("click", () => {
-        openCurrentPlayer({ focus: true });
-    });
+    document.addEventListener(
+        "click",
+        (event) => {
+            if (!(event.target instanceof Element)) {
+                return;
+            }
+
+            const link = event.target.closest("a[href]");
+            if (!(link instanceof HTMLAnchorElement)) {
+                return;
+            }
+
+            if (
+                link.target === "_blank" ||
+                link.hasAttribute("download") ||
+                (event instanceof MouseEvent &&
+                    (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey))
+            ) {
+                return;
+            }
+
+            persistBeforeNavigation();
+        },
+        true
+    );
+
+    document.addEventListener(
+        "submit",
+        () => {
+            persistBeforeNavigation();
+        },
+        true
+    );
 
     document.addEventListener(
         "play",
         (event) => {
             if (event.target instanceof HTMLVideoElement && !event.target.muted && playerState.wasPlaying) {
-                sendPlayerCommand({ type: "pause" });
+                audio.pause();
+                persistState({ force: true });
+                renderShell();
             }
         },
         true
     );
+
+    audio.addEventListener("timeupdate", () => {
+        playerState.currentTime = audio.currentTime || 0;
+        playerState.duration = Number.isFinite(audio.duration) ? audio.duration : playerState.duration;
+        playerState.wasPlaying = !audio.paused;
+        renderShell();
+        persistState();
+    });
+
+    audio.addEventListener("play", () => {
+        playerState.wasPlaying = true;
+        renderShell();
+        persistState({ force: true });
+    });
+
+    audio.addEventListener("pause", () => {
+        playerState.wasPlaying = false;
+        renderShell();
+        persistState({ force: true });
+    });
+
+    audio.addEventListener("ended", () => {
+        if (playerState.currentIndex < playerState.queue.length - 1) {
+            void loadTrack(playerState.currentIndex + 1, true, 0);
+            return;
+        }
+
+        playerState = writeStoredPlayerState(
+            {
+                ...playerState,
+                currentTime: 0,
+                wasPlaying: false,
+            },
+            pageCatalog
+        );
+        renderShell();
+    });
 
     window.addEventListener("storage", (event) => {
         if (event.key !== playerStorageKey || !event.newValue) {
@@ -2397,7 +2281,34 @@ function initRemotePlayerShell(shell, elements) {
         renderShell();
     });
 
+    window.addEventListener("pagehide", () => {
+        persistBeforeNavigation();
+    });
+
+    window.addEventListener("beforeunload", () => {
+        persistBeforeNavigation();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+            persistBeforeNavigation();
+        }
+    });
+
     window.addEventListener("pointermove", (event) => {
+        if (resizeState && event.pointerId === resizeState.pointerId) {
+            const deltaX = event.clientX - resizeState.startX;
+            const deltaY = event.clientY - resizeState.startY;
+            playerSize = applyPlayerSize(shell, {
+                width: resizeState.originWidth + deltaX,
+                height: resizeState.originHeight + deltaY,
+            });
+            if (customPosition) {
+                applyDockPosition();
+            }
+            return;
+        }
+
         if (!dragState || event.pointerId !== dragState.pointerId) {
             return;
         }
@@ -2423,6 +2334,16 @@ function initRemotePlayerShell(shell, elements) {
     });
 
     window.addEventListener("pointerup", (event) => {
+        if (resizeState && event.pointerId === resizeState.pointerId) {
+            resizeState = null;
+            shell.classList.remove("is-audio-player-resizing");
+            playerSize = writePlayerSize(playerSize);
+            if (customPosition) {
+                persistDockPosition(customPosition);
+            }
+            return;
+        }
+
         if (!dragState || event.pointerId !== dragState.pointerId) {
             return;
         }
@@ -2439,10 +2360,19 @@ function initRemotePlayerShell(shell, elements) {
     });
 
     window.addEventListener("resize", () => {
+        playerSize = applyPlayerSize(shell, playerSize);
+        if (!isCollapsed) {
+            playerSize = writePlayerSize(playerSize);
+        }
         if (!shell.hidden) {
             applyDockPosition();
         }
     });
+
+    if (playerState.currentIndex >= 0 && playerState.queue[playerState.currentIndex]) {
+        void loadTrack(playerState.currentIndex, playerState.wasPlaying, playerState.currentTime);
+        return;
+    }
 
     renderShell();
 }
@@ -2455,6 +2385,7 @@ function initGlobalPlayer() {
 
     const elements = {
         audio: shell.querySelector("[data-player-audio]"),
+        stateLabel: shell.querySelector("[data-player-state]"),
         title: shell.querySelector("[data-player-title]"),
         artist: shell.querySelector("[data-player-artist]"),
         toggle: shell.querySelector("[data-player-toggle]"),
@@ -2465,7 +2396,6 @@ function initGlobalPlayer() {
         duration: shell.querySelector("[data-player-duration]"),
         queueToggle: shell.querySelector("[data-player-queue-toggle]"),
         queuePanel: shell.querySelector("[data-player-queue]"),
-        popout: shell.querySelector("[data-player-popout]"),
         panel: shell.querySelector("[data-player-panel]"),
         bubble: shell.querySelector("[data-player-bubble]"),
         collapseToggle: shell.querySelector("[data-player-collapse-toggle]"),
@@ -2473,13 +2403,9 @@ function initGlobalPlayer() {
         settings: shell.querySelector("[data-player-settings]"),
         settingsToggle: shell.querySelector("[data-player-settings-toggle]"),
         opacityInput: shell.querySelector("[data-player-opacity-input]"),
-        scaleInput: shell.querySelector("[data-player-scale-input]"),
+        resetSizeButton: shell.querySelector("[data-player-reset-size]"),
+        resizeHandle: shell.querySelector("[data-player-resize-handle]"),
     };
-
-    if (shell.hasAttribute("data-player-floating-window")) {
-        initFloatingPlayerShell(shell, elements);
-        return;
-    }
 
     initRemotePlayerShell(shell, elements);
 }
@@ -2489,6 +2415,7 @@ export function initLibraryFeatures() {
     initImmersiveReaderShells();
     initBookReaderSelection();
     initDocxReaders();
+    initLinearReaderProgress();
     initSectionReaders();
     initEpubReaders();
     initTimestampHelpers();
