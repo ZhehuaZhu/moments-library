@@ -2293,8 +2293,8 @@ function initRemotePlayerShell(shell, elements) {
 
     const resetPlayerSize = () => {
         playerSize = writePlayerSize({
-            width: 392,
-            height: 332,
+            width: 360,
+            height: 300,
         });
         playerSize = applyPlayerSize(shell, playerSize);
         if (customPosition) {
