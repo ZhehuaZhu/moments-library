@@ -1,75 +1,95 @@
 {% extends "base.html" %}
 
-{% block content %}
-<section class="page-header">
-    <div>
-        <p class="eyebrow">{{ t('common.library') }}</p>
-        <h1>{{ module_labels.music }}</h1>
-    </div>
-    <div class="page-header__stats">
-        <span class="stat-chip">{{ t('counts.tracks', count=result_count) }}</span>
-        <span class="stat-chip stat-chip--accent">{{ t('common.queue') }}</span>
-        {% if can_manage %}
-            <button
-                type="button"
-                class="button button--ghost button--compact"
-                data-open-folder-panel="track-create"
-                aria-haspopup="dialog"
-                aria-controls="track-create-panel"
-                aria-expanded="false"
-            >
-                {{ t('music.add_track') }}
-            </button>
-        {% endif %}
-    </div>
-</section>
+{% set music_stats = namespace(notes=0) %}
+{% for track in tracks %}
+    {% set music_stats.notes = music_stats.notes + (track.comments|length) %}
+{% endfor %}
 
-<section class="library-grid">
-    {% for track in tracks %}
-        <article class="work-card work-card--track">
-            <div class="work-card__body">
-                <div class="work-card__hero">
-                    {% if track.cover_asset_path %}
-                        <img
-                            src="{{ url_for('static', filename=track.cover_asset_path) }}"
-                            alt="{{ track.title }} cover"
-                            class="work-card__cover"
-                            loading="lazy"
-                        >
-                    {% else %}
-                        <div class="work-card__cover work-card__cover--placeholder">{{ track.cover_seed }}</div>
-                    {% endif %}
-                    <div class="work-card__hero-copy">
-                        <div class="work-card__meta">
-                            {% if track.category %}
-                                <span class="badge badge--category">{{ t('common.collection') }} · {{ track.category.name }}</span>
-                            {% endif %}
-                            {% if track.mood %}
-                                <span class="badge">{{ track.mood }}</span>
-                            {% endif %}
-                            {% if track.has_lyrics %}
-                                <span class="badge">LRC</span>
-                            {% endif %}
-                            <span class="badge badge--edit">{{ t('counts.notes', count=track.comments|length) }}</span>
-                        </div>
-                        <h3>{{ track.title }}</h3>
-                        {% if track.artist_name %}
-                            <p class="work-card__subtitle">{{ track.artist_name }}</p>
+{% block content %}
+<section class="music-library-page">
+    <section class="page-header page-header--music-library">
+        <div class="music-library-page__headline">
+            <p class="eyebrow">{{ t('common.library') }}</p>
+            <h1>{{ module_labels.music }}</h1>
+        </div>
+        <div class="music-library-page__actions">
+            <div class="page-header__stats music-library-page__stats">
+                <span class="stat-chip">{{ t('counts.tracks', count=result_count) }}</span>
+                <span class="stat-chip stat-chip--accent">{{ t('counts.notes', count=music_stats.notes) }}</span>
+            </div>
+            {% if can_manage %}
+                <button
+                    type="button"
+                    class="button button--ghost button--compact"
+                    data-open-folder-panel="track-create"
+                    aria-haspopup="dialog"
+                    aria-controls="track-create-panel"
+                    aria-expanded="false"
+                >
+                    {{ t('music.add_track') }}
+                </button>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="music-library-list">
+        {% for track in tracks %}
+            {% set track_preview = track.overall_review or track.description %}
+            <article class="track-row">
+                <div class="track-row__primary">
+                    <a
+                        class="track-row__artwork-link"
+                        href="{{ url_for('library.track_detail', track_id=track.id) }}"
+                        aria-label="{{ t('common.details') }} {{ track.title }}"
+                    >
+                        {% if track.cover_asset_path %}
+                            <img
+                                src="{{ url_for('static', filename=track.cover_asset_path) }}"
+                                alt="{{ track.title }} cover"
+                                class="track-row__cover"
+                                loading="lazy"
+                            >
+                        {% else %}
+                            <div class="track-row__cover track-row__cover--placeholder">{{ track.cover_seed }}</div>
                         {% endif %}
+                    </a>
+                    <div class="track-row__main">
+                        <div class="track-row__title-row">
+                            <div class="track-row__title-group">
+                                <h3 class="track-row__title">
+                                    <a href="{{ url_for('library.track_detail', track_id=track.id) }}">{{ track.title }}</a>
+                                </h3>
+                                <p class="track-row__artist">{{ track.artist_name or t('music.personal_library') }}</p>
+                            </div>
+                            <div class="track-row__meta">
+                                {% if track.category %}
+                                    <span class="badge badge--category">{{ t('common.collection') }} / {{ track.category.name }}</span>
+                                {% endif %}
+                                {% if track.mood %}
+                                    <span class="badge">{{ track.mood }}</span>
+                                {% endif %}
+                                {% if track.has_lyrics %}
+                                    <span class="badge">LRC</span>
+                                {% endif %}
+                                <span class="badge badge--edit">{{ t('counts.notes', count=track.comments|length) }}</span>
+                            </div>
+                        </div>
+                        <p class="track-row__summary{% if not track_preview %} track-row__summary--placeholder{% endif %}">
+                            {{ track_preview or t('music.no_review') }}
+                        </p>
                     </div>
                 </div>
-                <p class="work-card__summary">{{ track.overall_review or track.description or t('music.no_review') }}</p>
-                <div class="work-card__footer">
+                <div class="track-row__actions">
                     <button type="button" class="button button--ghost" data-track-play data-track-id="{{ track.id }}">{{ t('music.play') }}</button>
                     <a class="button button--subtle" href="{{ url_for('library.track_detail', track_id=track.id) }}">{{ t('common.details') }}</a>
                 </div>
+            </article>
+        {% else %}
+            <div class="empty-state">
+                <h3>{{ t('music.no_tracks') }}</h3>
             </div>
-        </article>
-    {% else %}
-        <div class="empty-state">
-            <h3>{{ t('music.no_tracks') }}</h3>
-        </div>
-    {% endfor %}
+        {% endfor %}
+    </section>
 </section>
 
 {% if can_manage %}

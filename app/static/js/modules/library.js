@@ -6,8 +6,6 @@ const playerCommandKey = "moments-global-player-command";
 const playerDockStateKey = "moments-global-player-dock-state";
 const playerDockPositionKey = "moments-global-player-dock-position";
 const playerAppearanceKey = "moments-global-player-appearance";
-const playerWindowName = "moments-global-player-window";
-const playerWindowFeatures = "popup=yes,width=420,height=260,resizable=yes,scrollbars=no";
 const readerUiTimers = new WeakMap();
 
 function getReaderShell(scope) {
@@ -1482,32 +1480,6 @@ function writeStoredPlayerState(state, fallbackQueue = []) {
     return normalized;
 }
 
-function sendPlayerCommand(command) {
-    window.localStorage.setItem(
-        playerCommandKey,
-        JSON.stringify({
-            ...command,
-            issuedAt: Date.now(),
-        })
-    );
-}
-
-function openFloatingPlayerWindow(shell, { focus = false } = {}) {
-    const url = shell.getAttribute("data-player-window-url") || "/music/player-window";
-    const popup = window.open(url, playerWindowName, playerWindowFeatures);
-    if (popup && !focus) {
-        window.setTimeout(() => {
-            try {
-                popup.blur();
-                window.focus();
-            } catch {
-                // Ignore focus handoff issues across browsers.
-            }
-        }, 0);
-    }
-    return popup;
-}
-
 function normalizePlayerAppearance(rawAppearance) {
     const opacity = Number(rawAppearance?.opacity);
     const scale = Number(rawAppearance?.scale);
@@ -2026,6 +1998,7 @@ function initFloatingPlayerShell(shell, elements) {
 
 function initRemotePlayerShell(shell, elements) {
     const {
+        audio,
         title,
         artist,
         toggle,
@@ -2036,7 +2009,6 @@ function initRemotePlayerShell(shell, elements) {
         duration,
         queueToggle,
         queuePanel,
-        popout,
         panel,
         bubble,
         collapseToggle,
@@ -2047,6 +2019,7 @@ function initRemotePlayerShell(shell, elements) {
         scaleInput,
     } = elements;
     if (
+        !(audio instanceof HTMLAudioElement) ||
         !(title instanceof HTMLElement) ||
         !(artist instanceof HTMLElement) ||
         !(toggle instanceof HTMLButtonElement) ||
@@ -2080,10 +2053,29 @@ function initRemotePlayerShell(shell, elements) {
     let customPosition = readStoredJson(playerDockPositionKey);
     let dragState = null;
     let suppressBubbleClick = false;
+    let lastPersistAt = 0;
     let playerAppearance = applyPlayerAppearance(shell, readPlayerAppearance(), {
         opacityInput,
         scaleInput,
     });
+
+    const persistState = ({ force = false } = {}) => {
+        const now = Date.now();
+        if (!force && now - lastPersistAt < 500) {
+            return;
+        }
+
+        lastPersistAt = now;
+        playerState = writeStoredPlayerState(
+            {
+                ...playerState,
+                currentTime: audio.currentTime || 0,
+                duration: Number.isFinite(audio.duration) ? audio.duration : playerState.duration,
+                wasPlaying: !audio.paused,
+            },
+            pageCatalog
+        );
+    };
 
     const persistDockState = () => {
         window.localStorage.setItem(
@@ -2174,6 +2166,23 @@ function initRemotePlayerShell(shell, elements) {
         event.preventDefault();
     };
 
+    const waitForAudioReady = () =>
+        new Promise((resolve) => {
+            if (audio.readyState >= 1) {
+                resolve();
+                return;
+            }
+
+            const finish = () => {
+                audio.removeEventListener("loadedmetadata", finish);
+                audio.removeEventListener("error", finish);
+                resolve();
+            };
+
+            audio.addEventListener("loadedmetadata", finish);
+            audio.addEventListener("error", finish);
+        });
+
     const renderShell = () => {
         const track = playerState.queue[playerState.currentIndex];
         shell.hidden = !track;
@@ -2197,7 +2206,7 @@ function initRemotePlayerShell(shell, elements) {
         }
 
         title.textContent = track.title;
-        artist.textContent = track.artist || "";
+        artist.textContent = track.artist || t("music.personal_library", {}, "Personal music library");
         setPlayerToggleIcon(toggle, playerState.wasPlaying);
         current.textContent = secondsToClock(playerState.currentTime);
         duration.textContent = secondsToClock(playerState.duration);
@@ -2208,63 +2217,149 @@ function initRemotePlayerShell(shell, elements) {
         queuePanel.hidden = !queueOpen;
         renderPlayerQueue(queuePanel, playerState.queue, playerState.currentIndex, (index) => {
             queueOpen = false;
+            void loadTrack(index, true, 0);
             renderShell();
-            openFloatingPlayerWindow(shell);
-            sendPlayerCommand({
-                type: "play-index",
-                index,
-                queue: playerState.queue,
-            });
         });
         updatePlayerArtwork(shell, track);
         applyCollapsedState();
     };
-    const hydratePlayer = (state, { focus = false } = {}) => {
-        playerState = writeStoredPlayerState(state, pageCatalog);
-        openFloatingPlayerWindow(shell, { focus });
-        sendPlayerCommand({
-            type: "hydrate",
-            state: playerState,
-        });
+
+    const clearAudio = () => {
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+        playerState = writeStoredPlayerState(
+            {
+                ...playerState,
+                currentIndex: -1,
+                currentTime: 0,
+                duration: 0,
+                wasPlaying: false,
+            },
+            pageCatalog
+        );
         renderShell();
     };
 
-    const openCurrentPlayer = ({ focus = true } = {}) => {
-        const currentTrack = playerState.queue[playerState.currentIndex];
-        if (!currentTrack) {
-            if (!pageCatalog.length) {
-                return;
-            }
-            hydratePlayer(
-                {
-                    queue: pageCatalog,
-                    currentIndex: 0,
-                    currentTime: 0,
-                    wasPlaying: false,
-                    duration: 0,
-                },
-                { focus }
-            );
+    const loadTrack = async (index, autoplay, time = 0) => {
+        const track = playerState.queue[index];
+        if (!track) {
+            clearAudio();
             return;
         }
 
-        hydratePlayer(playerState, { focus });
+        playerState = {
+            ...playerState,
+            currentIndex: index,
+            currentTime: Math.max(Number(time) || 0, 0),
+        };
+
+        audio.pause();
+        audio.src = track.src;
+        audio.load();
+        renderShell();
+
+        await waitForAudioReady();
+        if (playerState.currentTime > 0) {
+            audio.currentTime = Math.min(playerState.currentTime, audio.duration || playerState.currentTime);
+        }
+
+        if (autoplay) {
+            try {
+                await audio.play();
+            } catch {
+                // Some browsers block autoplay after a navigation; keep the player state visible.
+            }
+        }
+
+        playerState = writeStoredPlayerState(
+            {
+                ...playerState,
+                currentTime: audio.currentTime || playerState.currentTime,
+                duration: Number.isFinite(audio.duration) ? audio.duration : playerState.duration,
+                wasPlaying: !audio.paused,
+            },
+            pageCatalog
+        );
+        renderShell();
     };
 
-    const playTrackFromCatalog = (trackId, startTime = 0) => {
+    const playTrackFromCatalog = async (trackId, startTime = 0) => {
         const catalog = pageCatalog.length ? pageCatalog : playerState.queue;
         const trackIndex = catalog.findIndex((track) => track.id === trackId);
         if (trackIndex < 0) {
             return;
         }
 
-        hydratePlayer({
-            queue: catalog,
-            currentIndex: trackIndex,
-            currentTime: startTime,
-            wasPlaying: true,
-            duration: 0,
-        });
+        if (!playerState.queue[playerState.currentIndex]) {
+            isCollapsed = false;
+        }
+
+        playerState = normalizePlayerState(
+            {
+                queue: catalog,
+                currentIndex: trackIndex,
+                currentTime: startTime,
+                wasPlaying: true,
+                duration: 0,
+            },
+            pageCatalog
+        );
+        await loadTrack(trackIndex, true, startTime);
+    };
+
+    const togglePlayback = async () => {
+        const currentTrack = playerState.queue[playerState.currentIndex];
+        if (!currentTrack) {
+            if (!pageCatalog.length) {
+                return;
+            }
+
+            isCollapsed = false;
+            playerState = normalizePlayerState(
+                {
+                    queue: pageCatalog,
+                    currentIndex: 0,
+                    currentTime: 0,
+                    wasPlaying: true,
+                    duration: 0,
+                },
+                pageCatalog
+            );
+            await loadTrack(0, true, 0);
+            return;
+        }
+
+        if (audio.paused) {
+            try {
+                await audio.play();
+            } catch {
+                return;
+            }
+        } else {
+            audio.pause();
+        }
+
+        persistState({ force: true });
+        renderShell();
+    };
+
+    const seekTo = async (seconds, { autoplay = !audio.paused } = {}) => {
+        if (!Number.isFinite(seconds) || !playerState.queue[playerState.currentIndex]) {
+            return;
+        }
+
+        audio.currentTime = Math.max(seconds, 0);
+        if (autoplay && audio.paused) {
+            try {
+                await audio.play();
+            } catch {
+                // Keep the new position even if autoplay is blocked.
+            }
+        }
+
+        persistState({ force: true });
+        renderShell();
     };
 
     document.addEventListener("click", (event) => {
@@ -2277,7 +2372,7 @@ function initRemotePlayerShell(shell, elements) {
             return;
         }
 
-        playTrackFromCatalog(Number(trigger.getAttribute("data-track-id")));
+        void playTrackFromCatalog(Number(trigger.getAttribute("data-track-id")));
     });
 
     bubble.addEventListener("pointerdown", (event) => {
@@ -2328,33 +2423,26 @@ function initRemotePlayerShell(shell, elements) {
     });
 
     toggle.addEventListener("click", () => {
-        const currentTrack = playerState.queue[playerState.currentIndex];
-        if (!currentTrack) {
-            openCurrentPlayer({ focus: true });
-            if (pageCatalog.length) {
-                sendPlayerCommand({ type: "toggle" });
-            }
-            return;
-        }
-
-        openFloatingPlayerWindow(shell);
-        sendPlayerCommand({ type: "toggle" });
+        void togglePlayback();
     });
 
     previous.addEventListener("click", () => {
-        if (!playerState.queue[playerState.currentIndex]) {
+        if (playerState.currentIndex <= 0) {
             return;
         }
-        openFloatingPlayerWindow(shell);
-        sendPlayerCommand({ type: "previous" });
+
+        void loadTrack(playerState.currentIndex - 1, true, 0);
     });
 
     next.addEventListener("click", () => {
-        if (!playerState.queue[playerState.currentIndex]) {
+        if (
+            playerState.currentIndex < 0 ||
+            playerState.currentIndex >= playerState.queue.length - 1
+        ) {
             return;
         }
-        openFloatingPlayerWindow(shell);
-        sendPlayerCommand({ type: "next" });
+
+        void loadTrack(playerState.currentIndex + 1, true, 0);
     });
 
     queueToggle.addEventListener("click", () => {
@@ -2366,27 +2454,60 @@ function initRemotePlayerShell(shell, elements) {
         if (playerState.duration <= 0 || !playerState.queue[playerState.currentIndex]) {
             return;
         }
-        openFloatingPlayerWindow(shell);
-        sendPlayerCommand({
-            type: "seek",
-            seconds: (Number(progress.value) / 100) * playerState.duration,
+
+        void seekTo((Number(progress.value) / 100) * playerState.duration, {
             autoplay: playerState.wasPlaying,
         });
-    });
-
-    popout?.addEventListener("click", () => {
-        openCurrentPlayer({ focus: true });
     });
 
     document.addEventListener(
         "play",
         (event) => {
             if (event.target instanceof HTMLVideoElement && !event.target.muted && playerState.wasPlaying) {
-                sendPlayerCommand({ type: "pause" });
+                audio.pause();
+                persistState({ force: true });
+                renderShell();
             }
         },
         true
     );
+
+    audio.addEventListener("timeupdate", () => {
+        playerState.currentTime = audio.currentTime || 0;
+        playerState.duration = Number.isFinite(audio.duration) ? audio.duration : playerState.duration;
+        playerState.wasPlaying = !audio.paused;
+        renderShell();
+        persistState();
+    });
+
+    audio.addEventListener("play", () => {
+        playerState.wasPlaying = true;
+        renderShell();
+        persistState({ force: true });
+    });
+
+    audio.addEventListener("pause", () => {
+        playerState.wasPlaying = false;
+        renderShell();
+        persistState({ force: true });
+    });
+
+    audio.addEventListener("ended", () => {
+        if (playerState.currentIndex < playerState.queue.length - 1) {
+            void loadTrack(playerState.currentIndex + 1, true, 0);
+            return;
+        }
+
+        playerState = writeStoredPlayerState(
+            {
+                ...playerState,
+                currentTime: 0,
+                wasPlaying: false,
+            },
+            pageCatalog
+        );
+        renderShell();
+    });
 
     window.addEventListener("storage", (event) => {
         if (event.key !== playerStorageKey || !event.newValue) {
@@ -2395,6 +2516,10 @@ function initRemotePlayerShell(shell, elements) {
 
         playerState = normalizePlayerState(readStoredJson(playerStorageKey), pageCatalog);
         renderShell();
+    });
+
+    window.addEventListener("pagehide", () => {
+        persistState({ force: true });
     });
 
     window.addEventListener("pointermove", (event) => {
@@ -2443,6 +2568,11 @@ function initRemotePlayerShell(shell, elements) {
             applyDockPosition();
         }
     });
+
+    if (playerState.currentIndex >= 0 && playerState.queue[playerState.currentIndex]) {
+        void loadTrack(playerState.currentIndex, playerState.wasPlaying, playerState.currentTime);
+        return;
+    }
 
     renderShell();
 }
