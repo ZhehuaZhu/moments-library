@@ -150,6 +150,10 @@ export function applyPlayerSize(shell, size) {
     const normalized = normalizePlayerSize(size);
     shell.style.setProperty("--player-panel-width", `${normalized.width}px`);
     shell.style.setProperty("--player-panel-height", `${normalized.height}px`);
+    shell.style.setProperty(
+        "--player-ui-scale",
+        `${Math.min(normalized.width / 392, normalized.height / 332).toFixed(3)}`
+    );
     return normalized;
 }
 
