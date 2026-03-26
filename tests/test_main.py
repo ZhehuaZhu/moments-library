@@ -276,6 +276,7 @@ def test_admin_feed_includes_composer_preview_workspace(admin_client):
     assert b"data-library-input" in response.data
     assert b"data-camera-input" in response.data
     assert b'capture="environment"' in response.data
+    assert b"data-mobile-compose" in response.data
     assert b"Attachment Order" in response.data
     assert b"data-citation-toggle" in response.data
     assert b"data-citation-search" in response.data

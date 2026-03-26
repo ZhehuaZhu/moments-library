@@ -1,0 +1,9 @@
+{% set body_class = "player-window-shell" %}
+{% extends "base.html" %}
+
+{% block content %}
+<section class="player-window-shell">
+    {% include "includes/global_audio_player.html" %}
+</section>
+<script type="application/json" data-track-catalog>{{ track_catalog_payload|default([], true)|tojson }}</script>
+{% endblock %}

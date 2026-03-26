@@ -23,6 +23,18 @@
             <span class="app-header__label">{{ header_title or title or "Moments Library" }}</span>
         </div>
     </div>
+    {% if can_manage %}
+        <button
+            type="button"
+            class="icon-button app-header__compose"
+            data-open-composer
+            data-mobile-compose
+            aria-label="{{ t('nav.publish_new_moment') }}"
+            title="{{ t('nav.publish_new_moment') }}"
+        >
+            +
+        </button>
+    {% endif %}
     {% if module_labels is defined %}
         <nav class="app-header__quicknav" aria-label="{{ t('nav.quick_navigation') }}">
             <a

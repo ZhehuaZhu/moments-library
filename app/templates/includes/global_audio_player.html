@@ -1,6 +1,7 @@
 <div
     class="audio-player{% if player_variant == 'window' %} audio-player--window{% endif %}"
     data-audio-player
+    data-player-window-url="{{ url_for('library.music_player_window') }}"
     {% if player_variant == 'window' %}data-player-floating-window{% else %}hidden{% endif %}
 >
     <audio data-player-audio preload="metadata"></audio>
@@ -92,6 +93,10 @@
                 <label class="audio-player__setting">
                     <span>{{ t('player.opacity') }}</span>
                     <input type="range" min="70" max="100" step="1" value="92" data-player-opacity-input>
+                </label>
+                <label class="audio-player__setting">
+                    <span>{{ t('player.scale') }}</span>
+                    <input type="range" min="85" max="120" step="1" value="100" data-player-scale-input>
                 </label>
                 <button
                     type="button"

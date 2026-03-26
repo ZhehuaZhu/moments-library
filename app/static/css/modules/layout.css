@@ -202,6 +202,10 @@ body.is-sidebar-open .sidebar-overlay {
     min-width: 0;
 }
 
+.app-header__compose {
+    display: none;
+}
+
 .app-header__copy {
     min-width: 0;
     display: flex;

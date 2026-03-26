@@ -677,6 +677,19 @@ def tracks():
     )
 
 
+@library_bp.route("/music/player-window")
+@admin_required
+def music_player_window():
+    context = build_sidebar_context(active_nav="music")
+    return render_template(
+        "music_player_window.html",
+        title=translate("player.mini_player"),
+        show_sidebar=False,
+        player_variant="window",
+        **context,
+    )
+
+
 @library_bp.route("/music", methods=["POST"])
 @admin_required
 def create_track():
