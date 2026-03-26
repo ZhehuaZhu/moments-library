@@ -249,6 +249,7 @@ def books():
     return render_template(
         "books.html",
         title=translate("module.books"),
+        body_class="books-page",
         books=books_list,
         status_choices=get_book_status_choices(),
         result_count=len(books_list),
