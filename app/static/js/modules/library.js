@@ -55,6 +55,10 @@ function clearReaderUiTimer(shell) {
     }
 }
 
+function isCompactReaderViewport() {
+    return window.matchMedia("(max-width: 720px)").matches;
+}
+
 function scheduleReaderUiHide(shell, delay = 2600) {
     if (!(shell instanceof HTMLElement) || shell.classList.contains("is-reader-notes-visible")) {
         return;
@@ -84,6 +88,10 @@ function toggleReaderPanel(shell, panel) {
 
     const className = `is-reader-${panel}-visible`;
     const willOpen = !shell.classList.contains(className);
+    if (willOpen && isCompactReaderViewport()) {
+        const oppositePanel = panel === "top" ? "bottom" : "top";
+        shell.classList.remove(`is-reader-${oppositePanel}-visible`);
+    }
     shell.classList.toggle(className, willOpen);
     if (willOpen) {
         scheduleReaderUiHide(shell);
@@ -472,7 +480,12 @@ function openReaderNotesDrawer(scope) {
 
     const drawer = shell.querySelector("[data-reader-notes-drawer]");
     if (drawer instanceof HTMLElement) {
-        shell.classList.add("is-reader-top-visible", "is-reader-bottom-visible", "is-reader-notes-visible");
+        if (isCompactReaderViewport()) {
+            shell.classList.remove("is-reader-top-visible", "is-reader-bottom-visible");
+            shell.classList.add("is-reader-notes-visible");
+        } else {
+            shell.classList.add("is-reader-top-visible", "is-reader-bottom-visible", "is-reader-notes-visible");
+        }
         drawer.setAttribute("aria-hidden", "false");
         clearReaderUiTimer(shell);
         return drawer;
@@ -526,8 +539,6 @@ function initImmersiveReaderShells() {
         notesBackdrop?.addEventListener("click", () => {
             closeReaderNotesDrawer(shell);
         }, { signal });
-
-        shell.classList.add("is-reader-top-visible");
 
         stage?.addEventListener("click", (event) => {
             if (!(event.target instanceof Element)) {
