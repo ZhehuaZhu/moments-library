@@ -56,6 +56,7 @@ export function normalizePlayerState(rawState, fallbackQueue = []) {
 
     const currentTime = Number(rawState?.currentTime);
     const duration = Number(rawState?.duration);
+    const repeatMode = rawState?.repeatMode === "one" ? "one" : "off";
 
     return {
         queue,
@@ -63,6 +64,7 @@ export function normalizePlayerState(rawState, fallbackQueue = []) {
         currentTime: Number.isFinite(currentTime) ? Math.max(currentTime, 0) : 0,
         duration: Number.isFinite(duration) ? Math.max(duration, 0) : 0,
         wasPlaying: Boolean(rawState?.wasPlaying),
+        repeatMode,
     };
 }
 
@@ -149,6 +151,33 @@ export function applyPlayerSize(shell, size) {
     shell.style.setProperty("--player-panel-width", `${normalized.width}px`);
     shell.style.setProperty("--player-panel-height", `${normalized.height}px`);
     return normalized;
+}
+
+export function animateMediaVolume(media, from, to, duration = 220) {
+    if (!(media instanceof HTMLMediaElement)) {
+        return Promise.resolve();
+    }
+
+    media.volume = Math.min(Math.max(from, 0), 1);
+    if (duration <= 0) {
+        media.volume = Math.min(Math.max(to, 0), 1);
+        return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+        const startTime = performance.now();
+        const tick = (now) => {
+            const progress = Math.min((now - startTime) / duration, 1);
+            media.volume = from + (to - from) * progress;
+            if (progress >= 1) {
+                resolve();
+                return;
+            }
+            window.requestAnimationFrame(tick);
+        };
+
+        window.requestAnimationFrame(tick);
+    });
 }
 
 export function getPlayerLabel(track) {
@@ -247,14 +276,47 @@ export function setPlayerToggleIcon(button, isPlaying) {
     );
 }
 
-export function renderPlayerQueue(queuePanel, queue, currentIndex, onSelect) {
+export function renderPlayerQueue(queuePanel, queue, currentIndex, handlers = {}) {
     queuePanel.replaceChildren();
     queue.forEach((track, index) => {
+        const item = document.createElement("div");
+        item.className = `audio-player__queue-item${index === currentIndex ? " is-active" : ""}`;
+        item.dataset.playerQueueItem = "true";
+
         const button = document.createElement("button");
         button.type = "button";
-        button.className = `audio-player__queue-item${index === currentIndex ? " is-active" : ""}`;
+        button.className = "audio-player__queue-track";
         button.textContent = getPlayerLabel(track);
-        button.addEventListener("click", () => onSelect(index));
-        queuePanel.append(button);
+        button.addEventListener("click", () => handlers.onSelect?.(index));
+
+        const actions = document.createElement("div");
+        actions.className = "audio-player__queue-actions";
+
+        const moveUp = document.createElement("button");
+        moveUp.type = "button";
+        moveUp.className = "icon-button icon-button--ghost audio-player__queue-action";
+        moveUp.innerHTML = '<span aria-hidden="true">&#8593;</span>';
+        moveUp.disabled = index === 0;
+        moveUp.setAttribute("aria-label", t("player.queue_move_up", {}, "Move track earlier"));
+        moveUp.addEventListener("click", () => handlers.onMove?.(index, -1));
+
+        const moveDown = document.createElement("button");
+        moveDown.type = "button";
+        moveDown.className = "icon-button icon-button--ghost audio-player__queue-action";
+        moveDown.innerHTML = '<span aria-hidden="true">&#8595;</span>';
+        moveDown.disabled = index === queue.length - 1;
+        moveDown.setAttribute("aria-label", t("player.queue_move_down", {}, "Move track later"));
+        moveDown.addEventListener("click", () => handlers.onMove?.(index, 1));
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "icon-button icon-button--ghost audio-player__queue-action";
+        remove.innerHTML = '<span aria-hidden="true">&#10005;</span>';
+        remove.setAttribute("aria-label", t("player.remove_from_queue", {}, "Remove track from queue"));
+        remove.addEventListener("click", () => handlers.onRemove?.(index));
+
+        actions.append(moveUp, moveDown, remove);
+        item.append(button, actions);
+        queuePanel.append(item);
     });
 }
