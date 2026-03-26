@@ -136,22 +136,21 @@
                 {% endif %}
                 <span class="bookshelf-card__status">{{ book_status_label(book.status) }}</span>
             </a>
+            <a class="bookshelf-card__detail-badge" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.details') }}</a>
             <div class="bookshelf-card__body">
-                <h3><a href="{{ url_for('library.book_reader', book_id=book.id) }}">{{ book.title }}</a></h3>
-                <p class="bookshelf-card__author">{{ book.author_name or t('books.personal_archive') }}</p>
-                <div class="bookshelf-card__meta">
-                    <span class="badge">{{ book.source_format|upper }}</span>
-                    {% if book.category %}
-                        <span class="badge badge--category">{{ t('common.collection') }} · {{ book.category.name }}</span>
-                    {% endif %}
-                    {% if book.finished_at %}
-                        <span class="badge badge--edit">{{ t('common.finished') }} {{ book.finished_at|dateformat }}</span>
-                    {% endif %}
-                </div>
-                <div class="bookshelf-card__actions">
-                    <a class="button button--subtle button--compact" href="{{ url_for('library.book_reader', book_id=book.id) }}">{{ t('common.read') }}</a>
-                    <a class="button button--ghost button--compact" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.details') }}</a>
-                </div>
+                <a class="bookshelf-card__summary" href="{{ url_for('library.book_reader', book_id=book.id) }}">
+                    <h3>{{ book.title }}</h3>
+                    <p class="bookshelf-card__author">{{ book.author_name or t('books.personal_archive') }}</p>
+                    <div class="bookshelf-card__meta">
+                        <span class="badge">{{ book.source_format|upper }}</span>
+                        {% if book.category %}
+                            <span class="badge badge--category">{{ t('common.collection') }} 路 {{ book.category.name }}</span>
+                        {% endif %}
+                        {% if book.finished_at %}
+                            <span class="badge badge--edit">{{ t('common.finished') }} {{ book.finished_at|dateformat }}</span>
+                        {% endif %}
+                    </div>
+                </a>
             </div>
         </article>
     {% else %}
