@@ -525,6 +525,65 @@
         padding-inline: 14px;
     }
 
+    .page-header.page-header--music-library {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .page-header.page-header--music-library .music-library-page__hero {
+        gap: 1px;
+    }
+
+    .page-header.page-header--music-library .music-library-page__hero .eyebrow {
+        font-size: 0.6rem;
+        letter-spacing: 0.08em;
+    }
+
+    .page-header.page-header--music-library .music-library-page__toolbar {
+        margin-left: auto;
+        flex-wrap: nowrap;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
+    .page-header.page-header--music-library .page-header__stats {
+        width: auto;
+        margin-inline: 0;
+        padding-inline: 0;
+        padding-bottom: 0;
+        overflow: visible;
+        gap: 4px;
+    }
+
+    .page-header.page-header--music-library .page-header__stats .stat-chip {
+        padding: 4px 7px;
+        font-size: 0.66rem;
+    }
+
+    .page-header.page-header--music-library .music-library-page__create-button {
+        width: 30px;
+        height: 30px;
+        min-height: 0;
+        min-width: 0;
+        border-radius: 9px;
+    }
+
+    .page-header.page-header--music-library .music-library-page__create-button span {
+        font-size: 1rem;
+    }
+
+    .page-header.page-header--music-library h1 {
+        font-size: clamp(1.08rem, 4.4vw, 1.34rem);
+    }
+
+    .track-row__action {
+        min-width: 0;
+        min-height: 0;
+    }
+
     .section-title-row {
         gap: 14px;
     }
@@ -1474,6 +1533,54 @@
         left: 10px;
         padding: 16px;
         border-radius: 22px;
+    }
+
+    .page-header.page-header--music-library {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+
+    .page-header.page-header--music-library .music-library-page__hero .eyebrow {
+        display: none;
+    }
+
+    .page-header.page-header--music-library .page-header__stats .stat-chip {
+        padding: 3px 6px;
+        font-size: 0.62rem;
+    }
+
+    .page-header.page-header--music-library .music-library-page__create-button {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+    }
+
+    .page-header.page-header--music-library .music-library-page__create-button span {
+        font-size: 0.92rem;
+    }
+
+    .page-header.page-header--music-library h1 {
+        font-size: clamp(0.98rem, 5vw, 1.16rem);
+    }
+
+    .track-row__primary {
+        align-items: center;
+    }
+
+    .track-row__title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+    }
+
+    .track-row__meta {
+        justify-content: flex-end;
+    }
+
+    .track-row__tag--collection,
+    .track-row__tag--mood {
+        display: none;
     }
 }
 
