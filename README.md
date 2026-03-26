@@ -149,3 +149,37 @@ Current automated coverage includes:
 Repository:
 
 - [https://github.com/ZhehuaZhu/moments-library](https://github.com/ZhehuaZhu/moments-library)
+
+## Production Update Flow
+
+If the server was deployed from a Git checkout, future updates can use a simple pull-and-restart flow.
+
+### One-command update on the server
+
+```bash
+cd /srv/moments/app
+bash scripts/update-production.sh
+```
+
+The update script will:
+- pull the latest `main` branch changes from GitHub
+- install any updated Python dependencies into the existing virtual environment
+- restart `moments.service`
+- run a local HTTP health check on `127.0.0.1:8000`
+
+### Important persistent paths
+
+These paths should be preserved between deployments:
+
+- `instance/app.db`
+- `app/static/uploads/`
+- `/etc/moments.env`
+
+### If the server was deployed from a tarball first
+
+Do one migration from the unpacked folder to a Git checkout:
+
+1. Back up `instance/` and `app/static/uploads/`
+2. Replace the app directory with a fresh `git clone`
+3. Restore `instance/` and `app/static/uploads/`
+4. Reuse the existing `.venv`, `/etc/moments.env`, `moments.service`, and nginx config if desired
