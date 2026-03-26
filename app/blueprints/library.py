@@ -598,31 +598,6 @@ def tracks():
     )
 
 
-@library_bp.route("/music/player-window")
-def music_player_window():
-    track_catalog_payload = [
-        {
-            "id": track.id,
-            "title": track.title,
-            "artist": track.artist_name or "",
-            "src": url_for("static", filename=track.relative_path),
-            "cover": (
-                url_for("static", filename=track.cover_relative_path)
-                if track.cover_relative_path
-                else None
-            ),
-        }
-        for track in Track.query.order_by(Track.created_at.desc()).all()
-    ]
-    return render_template(
-        "music_player_window.html",
-        title=translate("player.mini_player"),
-        body_class="floating-player-page",
-        show_sidebar=False,
-        track_catalog_payload=track_catalog_payload,
-    )
-
-
 @library_bp.route("/music", methods=["POST"])
 @admin_required
 def create_track():
