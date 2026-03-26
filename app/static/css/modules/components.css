@@ -18,7 +18,7 @@
     border-radius: var(--radius-md);
     border: 1px solid var(--line);
     background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 12px 24px rgba(21, 33, 42, 0.05);
+    box-shadow: 0 8px 18px rgba(21, 33, 42, 0.04);
 }
 
 .flash--success {
@@ -43,13 +43,13 @@
     color: #fff;
     cursor: pointer;
     transition: transform var(--transition), box-shadow var(--transition), filter var(--transition), background var(--transition), border-color var(--transition);
-    box-shadow: 0 14px 28px rgba(41, 83, 71, 0.18);
+    box-shadow: 0 10px 18px rgba(41, 83, 71, 0.14);
 }
 
 .button:hover {
-    transform: translateY(-2px);
-    filter: saturate(1.08);
-    box-shadow: 0 20px 34px rgba(41, 83, 71, 0.22);
+    transform: translateY(-1px);
+    filter: saturate(1.04);
+    box-shadow: 0 14px 24px rgba(41, 83, 71, 0.16);
 }
 
 .button--ghost,
@@ -96,7 +96,7 @@
     color: var(--accent-strong);
     cursor: pointer;
     transition: transform var(--transition), box-shadow var(--transition), background var(--transition), border-color var(--transition);
-    box-shadow: 0 12px 24px rgba(21, 33, 42, 0.06);
+    box-shadow: 0 8px 18px rgba(21, 33, 42, 0.05);
 }
 
 .icon-button:hover {
@@ -185,10 +185,10 @@
 
 .nav-link:hover,
 .nav-link.is-active {
-    transform: translateY(-1px);
+    transform: translateY(0);
     border-color: rgba(63, 111, 100, 0.22);
     background: rgba(63, 111, 100, 0.08);
-    box-shadow: 0 12px 26px rgba(63, 111, 100, 0.08);
+    box-shadow: 0 8px 18px rgba(63, 111, 100, 0.06);
 }
 
 .nav-link--recycle:hover,

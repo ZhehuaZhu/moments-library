@@ -21,7 +21,7 @@
                         muted
                         loop
                         playsinline
-                        preload="auto"
+                                    preload="metadata"
                         {% if poster_url %}poster="{{ poster_url }}"{% endif %}
                         aria-label="{{ attachment.original_name }}"
                         data-inline-video
@@ -75,7 +75,7 @@
                             decoding="async"
                         >
                     {% elif attachment.media_kind == 'video' %}
-                        <video muted playsinline preload="auto" {% if poster_url %}poster="{{ poster_url }}"{% endif %} aria-label="{{ attachment.original_name }}">
+                                <video muted playsinline preload="metadata" {% if poster_url %}poster="{{ poster_url }}"{% endif %} aria-label="{{ attachment.original_name }}">
                             <source src="{{ file_url }}" type="{{ attachment.preview_asset_mime_type }}">
                         </video>
                         <span class="media-tile__play">Video</span>

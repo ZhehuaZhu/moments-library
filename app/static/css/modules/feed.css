@@ -25,9 +25,9 @@
 }
 
 .moment-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
     border-color: rgba(63, 111, 100, 0.18);
-    box-shadow: var(--shadow-hover);
+    box-shadow: 0 14px 26px rgba(21, 33, 42, 0.08);
 }
 
 .moment-card__header,
@@ -194,9 +194,9 @@
 }
 
 .media-tile:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 16px 30px rgba(21, 33, 42, 0.12);
-    filter: saturate(1.02);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(21, 33, 42, 0.08);
+    filter: saturate(1.01);
 }
 
 .media-tile img,
@@ -290,7 +290,7 @@
     height: 38px;
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.82);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(4px);
 }
 
 .media-tile__video-expand:hover {
