@@ -3,50 +3,55 @@
 
 {% block content %}
 <section class="page-header page-header--shelf page-header--bookshelf">
-    <div class="bookshelf-header__hero">
-        <span class="bookshelf-header__mark" aria-hidden="true">
-            <span class="nav-link__glyph nav-link__glyph--books"></span>
-        </span>
-        <div class="bookshelf-header__copy">
-            <p class="eyebrow">{{ t('common.library') }}</p>
-            <h1>{{ module_labels.books }}</h1>
+    <div class="bookshelf-toolbar">
+        <div class="bookshelf-toolbar__title">
+            <span class="bookshelf-toolbar__icon" aria-hidden="true">
+                <span class="nav-link__glyph nav-link__glyph--books"></span>
+            </span>
+            <div class="bookshelf-toolbar__copy">
+                <p class="eyebrow">{{ t('common.library') }}</p>
+                <h1>{{ module_labels.books }}</h1>
+            </div>
         </div>
-    </div>
-    <div class="page-header__stats page-header__stats--bookshelf">
-        <div class="bookshelf-header__metrics">
-            <span class="stat-chip stat-chip--bookshelf stat-chip--books-total" data-count="{{ result_count }}" aria-label="{{ t('counts.titles', count=result_count) }}">
-                <span class="bookshelf-header__metric-label">{{ t('counts.titles', count=result_count) }}</span>
+
+        <div class="bookshelf-toolbar__stats">
+            <span class="stat-chip stat-chip--bookshelf stat-chip--books-total" aria-label="{{ t('counts.titles', count=result_count) }}">
+                <span class="bookshelf-toolbar__chip-value">{{ result_count }}</span>
+                <span class="bookshelf-toolbar__chip-label">{{ t('counts.titles', count=result_count) }}</span>
             </span>
-            <span class="stat-chip stat-chip--bookshelf stat-chip--books-reading" data-count="{{ reading_count }}" aria-label="{{ t('book_status.reading') }} {{ reading_count }}">
-                <span class="bookshelf-header__metric-label">{{ t('book_status.reading') }} {{ reading_count }}</span>
+            <span class="stat-chip stat-chip--bookshelf stat-chip--books-reading" aria-label="{{ t('book_status.reading') }} {{ reading_count }}">
+                <span class="bookshelf-toolbar__chip-value">{{ reading_count }}</span>
+                <span class="bookshelf-toolbar__chip-label">{{ t('book_status.reading') }}</span>
             </span>
-            <span class="stat-chip stat-chip--accent stat-chip--bookshelf stat-chip--books-finished" data-count="{{ finished_count }}" aria-label="{{ t('book_status.finished') }} {{ finished_count }}">
-                <span class="bookshelf-header__metric-label">{{ t('book_status.finished') }} {{ finished_count }}</span>
+            <span class="stat-chip stat-chip--accent stat-chip--bookshelf stat-chip--books-finished" aria-label="{{ t('book_status.finished') }} {{ finished_count }}">
+                <span class="bookshelf-toolbar__chip-value">{{ finished_count }}</span>
+                <span class="bookshelf-toolbar__chip-label">{{ t('book_status.finished') }}</span>
             </span>
         </div>
+
         {% if can_manage %}
-            <div class="bookshelf-header__actions">
+            <div class="bookshelf-toolbar__actions">
                 <button
                     type="button"
-                    class="button button--subtle button--compact bookshelf-header__action bookshelf-header__action--collection"
+                    class="button button--subtle button--compact bookshelf-toolbar__action bookshelf-toolbar__action--collection"
                     data-open-folder-panel="create"
                     aria-haspopup="dialog"
                     aria-controls="folder-create-panel"
                     aria-expanded="false"
                     aria-label="{{ t('books.new_collection') }}"
                 >
-                    <span class="bookshelf-header__action-label">{{ t('books.new_collection') }}</span>
+                    <span class="bookshelf-toolbar__action-label">{{ t('books.new_collection') }}</span>
                 </button>
                 <button
                     type="button"
-                    class="button button--ghost button--compact bookshelf-header__action bookshelf-header__action--add"
+                    class="button button--ghost button--compact bookshelf-toolbar__action bookshelf-toolbar__action--add"
                     data-open-folder-panel="book-create"
                     aria-haspopup="dialog"
                     aria-controls="book-create-panel"
                     aria-expanded="false"
                     aria-label="{{ t('books.add_book') }}"
                 >
-                    <span class="bookshelf-header__action-label">{{ t('books.add_book') }}</span>
+                    <span class="bookshelf-toolbar__action-label">{{ t('books.add_book') }}</span>
                 </button>
             </div>
         {% endif %}
