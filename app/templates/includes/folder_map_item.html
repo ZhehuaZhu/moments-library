@@ -1,20 +1,50 @@
-<div class="folder-map__branch {% if folder_node.children %}folder-map__branch--has-children{% endif %}">
+{% set has_children = folder_node.children|length > 0 %}
+{% set branch_id = "folder-map-children-" ~ folder_node.folder.id %}
+{% set is_active = active_nav == 'feed' and selected_folder_key == 'folder:' ~ folder_node.folder.id %}
+{% set initially_expanded = folder_node.depth == 0 %}
+{% set expand_label = 'Expand subcollections' %}
+{% set collapse_label = 'Collapse subcollections' %}
+
+<div
+    class="folder-map__branch {% if has_children %}folder-map__branch--has-children{% else %}folder-map__branch--leaf{% endif %}"
+    data-folder-branch
+    data-folder-branch-initially-expanded="{{ 'true' if initially_expanded else 'false' }}"
+>
     <div class="folder-map__row">
-        <a
-            class="folder-map__node {% if active_nav == 'feed' and selected_folder_key == 'folder:' ~ folder_node.folder.id %}is-active{% endif %}"
-            href="{{ url_for('main.index', folder_id=folder_node.folder.id, q=search_query or None) }}"
-            title="{{ folder_node.folder.name }}"
-            data-folder-jump
-        >
-            <span class="folder-map__node-mark">{{ folder_node.folder.name[:1] }}</span>
-            <span class="folder-map__node-copy">
-                <strong>{{ folder_node.folder.name }}</strong>
-                {% if folder_node.folder.description %}
-                    <small>{{ folder_node.folder.description }}</small>
-                {% endif %}
-            </span>
-            <em>{{ folder_counts.get(folder_node.folder.id, 0) }}</em>
-        </a>
+        <div class="folder-map__branch-main">
+            {% if has_children %}
+                <button
+                    type="button"
+                    class="folder-map__toggle"
+                    data-folder-branch-toggle
+                    aria-expanded="{{ 'true' if initially_expanded else 'false' }}"
+                    aria-controls="{{ branch_id }}"
+                    aria-label="{{ collapse_label if initially_expanded else expand_label }}"
+                    data-folder-expand-label="{{ expand_label }}"
+                    data-folder-collapse-label="{{ collapse_label }}"
+                >
+                    <span class="folder-map__toggle-chevron" aria-hidden="true"></span>
+                </button>
+            {% else %}
+                <span class="folder-map__toggle-spacer" aria-hidden="true"></span>
+            {% endif %}
+
+            <a
+                class="folder-map__node {% if is_active %}is-active{% endif %}"
+                href="{{ url_for('main.index', folder_id=folder_node.folder.id, q=search_query or None) }}"
+                title="{{ folder_node.folder.name }}"
+                data-folder-jump
+            >
+                <span class="folder-map__node-mark">{{ folder_node.folder.name[:1]|upper }}</span>
+                <span class="folder-map__node-copy">
+                    <strong>{{ folder_node.folder.name }}</strong>
+                    {% if folder_node.folder.description %}
+                        <small>{{ folder_node.folder.description }}</small>
+                    {% endif %}
+                </span>
+                <em>{{ folder_counts.get(folder_node.folder.id, 0) }}</em>
+            </a>
+        </div>
 
         {% if can_manage %}
             <form
@@ -31,8 +61,8 @@
         {% endif %}
     </div>
 
-    {% if folder_node.children %}
-        <div class="folder-map__children">
+    {% if has_children %}
+        <div class="folder-map__children" id="{{ branch_id }}" data-folder-branch-children>
             {% for folder_node in folder_node.children %}
                 {% include "includes/folder_map_item.html" %}
             {% endfor %}
