@@ -52,7 +52,9 @@
 }
 
 .page-header.page-header--video-library {
-    display: grid;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
     gap: 4px;
     padding: 14px 16px;
     border-radius: 24px;
@@ -184,14 +186,6 @@
     box-shadow: none;
 }
 
-.video-library-page__topline {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: start;
-}
-
 .video-library-page__heading {
     min-width: 0;
     flex: 1 1 auto;
@@ -221,6 +215,7 @@
     display: grid;
     gap: 8px;
     flex-shrink: 0;
+    justify-items: end;
 }
 
 .video-library-page__add-button,
@@ -299,33 +294,20 @@
     gap: 16px;
 }
 
-.video-folder-panel__existing {
-    display: grid;
-    gap: 10px;
-}
-
-.video-folder-panel__caption {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.84rem;
-    font-weight: 600;
-}
-
 .video-folder-panel__list {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
     gap: 8px;
-    max-height: 120px;
+    max-height: min(52vh, 420px);
     overflow: auto;
     padding-right: 4px;
 }
 
-.video-folder-panel__chip {
-    display: inline-flex;
+.video-folder-panel__row {
+    display: flex;
     align-items: center;
-    min-height: 32px;
-    padding: 0 11px;
-    border-radius: 999px;
+    min-height: 46px;
+    padding: 0 14px;
+    border-radius: 16px;
     border: 1px solid rgba(34, 48, 60, 0.06);
     background: rgba(255, 255, 255, 0.9);
     color: var(--muted);
@@ -333,11 +315,32 @@
     transition: background var(--transition), border-color var(--transition), color var(--transition);
 }
 
-.video-folder-panel__chip:hover,
-.video-folder-panel__chip.is-active {
+.video-folder-panel__row:hover,
+.video-folder-panel__row.is-active {
     background: rgba(63, 111, 100, 0.08);
     border-color: rgba(63, 111, 100, 0.16);
     color: var(--accent-strong);
+}
+
+.video-folder-panel__row-label {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.video-folder-panel__row--depth-1 {
+    margin-left: 10px;
+}
+
+.video-folder-panel__row--depth-2 {
+    margin-left: 20px;
+}
+
+.video-folder-panel__row--depth-3,
+.video-folder-panel__row--depth-4,
+.video-folder-panel__row--depth-5 {
+    margin-left: 30px;
 }
 
 .track-row {

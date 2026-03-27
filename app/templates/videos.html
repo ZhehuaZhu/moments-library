@@ -3,38 +3,36 @@
 {% block content %}
 <section class="video-library-page">
     <section class="page-header page-header--video-library">
-        <div class="video-library-page__topline">
-            <div class="video-library-page__heading">
-                <h1>{{ module_labels.videos }}</h1>
-                <p class="video-library-page__count">{{ t('counts.videos', count=result_count) }}</p>
-            </div>
-            {% if can_manage %}
-                <div class="video-library-page__actions">
-                    <button
-                        type="button"
-                        class="icon-button icon-button--ghost video-library-page__add-button"
-                        data-open-folder-panel="video-create"
-                        aria-haspopup="dialog"
-                        aria-controls="video-create-panel"
-                        aria-expanded="false"
-                        aria-label="{{ t('videos.add_video') }}"
-                    >
-                        +
-                    </button>
-                    <button
-                        type="button"
-                        class="icon-button icon-button--ghost video-library-page__folder-button"
-                        data-open-folder-panel="video-folder-create"
-                        aria-haspopup="dialog"
-                        aria-controls="video-folder-create-panel"
-                        aria-expanded="false"
-                        aria-label="{{ t('folders.create_folder') }}"
-                    >
-                        <span class="video-library-page__folder-glyph" aria-hidden="true"></span>
-                    </button>
-                </div>
-            {% endif %}
+        <div class="video-library-page__heading">
+            <h1>{{ module_labels.videos }}</h1>
+            <p class="video-library-page__count">{{ t('counts.videos', count=result_count) }}</p>
         </div>
+        {% if can_manage %}
+            <div class="video-library-page__actions">
+                <button
+                    type="button"
+                    class="icon-button icon-button--ghost video-library-page__add-button"
+                    data-open-folder-panel="video-create"
+                    aria-haspopup="dialog"
+                    aria-controls="video-create-panel"
+                    aria-expanded="false"
+                    aria-label="{{ t('videos.add_video') }}"
+                >
+                    +
+                </button>
+                <button
+                    type="button"
+                    class="icon-button icon-button--ghost video-library-page__folder-button"
+                    data-open-folder-panel="video-folders"
+                    aria-haspopup="dialog"
+                    aria-controls="video-folders-panel"
+                    aria-expanded="false"
+                    aria-label="{{ t('folders.collections') }}"
+                >
+                    <span class="video-library-page__folder-glyph" aria-hidden="true"></span>
+                </button>
+            </div>
+        {% endif %}
     </section>
 
     {% if can_manage %}
@@ -71,7 +69,7 @@
                             <select name="category_id" class="input">
                                 <option value="">{{ t('common.no_collection') }}</option>
                                 {% for choice in sidebar_folder_choices %}
-                                    <option value="{{ choice.id }}">{{ "-- " * choice.depth }}{{ choice.name }}</option>
+                                    <option value="{{ choice.id }}" {% if selected_video_folder_id == choice.id %}selected{% endif %}>{{ "-- " * choice.depth }}{{ choice.name }}</option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -98,6 +96,61 @@
 
         <section
             class="folder-panel folder-panel--create video-folder-panel"
+            id="video-folders-panel"
+            data-folder-panel="video-folders"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="video-folders-title"
+            hidden
+        >
+            <div class="folder-panel__header video-folder-panel__header">
+                <div>
+                    <p class="eyebrow">{{ t('folders.collections') }}</p>
+                    <h2 id="video-folders-title">{{ t('folders.collections') }}</h2>
+                </div>
+                <div class="folder-panel__header-actions">
+                    <button
+                        type="button"
+                        class="button button--subtle button--compact"
+                        data-open-folder-panel="video-folder-create"
+                        aria-haspopup="dialog"
+                        aria-controls="video-folder-create-panel"
+                        aria-expanded="false"
+                    >
+                        {{ t('folders.create_folder') }}
+                    </button>
+                    <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('folders.close_map') }}">
+                        &times;
+                    </button>
+                </div>
+            </div>
+
+            <div class="folder-panel__body video-folder-panel__body">
+                <div class="video-folder-panel__list">
+                    <a
+                        class="video-folder-panel__row{% if not selected_video_folder_id %} is-active{% endif %}"
+                        href="{{ url_for('library.videos', q=search_query or None) }}"
+                    >
+                        <span class="video-folder-panel__row-label">{{ t('common.all') }}</span>
+                    </a>
+                    {% for choice in sidebar_folder_choices %}
+                        <a
+                            class="video-folder-panel__row video-folder-panel__row--depth-{{ choice.depth }}{% if selected_video_folder_id == choice.id %} is-active{% endif %}"
+                            href="{{ url_for('library.videos', q=search_query or None, folder_id=choice.id) }}"
+                        >
+                            <span class="video-folder-panel__row-label">{{ choice.name }}</span>
+                        </a>
+                    {% else %}
+                        <div class="empty-state empty-state--compact">
+                            <p>{{ t('folders.empty_map') }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section
+            class="folder-panel folder-panel--create video-folder-panel"
             id="video-folder-create-panel"
             data-folder-panel="video-folder-create"
             role="dialog"
@@ -110,9 +163,21 @@
                     <p class="eyebrow">{{ t('folders.collections') }}</p>
                     <h2 id="video-folder-create-title">{{ t('folders.create_folder') }}</h2>
                 </div>
-                <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('folders.close_creator') }}">
-                    &times;
-                </button>
+                <div class="folder-panel__header-actions">
+                    <button
+                        type="button"
+                        class="button button--subtle button--compact"
+                        data-open-folder-panel="video-folders"
+                        aria-haspopup="dialog"
+                        aria-controls="video-folders-panel"
+                        aria-expanded="false"
+                    >
+                        {{ t('folders.collections') }}
+                    </button>
+                    <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('folders.close_creator') }}">
+                        &times;
+                    </button>
+                </div>
             </div>
 
             <div class="folder-panel__body video-folder-panel__body">
@@ -120,28 +185,6 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
                     <input type="hidden" name="video_folder_redirect" value="1">
-
-                    {% if sidebar_folder_choices %}
-                        <section class="video-folder-panel__existing">
-                            <p class="video-folder-panel__caption">{{ t('folders.collections') }}</p>
-                            <div class="video-folder-panel__list">
-                                <a
-                                    class="video-folder-panel__chip{% if not selected_video_folder_id %} is-active{% endif %}"
-                                    href="{{ url_for('library.videos', q=search_query or None) }}"
-                                >
-                                    {{ t('common.all') }}
-                                </a>
-                                {% for choice in sidebar_folder_choices %}
-                                    <a
-                                        class="video-folder-panel__chip{% if selected_video_folder_id == choice.id %} is-active{% endif %}"
-                                        href="{{ url_for('library.videos', q=search_query or None, folder_id=choice.id) }}"
-                                    >
-                                        {{ choice.name }}
-                                    </a>
-                                {% endfor %}
-                            </div>
-                        </section>
-                    {% endif %}
 
                     <label class="field">
                         <span>{{ t('folders.create_folder') }}</span>
@@ -153,7 +196,7 @@
                         <select name="parent_id" class="input">
                             <option value="">{{ t('folders.top_level') }}</option>
                             {% for choice in sidebar_folder_choices %}
-                                <option value="{{ choice.id }}">{{ "-- " * choice.depth }}{{ choice.name }}</option>
+                                <option value="{{ choice.id }}" {% if selected_video_folder_id == choice.id %}selected{% endif %}>{{ "-- " * choice.depth }}{{ choice.name }}</option>
                             {% endfor %}
                         </select>
                     </label>
