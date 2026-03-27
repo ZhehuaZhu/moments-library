@@ -2964,6 +2964,106 @@
 }
 
 @media (max-width: 720px) {
+    .audio-player:not(.audio-player--window) {
+        --player-bubble-size: 64px;
+        right: 12px;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    }
+
+    .audio-player:not(.audio-player--window) {
+        width: min(var(--player-panel-width), calc(100vw - 16px));
+        max-width: calc(100vw - 16px);
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__panel {
+        gap: calc(10px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__eyebrow {
+        display: none;
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__state {
+        font-size: calc(0.82rem * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__header-actions {
+        gap: calc(6px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__drag-handle,
+    .audio-player:not(.audio-player--window) .audio-player__header-actions .icon-button {
+        min-width: calc(34px * var(--player-ui-scale));
+        min-height: calc(34px * var(--player-ui-scale));
+        padding: 0 calc(9px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__summary {
+        grid-template-columns: calc(48px * var(--player-ui-scale)) minmax(0, 1fr);
+        gap: calc(10px * var(--player-ui-scale));
+        padding: calc(10px * var(--player-ui-scale)) calc(11px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__artwork--panel {
+        width: calc(48px * var(--player-ui-scale));
+        height: calc(48px * var(--player-ui-scale));
+        flex-basis: calc(48px * var(--player-ui-scale));
+        border-radius: calc(14px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__meta {
+        gap: calc(4px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__summary strong,
+    .audio-player:not(.audio-player--window) .audio-player__summary span {
+        display: block;
+        white-space: nowrap;
+        -webkit-line-clamp: unset;
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__summary strong {
+        font-size: calc(0.96rem * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__summary span {
+        font-size: calc(0.78rem * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__controls {
+        gap: calc(6px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__controls .icon-button {
+        min-height: calc(40px * var(--player-ui-scale));
+        border-radius: calc(14px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__toggle {
+        min-height: calc(44px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__progress {
+        gap: calc(8px * var(--player-ui-scale));
+        padding: calc(8px * var(--player-ui-scale)) calc(10px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__progress span {
+        font-size: calc(0.74rem * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__settings {
+        gap: calc(10px * var(--player-ui-scale));
+        padding: calc(10px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__resize-handle {
+        right: 8px;
+        bottom: 8px;
+        width: calc(28px * var(--player-ui-scale));
+        height: calc(28px * var(--player-ui-scale));
+    }
+
     .page-header.page-header--music-library {
         gap: 8px;
         padding: 10px 12px;
@@ -3100,6 +3200,67 @@
 }
 
 @media (max-width: 540px) {
+    .audio-player:not(.audio-player--window) {
+        --player-bubble-size: 58px;
+        right: 8px;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+        padding: calc(12px * var(--player-ui-scale));
+        border-radius: calc(22px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__panel {
+        gap: calc(8px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__header {
+        gap: calc(8px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__drag-handle,
+    .audio-player:not(.audio-player--window) .audio-player__header-actions .icon-button {
+        min-width: calc(30px * var(--player-ui-scale));
+        min-height: calc(30px * var(--player-ui-scale));
+        padding: 0 calc(7px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__summary {
+        grid-template-columns: calc(42px * var(--player-ui-scale)) minmax(0, 1fr);
+        gap: calc(8px * var(--player-ui-scale));
+        padding: calc(8px * var(--player-ui-scale)) calc(9px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__artwork--panel {
+        width: calc(42px * var(--player-ui-scale));
+        height: calc(42px * var(--player-ui-scale));
+        flex-basis: calc(42px * var(--player-ui-scale));
+        border-radius: calc(12px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__summary strong {
+        font-size: calc(0.9rem * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__summary span {
+        font-size: calc(0.74rem * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__controls {
+        gap: calc(5px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__controls .icon-button {
+        min-height: calc(36px * var(--player-ui-scale));
+        border-radius: calc(12px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__toggle {
+        min-height: calc(40px * var(--player-ui-scale));
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__queue {
+        width: min(240px, calc(100vw - 16px));
+    }
+
     .music-library-page {
         gap: 8px;
     }
