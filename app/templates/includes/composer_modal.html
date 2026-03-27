@@ -33,27 +33,27 @@
                     multiple
                     accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
                 >
-                <input
-                    type="file"
-                    class="composer-input-hidden"
-                    data-library-input
-                    multiple
-                    accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
-                >
-                <input
-                    type="file"
-                    class="composer-input-hidden"
-                    data-camera-input
-                    accept="image/*,video/*"
-                    capture="environment"
-                >
                 <div class="composer-attachment-actions">
-                    <button type="button" class="button button--ghost composer-attachment-trigger" data-open-library-picker>
+                    <label class="button button--ghost composer-attachment-trigger">
                         <span>{{ t('composer.choose_media') }}</span>
-                    </button>
-                    <button type="button" class="button composer-attachment-trigger" data-open-camera-picker>
+                        <input
+                            type="file"
+                            class="composer-attachment-input"
+                            data-library-input
+                            multiple
+                            accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
+                        >
+                    </label>
+                    <label class="button composer-attachment-trigger">
                         <span>{{ t('composer.open_camera') }}</span>
-                    </button>
+                        <input
+                            type="file"
+                            class="composer-attachment-input"
+                            data-camera-input
+                            accept="image/*,video/*"
+                            capture="environment"
+                        >
+                    </label>
                 </div>
                 <small class="helper-text">{{ t('composer.attachments_hint') }}</small>
                 <small class="helper-text" data-file-summary hidden></small>

@@ -19,21 +19,6 @@ export function createComposerFileController({
 }) {
     let selectedFiles = [];
     let dragIndex = null;
-    const libraryPickerButton = modal?.querySelector("[data-open-library-picker]");
-    const cameraPickerButton = modal?.querySelector("[data-open-camera-picker]");
-
-    function openPicker(input) {
-        if (!(input instanceof HTMLInputElement)) {
-            return;
-        }
-
-        if (typeof input.showPicker === "function") {
-            input.showPicker();
-            return;
-        }
-
-        input.click();
-    }
 
     function syncInputFiles() {
         updateFileSummary(modal, selectedFiles.length);
@@ -271,19 +256,11 @@ export function createComposerFileController({
         }
     }, { signal });
 
-    libraryPickerButton?.addEventListener("click", () => {
-        openPicker(libraryInput);
-    }, { signal });
-
     cameraInput?.addEventListener("change", () => {
         appendSelectedFiles(Array.from(cameraInput.files || []));
         if (cameraInput instanceof HTMLInputElement) {
             cameraInput.value = "";
         }
-    }, { signal });
-
-    cameraPickerButton?.addEventListener("click", () => {
-        openPicker(cameraInput);
     }, { signal });
 
     signal.addEventListener("abort", () => {

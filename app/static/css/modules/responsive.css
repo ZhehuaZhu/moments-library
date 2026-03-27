@@ -943,13 +943,6 @@
         border-radius: 20px;
     }
 
-    .audio-player.is-audio-player-collapsed {
-        right: 12px !important;
-        left: auto !important;
-        top: auto !important;
-        bottom: calc(94px + env(safe-area-inset-bottom)) !important;
-    }
-
     .audio-player__bubble {
         width: 56px;
         height: 56px;
