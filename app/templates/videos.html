@@ -3,34 +3,35 @@
 {% block content %}
 <section class="video-library-page">
     <section class="page-header page-header--video-library">
-        <div class="video-library-page__headline">
-            <p class="eyebrow">{{ t('common.library') }}</p>
-            <h1>{{ module_labels.videos }}</h1>
-            <p class="page-description">
-                {% if search_query %}
-                    {{ t('videos.showing_results', count=result_count, query=search_query) }}
-                {% else %}
-                    {{ t('videos.description') }}
-                {% endif %}
-            </p>
-        </div>
-        <div class="video-library-page__actions">
-            <div class="page-header__stats video-library-page__stats">
-                <span class="stat-chip">{{ t('counts.videos', count=result_count) }}</span>
+        <div class="video-library-page__topline">
+            <div class="video-library-page__meta">
+                <p class="eyebrow">{{ t('common.library') }}</p>
+                <span class="stat-chip video-library-page__count">{{ t('counts.videos', count=result_count) }}</span>
             </div>
-            {% if can_manage %}
-                <button
-                    type="button"
-                    class="button button--ghost button--compact"
-                    data-open-folder-panel="video-create"
-                    aria-haspopup="dialog"
-                    aria-controls="video-create-panel"
-                    aria-expanded="false"
-                >
-                    {{ t('videos.add_video') }}
-                </button>
-            {% endif %}
+            <div class="video-library-page__title-row">
+                <h1>{{ module_labels.videos }}</h1>
+                {% if can_manage %}
+                    <button
+                        type="button"
+                        class="icon-button icon-button--ghost video-library-page__add-button"
+                        data-open-folder-panel="video-create"
+                        aria-haspopup="dialog"
+                        aria-controls="video-create-panel"
+                        aria-expanded="false"
+                        aria-label="{{ t('videos.add_video') }}"
+                    >
+                        +
+                    </button>
+                {% endif %}
+            </div>
         </div>
+        <p class="page-description">
+            {% if search_query %}
+                {{ t('videos.showing_results', count=result_count, query=search_query) }}
+            {% else %}
+                {{ t('videos.description') }}
+            {% endif %}
+        </p>
     </section>
 
     {% if can_manage %}
