@@ -1500,6 +1500,45 @@
     padding: 20px;
 }
 
+.library-detail-grid--book .meta-stack {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.library-detail-grid--book .meta-row {
+    min-width: 0;
+    display: grid;
+    align-content: start;
+    justify-content: start;
+    gap: 6px;
+    padding: 14px 16px;
+    border: 1px solid rgba(34, 48, 60, 0.08);
+    border-bottom: 1px solid rgba(34, 48, 60, 0.08);
+    border-radius: 18px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(247, 249, 248, 0.92));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.library-detail-grid--book .meta-row:last-child {
+    border-bottom: 1px solid rgba(34, 48, 60, 0.08);
+}
+
+.library-detail-grid--book .meta-row strong {
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.library-detail-grid--book .meta-row span {
+    min-width: 0;
+    font-size: 0.96rem;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
 .books-detail-actions {
     display: flex;
     gap: 10px;
@@ -3291,8 +3330,12 @@
         font-size: clamp(1.5rem, 6vw, 2rem);
     }
 
+    .library-detail-grid--book .meta-stack {
+        gap: 10px;
+    }
+
     .library-detail-grid--book .meta-row {
-        align-items: flex-start;
+        padding: 13px 14px;
     }
 }
 
@@ -3528,10 +3571,23 @@
         gap: 16px;
     }
 
+    .library-detail-grid--book .meta-stack {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
     .library-detail-grid--book .meta-row {
-        flex-direction: column;
-        gap: 6px;
-        padding: 9px 0;
+        gap: 5px;
+        padding: 11px 12px;
+        border-radius: 16px;
+    }
+
+    .library-detail-grid--book .meta-row strong {
+        font-size: 0.68rem;
+    }
+
+    .library-detail-grid--book .meta-row span {
+        font-size: 0.9rem;
     }
 
     .library-detail-grid--book .books-detail-actions .button {
