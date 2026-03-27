@@ -59,6 +59,16 @@
                 <small class="helper-text" data-file-summary hidden></small>
             </div>
 
+            <section class="composer-preview" data-composer-preview hidden>
+                <div class="section-title-row section-title-row--compact">
+                    <div>
+                        <h3>{{ t('composer.attachment_order') }}</h3>
+                        <p>{{ t('composer.drag_to_reorder') }}</p>
+                    </div>
+                </div>
+                <div class="composer-file-list" data-composer-file-list></div>
+            </section>
+
             <details class="composer-disclosure" data-composer-disclosure>
                 <summary class="composer-disclosure__summary">
                     <span>{{ t('composer.cite') }}</span>
@@ -70,25 +80,36 @@
                     <div class="composer-citation__selected" data-selected-citation hidden></div>
 
                     <div class="composer-citation__panel" data-citation-panel>
-                        <div class="composer-citation__scopes" role="tablist" aria-label="{{ t('composer.citation_scope') }}">
-                            <button type="button" class="composer-citation__scope is-active" data-citation-scope="all">{{ t('common.all') }}</button>
-                            <button type="button" class="composer-citation__scope" data-citation-scope="books">{{ module_labels.books }}</button>
-                            <button type="button" class="composer-citation__scope" data-citation-scope="quotes">{{ t('citation.book_quote') }}</button>
-                            <button type="button" class="composer-citation__scope" data-citation-scope="music">{{ module_labels.music }}</button>
-                            <button type="button" class="composer-citation__scope" data-citation-scope="videos">{{ module_labels.videos }}</button>
+                        <div class="composer-citation__toolbar">
+                            <div class="composer-citation__scopes" role="tablist" aria-label="{{ t('composer.citation_scope') }}">
+                                <button type="button" class="composer-citation__scope is-active" data-citation-scope="all">{{ t('common.all') }}</button>
+                                <button type="button" class="composer-citation__scope" data-citation-scope="books">{{ module_labels.books }}</button>
+                                <button type="button" class="composer-citation__scope" data-citation-scope="quotes">{{ t('citation.book_quote') }}</button>
+                                <button type="button" class="composer-citation__scope" data-citation-scope="music">{{ module_labels.music }}</button>
+                                <button type="button" class="composer-citation__scope" data-citation-scope="videos">{{ module_labels.videos }}</button>
+                            </div>
+
+                            <label class="field">
+                                <span>{{ t('composer.search_library') }}</span>
+                                <input
+                                    type="search"
+                                    class="input"
+                                    placeholder="{{ t('composer.search_placeholder') }}"
+                                    data-citation-search
+                                >
+                            </label>
                         </div>
 
-                        <label class="field">
-                            <span>{{ t('composer.search_library') }}</span>
-                            <input
-                                type="search"
-                                class="input"
-                                placeholder="{{ t('composer.search_placeholder') }}"
-                                data-citation-search
-                            >
-                        </label>
-
                         <div class="composer-citation__results" data-citation-results></div>
+                        <div class="composer-citation__footer" data-citation-footer hidden>
+                            <button
+                                type="button"
+                                class="button button--ghost button--compact composer-citation__more"
+                                data-citation-load-more
+                            >
+                                {{ t('composer.load_more') }}
+                            </button>
+                        </div>
                     </div>
                 </section>
             </details>
@@ -101,16 +122,6 @@
                     {% include "includes/folder_picker.html" %}
                 </div>
             </details>
-
-            <section class="composer-preview" data-composer-preview hidden>
-                <div class="section-title-row section-title-row--compact">
-                    <div>
-                        <h3>{{ t('composer.attachment_order') }}</h3>
-                        <p>{{ t('composer.drag_to_reorder') }}</p>
-                    </div>
-                </div>
-                <div class="composer-file-list" data-composer-file-list></div>
-            </section>
 
             <details class="composer-disclosure" data-composer-disclosure>
                 <summary class="composer-disclosure__summary">

@@ -154,10 +154,19 @@ def resolve_citation_payload(kind: str | None, target_id: int | None):
     return None
 
 
-def search_citation_payloads(search_query: str, *, scope: str = DEFAULT_SCOPE, limit: int = 24):
+def search_citation_payloads(
+    search_query: str,
+    *,
+    scope: str = DEFAULT_SCOPE,
+    limit: int = 24,
+    offset: int = 0,
+):
     scope = normalize_citation_scope(scope)
     query = (search_query or "").strip()
-    per_group_limit = max(4, limit // 4)
+    limit = max(limit, 1)
+    offset = max(offset, 0)
+    request_window = limit + offset + 1
+    per_group_limit = max(4, request_window)
     results: list[dict[str, str | int | None]] = []
 
     if scope in {"all", "books"}:
@@ -171,7 +180,9 @@ def search_citation_payloads(search_query: str, *, scope: str = DEFAULT_SCOPE, l
         results.extend(search_videos(query, per_group_limit))
         results.extend(search_video_comments(query, per_group_limit))
 
-    return results[:limit]
+    window = results[offset: offset + limit]
+    has_more = len(results) > offset + limit
+    return window, has_more
 
 
 def search_books(query: str, limit: int):

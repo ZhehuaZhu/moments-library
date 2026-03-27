@@ -22,6 +22,104 @@ export function createComposerFileController({
     let pointerSortState = null;
     let suppressPreviewClick = false;
 
+    function getPreviewCards() {
+        return Array.from(previewList?.querySelectorAll(".composer-file-card") || []);
+    }
+
+    function animatePreviewLayout(mutator, { skip = null } = {}) {
+        if (!(previewList instanceof HTMLElement)) {
+            mutator();
+            return;
+        }
+
+        const cards = getPreviewCards();
+        const firstRects = new Map(cards.map((card) => [card, card.getBoundingClientRect()]));
+        mutator();
+        const lastRects = new Map(cards.map((card) => [card, card.getBoundingClientRect()]));
+
+        cards.forEach((card) => {
+            if (!(card instanceof HTMLElement) || card === skip) {
+                return;
+            }
+
+            const firstRect = firstRects.get(card);
+            const lastRect = lastRects.get(card);
+            if (!firstRect || !lastRect) {
+                return;
+            }
+
+            const deltaX = firstRect.left - lastRect.left;
+            const deltaY = firstRect.top - lastRect.top;
+            if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) {
+                return;
+            }
+
+            card.getAnimations().forEach((animation) => animation.cancel());
+            card.animate(
+                [
+                    { transform: `translate(${deltaX}px, ${deltaY}px)` },
+                    { transform: "translate(0, 0)" },
+                ],
+                {
+                    duration: 180,
+                    easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+                },
+            );
+        });
+    }
+
+    function applyPointerSortPreview(fromIndex, toIndex) {
+        if (!(previewList instanceof HTMLElement)) {
+            return;
+        }
+
+        const previewOrder = reorderEntries(
+            selectedFiles.map((_, index) => index),
+            fromIndex,
+            toIndex,
+        );
+        const orderMap = new Map(previewOrder.map((originalIndex, previewIndex) => [originalIndex, previewIndex]));
+
+        animatePreviewLayout(() => {
+            previewList.querySelectorAll(".composer-file-card[data-index]").forEach((node) => {
+                if (!(node instanceof HTMLElement)) {
+                    return;
+                }
+                const originalIndex = Number(node.dataset.index || "");
+                const previewIndex = orderMap.get(originalIndex);
+                if (!Number.isInteger(originalIndex) || previewIndex === undefined) {
+                    return;
+                }
+
+                node.style.order = String(previewIndex);
+                node.classList.toggle("is-sort-preview", previewIndex !== originalIndex);
+                node.classList.toggle(
+                    "is-drop-target",
+                    previewIndex === toIndex && originalIndex !== fromIndex,
+                );
+            });
+        }, { skip: pointerSortState?.article ?? null });
+    }
+
+    function resetPreviewOrder({ animate = false, skip = null } = {}) {
+        const reset = () => {
+            previewList?.querySelectorAll(".composer-file-card[data-index]").forEach((node) => {
+                if (!(node instanceof HTMLElement)) {
+                    return;
+                }
+                node.style.removeProperty("order");
+                node.classList.remove("is-sort-preview");
+                node.classList.remove("is-drop-target");
+            });
+        };
+
+        if (animate) {
+            animatePreviewLayout(reset, { skip });
+            return;
+        }
+        reset();
+    }
+
     function triggerPicker(input) {
         if (!(input instanceof HTMLInputElement)) {
             return;
@@ -76,6 +174,8 @@ export function createComposerFileController({
             targetIndex: index,
             startX: event.clientX,
             startY: event.clientY,
+            pointerOffsetX: 0,
+            pointerOffsetY: 0,
             active: false,
             activationTimer: null,
         };
@@ -84,6 +184,9 @@ export function createComposerFileController({
             if (pointerSortState !== state) {
                 return;
             }
+            const rect = article.getBoundingClientRect();
+            state.pointerOffsetX = event.clientX - rect.left;
+            state.pointerOffsetY = event.clientY - rect.top;
             state.active = true;
             article.classList.add("is-pointer-dragging");
             previewList?.classList.add("is-sorting");
@@ -114,6 +217,7 @@ export function createComposerFileController({
             article.className = "composer-file-card composer-file-card--compact";
             article.draggable = true;
             article.dataset.index = String(index);
+            article.style.order = String(index);
 
             const previewButton = document.createElement("button");
             previewButton.type = "button";
@@ -262,11 +366,12 @@ export function createComposerFileController({
             previewList.append(article);
         });
 
-        const buildActionTile = ({ className, label, glyph, onClick }) => {
+        const buildActionTile = ({ className, label, glyph, onClick, order }) => {
             const tile = document.createElement("button");
             tile.type = "button";
             tile.className = `composer-file-card composer-file-card--add ${className}`;
             tile.setAttribute("aria-label", label);
+            tile.style.order = String(order);
 
             const glyphNode = document.createElement("span");
             glyphNode.className = "composer-file-card__add-glyph";
@@ -288,6 +393,7 @@ export function createComposerFileController({
                     label: t("composer.choose_media", {}, "Choose Existing Media"),
                     glyph: "+",
                     onClick: () => triggerPicker(libraryInput),
+                    order: 900,
                 }),
             );
             previewList.append(
@@ -296,15 +402,13 @@ export function createComposerFileController({
                     label: t("composer.open_camera", {}, "Take Photo / Video"),
                     glyph: "\ud83d\udcf7",
                     onClick: () => triggerPicker(cameraInput),
+                    order: 901,
                 }),
             );
         }
     }
 
-    function clearPointerSortState() {
-        previewList?.querySelectorAll(".is-drop-target").forEach((node) => {
-            node.classList.remove("is-drop-target");
-        });
+    function clearPointerSortState({ keepPreviewOrder = false } = {}) {
         previewList?.classList.remove("is-sorting");
         if (pointerSortState?.article instanceof HTMLElement) {
             pointerSortState.article.classList.remove("is-pointer-dragging");
@@ -313,6 +417,12 @@ export function createComposerFileController({
         }
         if (pointerSortState?.activationTimer) {
             window.clearTimeout(pointerSortState.activationTimer);
+        }
+        if (!keepPreviewOrder) {
+            resetPreviewOrder({
+                animate: Boolean(pointerSortState?.active),
+                skip: pointerSortState?.article ?? null,
+            });
         }
         pointerSortState = null;
     }
@@ -356,25 +466,20 @@ export function createComposerFileController({
             return;
         }
 
-        pointerSortState.article.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
-        pointerSortState.article.style.zIndex = "4";
-
-        previewList?.querySelectorAll(".is-drop-target").forEach((node) => {
-            if (node !== pointerSortState.article) {
-                node.classList.remove("is-drop-target");
-            }
-        });
-
         const hovered = document.elementFromPoint(event.clientX, event.clientY)?.closest(".composer-file-card");
-        if (!(hovered instanceof HTMLElement) || hovered === pointerSortState.article) {
-            return;
+        if (hovered instanceof HTMLElement && hovered !== pointerSortState.article) {
+            const targetIndex = Number(hovered.dataset.index || "");
+            if (Number.isInteger(targetIndex) && targetIndex >= 0 && targetIndex !== pointerSortState.targetIndex) {
+                pointerSortState.targetIndex = targetIndex;
+                applyPointerSortPreview(pointerSortState.index, targetIndex);
+            }
         }
 
-        const targetIndex = Number(hovered.dataset.index || "");
-        if (Number.isInteger(targetIndex) && targetIndex >= 0) {
-            pointerSortState.targetIndex = targetIndex;
-            hovered.classList.add("is-drop-target");
-        }
+        const rect = pointerSortState.article.getBoundingClientRect();
+        const translateX = event.clientX - pointerSortState.pointerOffsetX - rect.left;
+        const translateY = event.clientY - pointerSortState.pointerOffsetY - rect.top;
+        pointerSortState.article.style.transform = `translate3d(${translateX}px, ${translateY}px, 0)`;
+        pointerSortState.article.style.zIndex = "4";
     }, { signal });
 
     const finishPointerSort = (event) => {
@@ -383,13 +488,13 @@ export function createComposerFileController({
         }
 
         const { active, index, targetIndex } = pointerSortState;
-        clearPointerSortState();
-
         if (!active || targetIndex === index) {
+            clearPointerSortState();
             suppressPreviewClick = false;
             return;
         }
 
+        clearPointerSortState({ keepPreviewOrder: true });
         selectedFiles = reorderEntries(selectedFiles, index, targetIndex);
         syncInputFiles();
         renderPreviewList();

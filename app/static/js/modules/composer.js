@@ -37,6 +37,8 @@ export function initComposerModal() {
     const citationPanel = modal.querySelector("[data-citation-panel]");
     const citationSearch = modal.querySelector("[data-citation-search]");
     const citationResults = modal.querySelector("[data-citation-results]");
+    const citationFooter = modal.querySelector("[data-citation-footer]");
+    const citationLoadMore = modal.querySelector("[data-citation-load-more]");
     const selectedCitationShell = modal.querySelector("[data-selected-citation]");
     const citationKindField = modal.querySelector("[data-citation-kind]");
     const citationTargetIdField = modal.querySelector("[data-citation-target-id]");
@@ -75,6 +77,8 @@ export function initComposerModal() {
         citationPanel,
         citationSearch,
         citationResults,
+        citationFooter,
+        citationLoadMore,
         selectedCitationShell,
         citationKindField,
         citationTargetIdField,
