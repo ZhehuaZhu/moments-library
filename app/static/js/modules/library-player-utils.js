@@ -5,6 +5,7 @@ export const playerDockStateKey = "moments-global-player-dock-state";
 export const playerDockPositionKey = "moments-global-player-dock-position";
 export const playerAppearanceKey = "moments-global-player-appearance";
 export const playerSizeKey = "moments-global-player-size";
+export const playerResumeIntentKey = "moments-global-player-resume-intent";
 
 export function readTrackCatalog() {
     const script = document.querySelector("[data-track-catalog]");
@@ -22,6 +23,19 @@ export function readTrackCatalog() {
 
 export function readStoredJson(key) {
     const raw = window.localStorage.getItem(key);
+    if (!raw) {
+        return null;
+    }
+
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
+function readSessionJson(key) {
+    const raw = window.sessionStorage.getItem(key);
     if (!raw) {
         return null;
     }
@@ -110,11 +124,23 @@ export function applyPlayerAppearance(shell, appearance, controls = {}) {
 }
 
 function getPlayerSizeBounds() {
+    const isCompactViewport = window.matchMedia("(max-width: 720px)").matches;
+    const minWidth = isCompactViewport ? 248 : 280;
+    const minHeight = isCompactViewport ? 208 : 220;
+    const maxWidth = isCompactViewport
+        ? Math.max(minWidth, Math.min(window.innerWidth - 16, 324))
+        : Math.max(minWidth, window.innerWidth - 24);
+    const maxHeight = isCompactViewport
+        ? Math.max(minHeight, Math.min(window.innerHeight - 16, 248))
+        : Math.max(minHeight, window.innerHeight - 24);
+
     return {
-        minWidth: 280,
-        minHeight: 220,
-        maxWidth: Math.max(280, window.innerWidth - 24),
-        maxHeight: Math.max(220, window.innerHeight - 24),
+        minWidth,
+        minHeight,
+        maxWidth,
+        maxHeight,
+        defaultWidth: isCompactViewport ? Math.min(320, maxWidth) : Math.min(360, maxWidth),
+        defaultHeight: isCompactViewport ? Math.min(240, maxHeight) : Math.min(300, maxHeight),
     };
 }
 
@@ -125,10 +151,10 @@ function normalizePlayerSize(rawSize) {
     return {
         width: Number.isFinite(width)
             ? Math.min(Math.max(Math.round(width), bounds.minWidth), bounds.maxWidth)
-            : Math.min(360, bounds.maxWidth),
+            : bounds.defaultWidth,
         height: Number.isFinite(height)
             ? Math.min(Math.max(Math.round(height), bounds.minHeight), bounds.maxHeight)
-            : Math.min(300, bounds.maxHeight),
+            : bounds.defaultHeight,
     };
 }
 
@@ -140,6 +166,50 @@ export function writePlayerSize(size) {
     const normalized = normalizePlayerSize(size);
     window.localStorage.setItem(playerSizeKey, JSON.stringify(normalized));
     return normalized;
+}
+
+function normalizePlayerResumeIntent(rawIntent) {
+    const timestamp = Number(rawIntent?.timestamp);
+    const currentTime = Number(rawIntent?.currentTime);
+    const duration = Number(rawIntent?.duration);
+    return {
+        shouldResume: Boolean(rawIntent?.shouldResume),
+        reason: typeof rawIntent?.reason === "string" ? rawIntent.reason : "",
+        timestamp: Number.isFinite(timestamp) ? Math.max(timestamp, 0) : 0,
+        currentIndex: Number.isInteger(rawIntent?.currentIndex) ? rawIntent.currentIndex : -1,
+        currentTime: Number.isFinite(currentTime) ? Math.max(currentTime, 0) : 0,
+        duration: Number.isFinite(duration) ? Math.max(duration, 0) : 0,
+        trackSrc: typeof rawIntent?.trackSrc === "string" ? rawIntent.trackSrc : "",
+    };
+}
+
+export function readPlayerResumeIntent() {
+    const intent = normalizePlayerResumeIntent(readSessionJson(playerResumeIntentKey));
+    if (!intent.shouldResume) {
+        return null;
+    }
+
+    if (!intent.timestamp || Date.now() - intent.timestamp > 45_000) {
+        window.sessionStorage.removeItem(playerResumeIntentKey);
+        return null;
+    }
+
+    return intent;
+}
+
+export function writePlayerResumeIntent(intent) {
+    const normalized = normalizePlayerResumeIntent(intent);
+    if (!normalized.shouldResume) {
+        window.sessionStorage.removeItem(playerResumeIntentKey);
+        return null;
+    }
+
+    window.sessionStorage.setItem(playerResumeIntentKey, JSON.stringify(normalized));
+    return normalized;
+}
+
+export function clearPlayerResumeIntent() {
+    window.sessionStorage.removeItem(playerResumeIntentKey);
 }
 
 export function applyPlayerSize(shell, size) {

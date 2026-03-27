@@ -7,6 +7,8 @@ import {
     animateMediaVolume,
     applyPlayerAppearance,
     applyPlayerSize,
+    clearPlayerResumeIntent,
+    readPlayerResumeIntent,
     playerDockPositionKey,
     playerDockStateKey,
     playerStorageKey,
@@ -15,6 +17,7 @@ import {
     readStoredJson,
     readStoredPlayerState,
     readTrackCatalog,
+    writePlayerResumeIntent,
     writePlayerAppearance,
     writePlayerSize,
     writeStoredPlayerState,
@@ -1796,8 +1799,81 @@ function initRemotePlayerShell(shell, elements) {
     let playerAppearance = applyPlayerAppearance(shell, readPlayerAppearance(), { opacityInput });
     let playerSize = applyPlayerSize(shell, readPlayerSize());
     let audioTransitionToken = 0;
+    let pauseContext = "idle";
+    let lifecyclePauseReason = "";
     let videoSuspension = {
         shouldResume: false,
+    };
+    const initialResumeIntent = readPlayerResumeIntent();
+
+    const clearPendingResumeIntent = () => {
+        lifecyclePauseReason = "";
+        clearPlayerResumeIntent();
+    };
+
+    const rememberResumeIntent = (reason = "navigation") => {
+        const currentTrack = playerState.queue[playerState.currentIndex];
+        const shouldResume = Boolean(currentTrack) && (playerState.wasPlaying || !audio.paused);
+        lifecyclePauseReason = shouldResume ? reason : "";
+
+        if (!shouldResume || !currentTrack) {
+            clearPlayerResumeIntent();
+            return false;
+        }
+
+        writePlayerResumeIntent({
+            shouldResume: true,
+            reason,
+            timestamp: Date.now(),
+            currentIndex: playerState.currentIndex,
+            currentTime: audio.currentTime || playerState.currentTime,
+            duration: Number.isFinite(audio.duration) ? audio.duration : playerState.duration,
+            trackSrc: currentTrack.src,
+        });
+        return true;
+    };
+
+    const resumeFromPendingIntent = async ({ finalizeOnFailure = false } = {}) => {
+        const intent = readPlayerResumeIntent();
+        const currentTrack = playerState.queue[playerState.currentIndex];
+        if (!intent || !currentTrack) {
+            return false;
+        }
+
+        if (
+            (intent.currentIndex >= 0 && intent.currentIndex !== playerState.currentIndex) ||
+            (intent.trackSrc && intent.trackSrc !== currentTrack.src)
+        ) {
+            clearPendingResumeIntent();
+            return false;
+        }
+
+        if (hasActiveAudibleVideo()) {
+            return false;
+        }
+
+        if (intent.currentTime > 0 && Math.abs((audio.currentTime || 0) - intent.currentTime) > 1) {
+            audio.currentTime = intent.currentTime;
+        }
+
+        if (!audio.paused) {
+            clearPendingResumeIntent();
+            return true;
+        }
+
+        try {
+            await audio.play();
+            clearPendingResumeIntent();
+            return true;
+        } catch {
+            if (finalizeOnFailure) {
+                clearPendingResumeIntent();
+                playerState.wasPlaying = false;
+                renderShell();
+                persistState({ force: true });
+            }
+            return false;
+        }
     };
 
     const hasActiveAudibleVideo = () =>
@@ -1826,6 +1902,7 @@ function initRemotePlayerShell(shell, elements) {
         if (token !== audioTransitionToken) {
             return;
         }
+        pauseContext = "video";
         audio.pause();
         audio.volume = 1;
         persistState({ force: true });
@@ -1859,19 +1936,22 @@ function initRemotePlayerShell(shell, elements) {
         renderShell();
     };
 
-    const persistState = ({ force = false } = {}) => {
+    const persistState = ({ force = false, preservePlayback = false } = {}) => {
         const now = Date.now();
         if (!force && now - lastPersistAt < 500) {
             return;
         }
 
         lastPersistAt = now;
+        const currentTrack = playerState.queue[playerState.currentIndex];
         playerState = writeStoredPlayerState(
             {
                 ...playerState,
                 currentTime: audio.currentTime || 0,
                 duration: Number.isFinite(audio.duration) ? audio.duration : playerState.duration,
-                wasPlaying: !audio.paused,
+                wasPlaying: preservePlayback
+                    ? Boolean(currentTrack) && (playerState.wasPlaying || !audio.paused)
+                    : !audio.paused,
             },
             pageCatalog
         );
@@ -1992,11 +2072,16 @@ function initRemotePlayerShell(shell, elements) {
         persistDockState();
     };
 
-    const persistBeforeNavigation = () => {
+    const persistBeforeNavigation = (reason = "navigation", { armPauseContext = false } = {}) => {
         if (shell.hidden) {
+            clearPendingResumeIntent();
             return;
         }
-        persistState({ force: true });
+        if (armPauseContext) {
+            pauseContext = "lifecycle";
+        }
+        const shouldResume = rememberResumeIntent(reason);
+        persistState({ force: true, preservePlayback: shouldResume });
     };
 
     const beginDrag = (event, source) => {
@@ -2114,6 +2199,8 @@ function initRemotePlayerShell(shell, elements) {
     };
 
     const clearAudio = () => {
+        clearPendingResumeIntent();
+        pauseContext = "clear";
         audio.pause();
         audio.removeAttribute("src");
         audio.load();
@@ -2143,6 +2230,7 @@ function initRemotePlayerShell(shell, elements) {
             currentTime: Math.max(Number(time) || 0, 0),
         };
 
+        pauseContext = "track-change";
         audio.pause();
         audio.src = track.src;
         audio.load();
@@ -2298,6 +2386,8 @@ function initRemotePlayerShell(shell, elements) {
                 return;
             }
         } else {
+            clearPendingResumeIntent();
+            pauseContext = "manual";
             audio.pause();
         }
 
@@ -2521,7 +2611,7 @@ function initRemotePlayerShell(shell, elements) {
                 return;
             }
 
-            persistBeforeNavigation();
+            persistBeforeNavigation("navigation");
         },
         true
     );
@@ -2529,7 +2619,7 @@ function initRemotePlayerShell(shell, elements) {
     document.addEventListener(
         "submit",
         () => {
-            persistBeforeNavigation();
+            persistBeforeNavigation("navigation");
         },
         true
     );
@@ -2573,18 +2663,38 @@ function initRemotePlayerShell(shell, elements) {
     });
 
     audio.addEventListener("play", () => {
+        pauseContext = "idle";
+        clearPendingResumeIntent();
         playerState.wasPlaying = true;
         renderShell();
         persistState({ force: true });
     });
 
     audio.addEventListener("pause", () => {
+        const activePauseContext = pauseContext;
+        pauseContext = "idle";
+        const isHiddenLifecyclePause =
+            document.visibilityState === "hidden" &&
+            !["track-change", "clear", "manual", "video"].includes(activePauseContext);
+        const shouldPreservePlayback =
+            (activePauseContext === "lifecycle" || isHiddenLifecyclePause) &&
+            rememberResumeIntent(lifecyclePauseReason || "hidden");
+
+        playerState.currentTime = audio.currentTime || playerState.currentTime;
+        playerState.duration = Number.isFinite(audio.duration) ? audio.duration : playerState.duration;
+        if (shouldPreservePlayback) {
+            persistState({ force: true, preservePlayback: true });
+            return;
+        }
+
+        clearPendingResumeIntent();
         playerState.wasPlaying = false;
         renderShell();
         persistState({ force: true });
     });
 
     audio.addEventListener("ended", () => {
+        clearPendingResumeIntent();
         if (playerState.repeatMode === "one" && playerState.currentIndex >= 0) {
             void loadTrack(playerState.currentIndex, true, 0);
             return;
@@ -2616,16 +2726,22 @@ function initRemotePlayerShell(shell, elements) {
     });
 
     window.addEventListener("pagehide", () => {
-        persistBeforeNavigation();
+        persistBeforeNavigation("navigation", { armPauseContext: true });
     });
 
     window.addEventListener("beforeunload", () => {
-        persistBeforeNavigation();
+        persistBeforeNavigation("navigation", { armPauseContext: true });
     });
 
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") {
-            persistBeforeNavigation();
+            persistBeforeNavigation("hidden", { armPauseContext: true });
+            return;
+        }
+
+        if (document.visibilityState === "visible" && readPlayerResumeIntent()?.reason === "hidden") {
+            pauseContext = "idle";
+            void resumeFromPendingIntent({ finalizeOnFailure: true });
         }
     });
 
@@ -2720,10 +2836,20 @@ function initRemotePlayerShell(shell, elements) {
     });
 
     if (playerState.currentIndex >= 0 && playerState.queue[playerState.currentIndex]) {
-        void loadTrack(playerState.currentIndex, playerState.wasPlaying, playerState.currentTime);
+        const resumeTime =
+            initialResumeIntent &&
+            initialResumeIntent.trackSrc === playerState.queue[playerState.currentIndex].src
+                ? initialResumeIntent.currentTime
+                : playerState.currentTime;
+        void loadTrack(
+            playerState.currentIndex,
+            Boolean(initialResumeIntent?.shouldResume) || playerState.wasPlaying,
+            resumeTime
+        );
         return;
     }
 
+    clearPendingResumeIntent();
     renderShell();
 }
 
