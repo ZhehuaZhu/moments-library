@@ -43,6 +43,8 @@
 
 .page-header.page-header--video-library {
     display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
     justify-content: space-between;
     align-items: flex-start;
     gap: 4px;
