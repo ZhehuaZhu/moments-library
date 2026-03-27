@@ -6,7 +6,7 @@
         <div class="video-library-page__topline">
             <div class="video-library-page__meta">
                 <p class="eyebrow">{{ t('common.library') }}</p>
-                <span class="stat-chip video-library-page__count">{{ t('counts.videos', count=result_count) }}</span>
+                <p class="video-library-page__count">{{ t('counts.videos', count=result_count) }}</p>
             </div>
             <div class="video-library-page__title-row">
                 <h1>{{ module_labels.videos }}</h1>
@@ -25,13 +25,6 @@
                 {% endif %}
             </div>
         </div>
-        <p class="page-description">
-            {% if search_query %}
-                {{ t('videos.showing_results', count=result_count, query=search_query) }}
-            {% else %}
-                {{ t('videos.description') }}
-            {% endif %}
-        </p>
     </section>
 
     {% if can_manage %}
@@ -96,7 +89,6 @@
 
     <section class="library-grid video-library-grid">
         {% for video in videos %}
-            {% set video_preview = video.overall_review or video.description %}
             <article class="work-card work-card--video">
                 <a
                     class="work-card__media-link work-card__media-link--video"
@@ -115,22 +107,11 @@
                     >
                         <source src="{{ url_for('static', filename=video.preview_asset_path) }}" type="{{ video.preview_asset_mime_type }}">
                     </video>
-                    <span class="work-card__media-badge">{{ t('videos.title') }}</span>
                 </a>
-                <div class="work-card__body">
-                    <div class="work-card__meta">
-                        {% if video.category %}
-                            <span class="badge badge--category">{{ t('common.collection') }} / {{ video.category.name }}</span>
-                        {% endif %}
-                        <span class="badge">{{ video.created_at|dateformat }}</span>
-                    </div>
-                    <div class="video-library-card__copy">
+                <div class="work-card__body video-library-card__body">
+                    <div class="video-library-card__header">
                         <h3><a href="{{ url_for('library.video_detail', video_id=video.id) }}">{{ video.title }}</a></h3>
-                        <p class="work-card__subtitle">{{ t('common.imported') }} {{ video.created_at|dateformat }}</p>
-                        <p class="work-card__summary">{{ video_preview or t('videos.no_review') }}</p>
-                    </div>
-                    <div class="work-card__footer">
-                        <a class="button button--subtle" href="{{ url_for('library.video_detail', video_id=video.id) }}">{{ t('common.details') }}</a>
+                        <span class="video-library-card__date">{{ video.created_at|dateformat }}</span>
                     </div>
                 </div>
             </article>
