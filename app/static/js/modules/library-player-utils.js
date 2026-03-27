@@ -124,23 +124,11 @@ export function applyPlayerAppearance(shell, appearance, controls = {}) {
 }
 
 function getPlayerSizeBounds() {
-    const isCompactViewport = window.matchMedia("(max-width: 720px)").matches;
-    const minWidth = isCompactViewport ? 248 : 280;
-    const minHeight = isCompactViewport ? 208 : 220;
-    const maxWidth = isCompactViewport
-        ? Math.max(minWidth, Math.min(window.innerWidth - 16, 324))
-        : Math.max(minWidth, window.innerWidth - 24);
-    const maxHeight = isCompactViewport
-        ? Math.max(minHeight, Math.min(window.innerHeight - 16, 248))
-        : Math.max(minHeight, window.innerHeight - 24);
-
     return {
-        minWidth,
-        minHeight,
-        maxWidth,
-        maxHeight,
-        defaultWidth: isCompactViewport ? Math.min(320, maxWidth) : Math.min(360, maxWidth),
-        defaultHeight: isCompactViewport ? Math.min(240, maxHeight) : Math.min(300, maxHeight),
+        minWidth: 280,
+        minHeight: 220,
+        maxWidth: Math.max(280, window.innerWidth - 24),
+        maxHeight: Math.max(220, window.innerHeight - 24),
     };
 }
 
@@ -151,10 +139,10 @@ function normalizePlayerSize(rawSize) {
     return {
         width: Number.isFinite(width)
             ? Math.min(Math.max(Math.round(width), bounds.minWidth), bounds.maxWidth)
-            : bounds.defaultWidth,
+            : Math.min(360, bounds.maxWidth),
         height: Number.isFinite(height)
             ? Math.min(Math.max(Math.round(height), bounds.minHeight), bounds.maxHeight)
-            : bounds.defaultHeight,
+            : Math.min(300, bounds.maxHeight),
     };
 }
 
@@ -352,6 +340,26 @@ export function setPlayerToggleIcon(button, isPlaying) {
 
 export function renderPlayerQueue(queuePanel, queue, currentIndex, handlers = {}) {
     queuePanel.replaceChildren();
+
+    if (queuePanel.dataset.playerQueuePlacement === "mobile") {
+        const header = document.createElement("div");
+        header.className = "audio-player__queue-header";
+
+        const title = document.createElement("strong");
+        title.className = "audio-player__queue-title";
+        title.textContent = t("common.queue", {}, "Queue");
+
+        const close = document.createElement("button");
+        close.type = "button";
+        close.className = "icon-button icon-button--ghost audio-player__queue-close";
+        close.innerHTML = '<span aria-hidden="true">&#10005;</span>';
+        close.setAttribute("aria-label", t("common.close", {}, "Close"));
+        close.addEventListener("click", () => handlers.onClose?.());
+
+        header.append(title, close);
+        queuePanel.append(header);
+    }
+
     queue.forEach((track, index) => {
         const item = document.createElement("div");
         item.className = `audio-player__queue-item${index === currentIndex ? " is-active" : ""}`;

@@ -2017,7 +2017,7 @@ function initRemotePlayerShell(shell, elements) {
 
         let placement = "bottom";
         if (window.innerWidth <= 720) {
-            placement = "bottom";
+            placement = "mobile";
         } else if (rightSpace >= preferredQueueWidth) {
             placement = "right";
         } else if (leftSpace >= preferredQueueWidth) {
@@ -2182,6 +2182,10 @@ function initRemotePlayerShell(shell, elements) {
             updateQueuePlacement();
         }
         renderPlayerQueue(queuePanel, playerState.queue, playerState.currentIndex, {
+            onClose() {
+                queueOpen = false;
+                renderShell();
+            },
             onSelect(index) {
                 queueOpen = false;
                 void loadTrack(index, true, 0);
