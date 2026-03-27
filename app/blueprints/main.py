@@ -1,6 +1,16 @@
 from __future__ import annotations
 
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    url_for,
+)
 from flask_login import current_user
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
@@ -50,6 +60,45 @@ from ..services.storage import UploadValidationError, cleanup_files, save_upload
 from ..services.video_previews import ensure_attachment_video_preview
 
 main_bp = Blueprint("main", __name__)
+
+
+@main_bp.route("/manifest.webmanifest")
+def web_manifest():
+    response = send_from_directory(
+        current_app.static_folder,
+        "pwa/manifest.webmanifest",
+        mimetype="application/manifest+json",
+    )
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+@main_bp.route("/service-worker.js")
+def service_worker():
+    response = send_from_directory(
+        current_app.static_folder,
+        "pwa/service-worker.js",
+        mimetype="application/javascript",
+    )
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Service-Worker-Allowed"] = "/"
+    return response
+
+
+@main_bp.route("/apple-touch-icon.png")
+def apple_touch_icon():
+    response = send_from_directory(
+        current_app.static_folder,
+        "pwa/icons/apple-touch-icon.png",
+        mimetype="image/png",
+    )
+    response.headers["Cache-Control"] = "public, max-age=604800"
+    return response
+
+
+@main_bp.route("/offline")
+def offline():
+    return render_template("offline.html", title="Offline")
 
 
 def resolve_workspace_owner() -> User | None:

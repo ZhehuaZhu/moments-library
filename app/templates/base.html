@@ -4,8 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="theme-color" content="#2f6354">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Moments Library">
     <title>{{ title or "Moments Library" }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="manifest" href="{{ url_for('main.web_manifest') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('main.apple_touch_icon') }}">
     {% block head_extra %}{% endblock %}
     <script type="application/json" data-ui-translations>{{ client_translations|tojson }}</script>
     <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
