@@ -29,6 +29,7 @@ export function initComposerModal() {
     const closeButtons = modal.querySelectorAll("[data-close-composer]");
     const fileInput = modal.querySelector("[data-file-input]");
     const libraryInput = modal.querySelector("[data-library-input]");
+    const documentInput = modal.querySelector("[data-document-input]");
     const cameraInput = modal.querySelector("[data-camera-input]");
     const form = modal.querySelector("[data-composer-form]");
     const previewSection = modal.querySelector("[data-composer-preview]");
@@ -47,9 +48,53 @@ export function initComposerModal() {
     const crossPostShell = modal.querySelector("[data-cross-post-shell]");
     const crossPostOptions = modal.querySelectorAll("[data-cross-post-option]");
     const disclosureSections = modal.querySelectorAll("[data-composer-disclosure]");
+    const quickActionButtons = modal.querySelectorAll("[data-composer-quick-action]");
+    const panelCloseButtons = modal.querySelectorAll("[data-close-composer-panel]");
+    const locationActionButton = modal.querySelector('[data-action="resolve-location"]');
+    const composerPanels = new Map(
+        Array.from(modal.querySelectorAll("[data-composer-panel]"))
+            .filter((panel) => panel instanceof HTMLElement)
+            .map((panel) => [panel.dataset.composerPanel || "", panel]),
+    );
 
     let fileController;
     let citationController;
+
+    function syncQuickActionState() {
+        quickActionButtons.forEach((button) => {
+            const action = button.dataset.composerQuickAction || "";
+            const panel = composerPanels.get(action);
+            const isActive = panel instanceof HTMLElement ? !panel.hidden : false;
+            button.classList.toggle("is-active", isActive);
+            if (panel instanceof HTMLElement) {
+                button.setAttribute("aria-pressed", isActive ? "true" : "false");
+            }
+        });
+    }
+
+    function closeComposerPanels(except = null) {
+        composerPanels.forEach((panel, key) => {
+            if (!(panel instanceof HTMLElement)) {
+                return;
+            }
+            panel.hidden = except !== key;
+        });
+        syncQuickActionState();
+    }
+
+    function openComposerPanel(panelName, { onOpen = null } = {}) {
+        const panel = composerPanels.get(panelName);
+        if (!(panel instanceof HTMLElement)) {
+            return;
+        }
+
+        const willOpen = panel.hidden;
+        closeComposerPanels(willOpen ? panelName : null);
+        if (willOpen) {
+            panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+            onOpen?.();
+        }
+    }
 
     const crossPostController = createComposerCrossPostController({
         crossPostShell,
@@ -64,6 +109,7 @@ export function initComposerModal() {
         modal,
         fileInput,
         libraryInput,
+        documentInput,
         cameraInput,
         previewSection,
         previewList,
@@ -84,21 +130,22 @@ export function initComposerModal() {
         citationTargetIdField,
         citationScopeButtons,
         onSelectionChange: () => crossPostController.render(),
+        onPickCitation: () => closeComposerPanels(),
     });
 
     const openModal = () => {
         document.body.classList.remove("is-sidebar-open");
-        if (window.matchMedia("(max-width: 720px)").matches) {
-            disclosureSections.forEach((section) => {
-                section.removeAttribute("open");
-            });
-        }
+        disclosureSections.forEach((section) => {
+            section.removeAttribute("open");
+        });
+        closeComposerPanels();
         modal.hidden = false;
         document.body.classList.add("is-modal-open");
         modal.querySelector("textarea")?.focus();
     };
 
     const closeModal = () => {
+        closeComposerPanels();
         modal.hidden = true;
         document.body.classList.remove("is-modal-open");
     };
@@ -143,12 +190,43 @@ export function initComposerModal() {
 
     openButtons.forEach((button) => button.addEventListener("click", openModal, { signal }));
     closeButtons.forEach((button) => button.addEventListener("click", closeModal, { signal }));
+    panelCloseButtons.forEach((button) => button.addEventListener("click", () => closeComposerPanels(), { signal }));
+
+    quickActionButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const action = button.dataset.composerQuickAction || "";
+            if (action === "library") {
+                fileController?.openLibraryPicker();
+                return;
+            }
+            if (action === "camera") {
+                fileController?.openCameraPicker();
+                return;
+            }
+            if (action === "files") {
+                fileController?.openDocumentPicker();
+                return;
+            }
+            if (action === "citation") {
+                openComposerPanel("citation", {
+                    onOpen: () => citationSearch?.focus(),
+                });
+                return;
+            }
+            if (action === "location") {
+                openComposerPanel("location", {
+                    onOpen: () => locationActionButton?.click(),
+                });
+            }
+        }, { signal });
+    });
 
     form?.addEventListener("submit", submitComposerForm, { signal });
 
     bindLocationResolver(modal);
     citationController.renderSelectedCitation();
     crossPostController.render();
+    closeComposerPanels();
 
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && !modal.hidden) {

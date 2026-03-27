@@ -79,6 +79,7 @@ export function createComposerCitationController({
     citationTargetIdField,
     citationScopeButtons,
     onSelectionChange,
+    onPickCitation = () => {},
 }) {
     let selectedCitation = null;
     let citationScope = "all";
@@ -197,6 +198,7 @@ export function createComposerCitationController({
                 if (hasToggleButton && citationToggle instanceof HTMLButtonElement) {
                     citationToggle.setAttribute("aria-expanded", "false");
                 }
+                onPickCitation();
             }, { signal });
 
             citationResults.append(button);
