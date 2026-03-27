@@ -644,21 +644,20 @@
     }
 
     .page-header.page-header--video-library {
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 10px 12px;
-    }
-
-    .video-library-page__heading {
-        gap: 6px;
-    }
-
-    .video-library-page__heading h1 {
-        font-size: clamp(1.28rem, 5.8vw, 1.65rem);
+        gap: 10px;
     }
 
     .video-library-page__actions {
         gap: 6px;
         flex-wrap: nowrap;
+    }
+
+    .page-header.page-header--video-library > h1 {
+        font-size: clamp(1.28rem, 5.8vw, 1.65rem);
+    }
+
+    .video-library-page__aside {
+        gap: 5px;
     }
 
     .video-library-page__stats {
