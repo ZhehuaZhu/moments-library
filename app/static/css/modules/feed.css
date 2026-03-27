@@ -471,17 +471,17 @@
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    width: min(296px, calc(100vw - 28px));
-    min-width: 248px;
-    max-width: 320px;
+    width: min(252px, calc(100vw - 20px));
+    min-width: 220px;
+    max-width: 272px;
     display: grid;
-    gap: 8px;
+    gap: 6px;
     max-height: min(72vh, 520px);
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 12px;
+    padding: 10px;
     border: 1px solid var(--line-strong);
-    border-radius: 18px;
+    border-radius: 16px;
     background: rgba(255, 255, 255, 0.96);
     backdrop-filter: blur(12px);
     box-shadow: var(--shadow-hover);
@@ -492,29 +492,41 @@
 .moment-menu__section-body,
 .moment-share-option {
     display: grid;
-    gap: 8px;
+    gap: 6px;
+}
+
+.moment-menu__group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .moment-menu__item,
 .moment-menu__item:link,
 .moment-menu__item:visited {
     width: 100%;
-    padding: 10px 12px;
+    padding: 8px 10px;
     display: flex;
     align-items: center;
     justify-content: flex-start;
     border: 0;
-    border-radius: 12px;
+    border-radius: 10px;
     background: rgba(34, 48, 60, 0.04);
     color: var(--text);
     cursor: pointer;
     transition: background var(--transition), transform var(--transition);
     text-align: left;
+    font-size: 0.9rem;
 }
 
 .moment-menu__item:hover {
     background: rgba(63, 111, 100, 0.08);
     transform: translateY(-1px);
+}
+
+.moment-menu__group .moment-menu__item,
+.moment-menu__group .moment-menu__item:link,
+.moment-menu__group .moment-menu__item:visited {
+    justify-content: center;
+    text-align: center;
 }
 
 .moment-menu__item--danger {
@@ -567,9 +579,9 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 6px 10px;
+    padding: 4px 8px;
     color: var(--accent-strong);
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     font-weight: 700;
     cursor: pointer;
     list-style: none;
@@ -590,7 +602,7 @@
 }
 
 .moment-menu__section-body {
-    padding-top: 8px;
+    padding-top: 6px;
 }
 
 .moment-menu__caption {
@@ -600,6 +612,16 @@
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+}
+
+.moment-menu .cross-post-status {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+}
+
+.moment-share-option .helper-text {
+    font-size: 0.78rem;
+    line-height: 1.38;
 }
 
 .moment-menu__item[disabled] {
@@ -646,38 +668,43 @@
     .moment-menu {
         top: calc(100% + 8px);
         right: -4px;
-        width: min(276px, calc(100vw - 20px));
+        width: min(224px, calc(100vw - 14px));
         min-width: 0;
-        max-height: min(68vh, 420px);
-        padding: 10px;
-        border-radius: 16px;
+        max-height: min(68vh, 400px);
+        padding: 8px;
+        border-radius: 14px;
     }
 
     .moment-menu__item,
     .moment-menu__item:link,
     .moment-menu__item:visited {
-        padding: 9px 10px;
-        border-radius: 11px;
-        font-size: 0.94rem;
-    }
-
-    .moment-menu__summary {
-        padding: 6px 8px;
+        padding: 7px 8px;
+        border-radius: 9px;
         font-size: 0.86rem;
     }
 
+    .moment-menu__summary {
+        padding: 4px 6px;
+        font-size: 0.78rem;
+    }
+
     .moment-menu__section-body {
-        padding-top: 6px;
+        padding-top: 4px;
     }
 
     .moment-menu__field .folder-picker {
-        max-height: 132px;
-        padding: 8px;
+        max-height: 120px;
+        padding: 6px;
     }
 
     .moment-share-assets__item {
-        min-width: 28px;
-        height: 28px;
-        padding: 0 8px;
+        min-width: 24px;
+        height: 24px;
+        padding: 0 6px;
+    }
+
+    .moment-menu .cross-post-status {
+        padding: 4px 7px;
+        font-size: 0.68rem;
     }
 }

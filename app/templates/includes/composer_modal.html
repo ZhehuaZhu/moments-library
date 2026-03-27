@@ -24,43 +24,35 @@
                     ></textarea>
                 </label>
 
-                <div class="composer-stage__attachments">
-                    <input
-                        type="file"
-                        name="files"
-                        class="composer-input-hidden"
-                        data-file-input
-                        multiple
-                        accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
-                    >
-                    <div class="composer-stage__attachments-copy">
-                        <span class="composer-stage__label">{{ t('common.attachments') }}</span>
-                        <small class="helper-text">{{ t('composer.attachments_hint') }}</small>
-                        <small class="helper-text composer-stage__file-summary" data-file-summary hidden></small>
-                    </div>
-                    <div class="composer-attachment-actions">
-                        <label class="button button--ghost composer-attachment-trigger">
-                            <span>{{ t('composer.choose_media') }}</span>
-                            <input
-                                type="file"
-                                class="composer-attachment-input"
-                                data-library-input
-                                multiple
-                                accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
-                            >
-                        </label>
-                        <label class="button composer-attachment-trigger">
-                            <span>{{ t('composer.open_camera') }}</span>
-                            <input
-                                type="file"
-                                class="composer-attachment-input"
-                                data-camera-input
-                                accept="image/*,video/*"
-                                capture="environment"
-                            >
-                        </label>
-                    </div>
-                </div>
+                <input
+                    type="file"
+                    name="files"
+                    class="composer-input-hidden"
+                    data-file-input
+                    multiple
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.pdf,.doc,.docx,.txt"
+                >
+                <input
+                    type="file"
+                    class="composer-input-hidden"
+                    data-library-input
+                    multiple
+                    accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm"
+                >
+                <input
+                    type="file"
+                    class="composer-input-hidden"
+                    data-document-input
+                    multiple
+                    accept=".pdf,.doc,.docx,.txt"
+                >
+                <input
+                    type="file"
+                    class="composer-input-hidden"
+                    data-camera-input
+                    accept="image/*,video/*"
+                    capture="environment"
+                >
 
                 <section class="composer-preview" data-composer-preview hidden>
                     <div class="composer-preview__header">
@@ -69,14 +61,73 @@
                     </div>
                     <div class="composer-file-list" data-composer-file-list></div>
                 </section>
+
+                <div class="composer-stage__footer">
+                    <small class="helper-text composer-stage__file-summary" data-file-summary hidden></small>
+                    <div class="composer-quick-actions" role="toolbar" aria-label="Moment tools">
+                        <button
+                            type="button"
+                            class="composer-quick-action"
+                            data-composer-quick-action="library"
+                            aria-label="{{ t('composer.choose_media') }}"
+                            title="{{ t('composer.choose_media') }}"
+                        >
+                            <span class="composer-quick-action__icon composer-quick-action__icon--library" aria-hidden="true"></span>
+                        </button>
+                        <button
+                            type="button"
+                            class="composer-quick-action"
+                            data-composer-quick-action="citation"
+                            aria-label="{{ t('composer.cite') }}"
+                            title="{{ t('composer.cite') }}"
+                        >
+                            <span class="composer-quick-action__icon composer-quick-action__icon--citation" aria-hidden="true"></span>
+                        </button>
+                        <button
+                            type="button"
+                            class="composer-quick-action"
+                            data-composer-quick-action="camera"
+                            aria-label="{{ t('composer.open_camera') }}"
+                            title="{{ t('composer.open_camera') }}"
+                        >
+                            <span class="composer-quick-action__icon composer-quick-action__icon--camera" aria-hidden="true"></span>
+                        </button>
+                        <button
+                            type="button"
+                            class="composer-quick-action"
+                            data-composer-quick-action="files"
+                            aria-label="{{ t('common.attachments') }}"
+                            title="{{ t('common.attachments') }}"
+                        >
+                            <span class="composer-quick-action__icon composer-quick-action__icon--document" aria-hidden="true"></span>
+                        </button>
+                        <button
+                            type="button"
+                            class="composer-quick-action"
+                            data-composer-quick-action="location"
+                            aria-label="{{ t('common.current_location') }}"
+                            title="{{ t('common.current_location') }}"
+                        >
+                            <span class="composer-quick-action__icon composer-quick-action__icon--location" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                </div>
             </section>
 
             <section class="composer-secondary-grid">
-                <details class="composer-disclosure composer-disclosure--wide" data-composer-disclosure>
-                    <summary class="composer-disclosure__summary">
-                        <span>{{ t('composer.cite') }}</span>
-                    </summary>
-                    <section class="composer-citation composer-disclosure__body" data-citation-shell>
+                <section class="composer-inline-panel composer-inline-panel--wide" data-composer-panel="citation" hidden>
+                    <div class="composer-inline-panel__header">
+                        <strong>{{ t('composer.cite') }}</strong>
+                        <button
+                            type="button"
+                            class="icon-button icon-button--ghost composer-inline-panel__close"
+                            data-close-composer-panel="citation"
+                            aria-label="{{ t('composer.close_composer') }}"
+                        >
+                            &#10005;
+                        </button>
+                    </div>
+                    <section class="composer-citation" data-citation-shell>
                         <input type="hidden" name="citation_kind" data-citation-kind>
                         <input type="hidden" name="citation_target_id" data-citation-target-id>
 
@@ -115,7 +166,27 @@
                             </div>
                         </div>
                     </section>
-                </details>
+                </section>
+
+                <section class="composer-inline-panel composer-inline-panel--wide" data-composer-panel="location" hidden>
+                    <div class="composer-inline-panel__header">
+                        <strong>{{ t('common.current_location') }}</strong>
+                        <button
+                            type="button"
+                            class="icon-button icon-button--ghost composer-inline-panel__close"
+                            data-close-composer-panel="location"
+                            aria-label="{{ t('composer.close_composer') }}"
+                        >
+                            &#10005;
+                        </button>
+                    </div>
+                    <div class="composer-inline-panel__body">
+                        <div class="location-card composer-location-card">
+                            <button type="button" class="button button--ghost button--full" data-action="resolve-location">{{ t('common.use_current_location') }}</button>
+                            <p class="helper-text" data-location-status hidden></p>
+                        </div>
+                    </div>
+                </section>
 
                 <details class="composer-disclosure composer-disclosure--wide" data-composer-disclosure>
                     <summary class="composer-disclosure__summary">
@@ -123,18 +194,6 @@
                     </summary>
                     <div class="composer-disclosure__body">
                         {% include "includes/folder_picker.html" %}
-                    </div>
-                </details>
-
-                <details class="composer-disclosure" data-composer-disclosure>
-                    <summary class="composer-disclosure__summary">
-                        <span>{{ t('common.current_location') }}</span>
-                    </summary>
-                    <div class="composer-disclosure__body">
-                        <div class="location-card composer-location-card">
-                            <button type="button" class="button button--ghost button--full" data-action="resolve-location">{{ t('common.use_current_location') }}</button>
-                            <p class="helper-text" data-location-status hidden></p>
-                        </div>
                     </div>
                 </details>
 

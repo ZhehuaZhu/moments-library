@@ -11,6 +11,7 @@ export function createComposerFileController({
     modal,
     fileInput,
     libraryInput,
+    documentInput,
     cameraInput,
     previewSection,
     previewList,
@@ -210,7 +211,10 @@ export function createComposerFileController({
         }
 
         previewList.replaceChildren();
-        previewSection.hidden = false;
+        previewSection.hidden = selectedFiles.length === 0;
+        if (!selectedFiles.length) {
+            return;
+        }
 
         selectedFiles.forEach((entry, index) => {
             const article = document.createElement("article");
@@ -365,47 +369,6 @@ export function createComposerFileController({
 
             previewList.append(article);
         });
-
-        const buildActionTile = ({ className, label, glyph, onClick, order }) => {
-            const tile = document.createElement("button");
-            tile.type = "button";
-            tile.className = `composer-file-card composer-file-card--add ${className}`;
-            tile.setAttribute("aria-label", label);
-            tile.style.order = String(order);
-
-            const glyphNode = document.createElement("span");
-            glyphNode.className = "composer-file-card__add-glyph";
-            glyphNode.textContent = glyph;
-
-            const labelNode = document.createElement("span");
-            labelNode.className = "composer-file-card__add-label";
-            labelNode.textContent = label;
-
-            tile.append(glyphNode, labelNode);
-            tile.addEventListener("click", onClick, { signal });
-            return tile;
-        };
-
-        if (selectedFiles.length < 9) {
-            previewList.append(
-                buildActionTile({
-                    className: "composer-file-card--library",
-                    label: t("composer.choose_media", {}, "Choose Existing Media"),
-                    glyph: "+",
-                    onClick: () => triggerPicker(libraryInput),
-                    order: 900,
-                }),
-            );
-            previewList.append(
-                buildActionTile({
-                    className: "composer-file-card--camera",
-                    label: t("composer.open_camera", {}, "Take Photo / Video"),
-                    glyph: "\ud83d\udcf7",
-                    onClick: () => triggerPicker(cameraInput),
-                    order: 901,
-                }),
-            );
-        }
     }
 
     function clearPointerSortState({ keepPreviewOrder = false } = {}) {
@@ -435,6 +398,13 @@ export function createComposerFileController({
         appendSelectedFiles(Array.from(libraryInput.files || []));
         if (libraryInput instanceof HTMLInputElement) {
             libraryInput.value = "";
+        }
+    }, { signal });
+
+    documentInput?.addEventListener("change", () => {
+        appendSelectedFiles(Array.from(documentInput.files || []));
+        if (documentInput instanceof HTMLInputElement) {
+            documentInput.value = "";
         }
     }, { signal });
 
@@ -519,6 +489,9 @@ export function createComposerFileController({
     return {
         getSelectedFiles: () => selectedFiles,
         appendSelectedFiles,
+        openCameraPicker: () => triggerPicker(cameraInput),
+        openDocumentPicker: () => triggerPicker(documentInput),
+        openLibraryPicker: () => triggerPicker(libraryInput),
         renderPreviewList,
         syncInputFiles,
     };
