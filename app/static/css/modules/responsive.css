@@ -265,57 +265,6 @@
         align-self: center;
     }
 
-    .app-body.books-page .app-header {
-        padding: 8px 10px;
-        gap: 8px;
-        border-radius: 18px;
-    }
-
-    .app-body.books-page .app-header__copy {
-        display: none;
-    }
-
-    .app-body.books-page .app-header__main {
-        gap: 8px;
-    }
-
-    .app-body.books-page .app-header .icon-button {
-        width: 40px;
-        height: 40px;
-        min-height: 40px;
-        border-radius: 14px;
-    }
-
-    .app-body.books-page .app-header__quicknav {
-        flex: 1;
-        width: auto;
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        justify-content: flex-end;
-        gap: 6px;
-    }
-
-    .app-body.books-page .app-header__quicklink {
-        min-width: 40px;
-        min-height: 40px;
-        padding: 0;
-        border-radius: 14px;
-        font-size: 0;
-    }
-
-    .app-body.books-page .app-header__quickglyph {
-        display: inline-block;
-    }
-
-    .app-body.books-page .app-header__quicktext {
-        display: none;
-    }
-
-    .app-body.books-page .app-header__quicklink--music,
-    .app-body.books-page .app-header__quicklink--videos {
-        display: none;
-    }
-
     .app-body.books-page .page-header--bookshelf {
         padding: 16px;
         border-radius: 24px;
