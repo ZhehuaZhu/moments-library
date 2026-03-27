@@ -227,6 +227,7 @@
     align-items: center;
     justify-self: end;
     align-self: start;
+    flex-wrap: nowrap;
 }
 
 .video-library-page__add-button,
@@ -276,6 +277,10 @@
     justify-self: end;
     justify-content: flex-end;
     align-self: end;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
 }
 
 .video-library-page__stats .stat-chip {

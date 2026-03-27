@@ -658,6 +658,14 @@
 
     .video-library-page__actions {
         gap: 6px;
+        flex-wrap: nowrap;
+    }
+
+    .video-library-page__stats {
+        width: auto;
+        margin: 0;
+        padding: 0;
+        overflow: visible;
     }
 
     .video-library-page__add-button,
