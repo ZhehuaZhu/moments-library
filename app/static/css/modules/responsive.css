@@ -237,6 +237,44 @@
         flex: 0 0 auto;
     }
 
+    .app-body.books-page .app-header {
+        padding: 10px 12px;
+        border-radius: 18px;
+        align-items: stretch;
+    }
+
+    .app-body.books-page .app-header__main {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .app-body.books-page .app-header__copy {
+        min-height: 34px;
+    }
+
+    .app-body.books-page .app-header__label {
+        font-size: 0.9rem;
+    }
+
+    .app-body.books-page .app-header__quicknav {
+        width: 100%;
+        overflow: visible;
+        flex-wrap: wrap;
+        margin-inline: 0;
+        padding-inline: 0;
+        justify-content: flex-start;
+        gap: 8px;
+    }
+
+    .app-body.books-page .app-header__quicklink {
+        flex: 0 0 auto;
+        min-height: 36px;
+        padding: 0 14px;
+        font-size: 0.84rem;
+        color: var(--muted);
+    }
+
     .language-switch--compact {
         flex: 0 0 auto;
     }
@@ -249,21 +287,6 @@
     .app-body.books-page .page-header--bookshelf {
         padding: 16px;
         border-radius: 24px;
-    }
-
-    .app-body.books-page .app-header__quicknav {
-        width: 100%;
-        overflow: visible;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-        gap: 8px;
-    }
-
-    .app-body.books-page .app-header__quicklink {
-        min-height: 32px;
-        padding-inline: 12px;
-        font-size: 0.8rem;
-        color: var(--muted);
     }
 
     .app-body.books-page .bookshelf-header-bar {
@@ -840,6 +863,27 @@
         min-height: 32px;
         padding-inline: 12px;
         font-size: 0.8rem;
+    }
+
+    .app-body.books-page .app-header {
+        top: 10px;
+        padding: 8px 10px;
+        border-radius: 16px;
+    }
+
+    .app-body.books-page .app-header__label {
+        font-size: 0.88rem;
+    }
+
+    .app-body.books-page .app-header__quicknav {
+        gap: 8px;
+    }
+
+    .app-body.books-page .app-header__quicklink {
+        min-height: 32px;
+        padding-inline: 12px;
+        font-size: 0.8rem;
+        color: var(--muted);
     }
 
     .page-header h1 {
@@ -1447,16 +1491,6 @@
 }
 
 @media (max-width: 480px) {
-    .app-body.books-page .app-header__quicknav {
-        gap: 6px;
-    }
-
-    .app-body.books-page .app-header__quicklink {
-        min-height: 30px;
-        padding-inline: 10px;
-        font-size: 0.76rem;
-    }
-
     .app-body.books-page .page-header--bookshelf {
         padding: 14px;
         border-radius: 20px;
@@ -1489,6 +1523,23 @@
 }
 
 @media (max-width: 480px) {
+    .app-body.books-page .app-header {
+        top: 10px;
+        padding: 8px 10px;
+        border-radius: 16px;
+    }
+
+    .app-body.books-page .app-header__label {
+        font-size: 0.88rem;
+    }
+
+    .app-body.books-page .app-header__quicklink {
+        min-height: 32px;
+        padding-inline: 12px;
+        font-size: 0.8rem;
+        color: var(--muted);
+    }
+
     .app-body.book-reader-page .page-shell {
         padding: 0;
     }
