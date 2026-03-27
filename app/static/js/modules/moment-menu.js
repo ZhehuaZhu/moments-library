@@ -1,10 +1,8 @@
-function closeAllSharePanels(scope = document) {
-    scope.querySelectorAll("[data-share-platforms]").forEach((panel) => {
-        panel.hidden = true;
-    });
-
-    scope.querySelectorAll("[data-toggle-share-platforms]").forEach((button) => {
-        button.setAttribute("aria-expanded", "false");
+function closeAllMenuSections(scope = document) {
+    scope.querySelectorAll("[data-menu-section]").forEach((section) => {
+        if (section instanceof HTMLDetailsElement) {
+            section.open = false;
+        }
     });
 }
 
@@ -14,7 +12,7 @@ function closeAllMenus(except = null) {
             return;
         }
         menu.hidden = true;
-        closeAllSharePanels(menu);
+        closeAllMenuSections(menu);
     });
 
     document.querySelectorAll("[data-menu-toggle]").forEach((button) => {
@@ -30,6 +28,21 @@ export function initMomentMenus() {
     if (!toggles.length) {
         return;
     }
+
+    document.querySelectorAll("[data-menu-section]").forEach((section) => {
+        if (!(section instanceof HTMLDetailsElement) || section.dataset.menuSectionBound === "true") {
+            return;
+        }
+        section.dataset.menuSectionBound = "true";
+        const summary = section.querySelector("[data-toggle-share-platforms]");
+        if (!(summary instanceof HTMLElement)) {
+            return;
+        }
+        summary.setAttribute("aria-expanded", section.open ? "true" : "false");
+        section.addEventListener("toggle", () => {
+            summary.setAttribute("aria-expanded", section.open ? "true" : "false");
+        });
+    });
 
     toggles.forEach((button) => {
         if (button.dataset.menuBound === "true") {
@@ -47,24 +60,8 @@ export function initMomentMenus() {
             closeAllMenus();
             menu.hidden = !willOpen;
             if (willOpen) {
-                closeAllSharePanels(menu);
+                closeAllMenuSections(menu);
             }
-            button.setAttribute("aria-expanded", willOpen ? "true" : "false");
-        });
-    });
-
-    document.querySelectorAll("[data-toggle-share-platforms]").forEach((button) => {
-        button.addEventListener("click", (event) => {
-            event.stopPropagation();
-            const menu = button.closest("[data-card-menu]");
-            const panel = menu?.querySelector("[data-share-platforms]");
-            if (!menu || !panel) {
-                return;
-            }
-
-            const willOpen = panel.hidden;
-            closeAllSharePanels(menu);
-            panel.hidden = !willOpen;
             button.setAttribute("aria-expanded", willOpen ? "true" : "false");
         });
     });
@@ -76,6 +73,11 @@ export function initMomentMenus() {
                 return;
             }
             closeAllMenus();
+        });
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                closeAllMenus();
+            }
         });
     }
 }

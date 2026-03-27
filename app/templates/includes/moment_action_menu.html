@@ -12,72 +12,67 @@
 
     <div class="moment-menu" data-card-menu hidden>
         {% if not recycle_view %}
-            <button
-                type="button"
-                class="moment-menu__item"
-                data-toggle-share-platforms
-                aria-expanded="false"
-            >
-                {{ t('share.open') }}
-            </button>
-
-            <div class="moment-menu__field moment-menu__field--stack" data-share-platforms hidden>
-                <span>{{ t('share.title') }}</span>
-                {% for entry in moment.cross_post_share_options %}
-                    <div class="moment-share-option" data-share-platform-row>
-                        <button
-                            type="button"
-                            class="moment-menu__item"
-                            data-share-platform="{{ entry.platform }}"
-                            data-share-platform-label="{{ t(entry.label_key) }}"
-                            data-share-placeholder-label="{{ t('share.placeholder', platform=t(entry.label_key)) }}"
-                            {% if not entry.eligible %}disabled{% endif %}
-                        >
-                            <span>{{ t(entry.label_key) }}</span>
-                            <span
-                                class="cross-post-status cross-post-status--{% if entry.published %}published{% elif entry.eligible %}ready{% else %}blocked{% endif %}"
-                                data-share-status
-                            >
-                                {{ t(entry.status_key) }}
-                            </span>
-                        </button>
-                        <p class="helper-text">
-                            {% if entry.reason_key %}
-                                {{ t(entry.reason_key) }}
-                            {% else %}
-                                {{ t('share.helper') }}
-                            {% endif %}
-                        </p>
-                        {% if entry.media_attachments %}
-                            <div class="moment-share-assets">
-                                {% for attachment in entry.media_attachments %}
-                                    <a
-                                        class="moment-share-assets__item"
-                                        href="{{ url_for('static', filename=attachment.relative_path) }}"
-                                        target="_blank"
-                                        rel="noopener"
-                                        title="{{ attachment.original_name }}"
-                                    >
-                                        {{ loop.index }}
-                                    </a>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        <p class="helper-text moment-share-option__feedback" data-share-feedback hidden></p>
-                    </div>
-                {% endfor %}
+            <div class="moment-menu__group">
+                <a class="moment-menu__item" href="{{ url_for('main.edit_moment', moment_id=moment.id) }}">Edit</a>
+                <a class="moment-menu__item" href="{{ url_for('main.moment_history', moment_id=moment.id) }}">History</a>
             </div>
 
-            <a class="moment-menu__item" href="{{ url_for('main.edit_moment', moment_id=moment.id) }}">Edit</a>
-            <a class="moment-menu__item" href="{{ url_for('main.moment_history', moment_id=moment.id) }}">History</a>
+            <details class="moment-menu__section" data-menu-section>
+                <summary class="moment-menu__summary" data-toggle-share-platforms aria-expanded="false">{{ t('share.open') }}</summary>
+                <div class="moment-menu__section-body" data-share-platforms>
+                    <p class="moment-menu__caption">{{ t('share.title') }}</p>
+                    <p class="helper-text moment-menu__hint">{{ t('share.helper') }}</p>
+                    {% for entry in moment.cross_post_share_options %}
+                        <div class="moment-share-option" data-share-platform-row>
+                            <button
+                                type="button"
+                                class="moment-menu__item moment-menu__item--share"
+                                data-share-platform="{{ entry.platform }}"
+                                data-share-platform-label="{{ t(entry.label_key) }}"
+                                data-share-placeholder-label="{{ t('share.placeholder', platform=t(entry.label_key)) }}"
+                                {% if not entry.eligible %}disabled{% endif %}
+                            >
+                                <span>{{ t(entry.label_key) }}</span>
+                                <span
+                                    class="cross-post-status cross-post-status--{% if entry.published %}published{% elif entry.eligible %}ready{% else %}blocked{% endif %}"
+                                    data-share-status
+                                >
+                                    {{ t(entry.status_key) }}
+                                </span>
+                            </button>
+                            {% if entry.reason_key %}
+                                <p class="helper-text">{{ t(entry.reason_key) }}</p>
+                            {% endif %}
+                            {% if entry.media_attachments %}
+                                <div class="moment-share-assets">
+                                    {% for attachment in entry.media_attachments %}
+                                        <a
+                                            class="moment-share-assets__item"
+                                            href="{{ url_for('static', filename=attachment.relative_path) }}"
+                                            target="_blank"
+                                            rel="noopener"
+                                            title="{{ attachment.original_name }}"
+                                        >
+                                            {{ loop.index }}
+                                        </a>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <p class="helper-text moment-share-option__feedback" data-share-feedback hidden></p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </details>
 
-            {% set selected_folder_ids = moment.category_ids_list %}
-            {% set compact_picker = true %}
-            <form class="moment-menu__field moment-menu__field--stack" data-folder-form>
-                <span>Collections</span>
-                {% include "includes/folder_picker.html" %}
-                <button type="submit" class="button button--ghost button--full">Save Collections</button>
-            </form>
+            <details class="moment-menu__section" data-menu-section>
+                <summary class="moment-menu__summary">Collections</summary>
+                {% set selected_folder_ids = moment.category_ids_list %}
+                {% set compact_picker = true %}
+                <form class="moment-menu__section-body moment-menu__field moment-menu__field--stack" data-folder-form>
+                    {% include "includes/folder_picker.html" %}
+                    <button type="submit" class="button button--ghost button--full">Save Collections</button>
+                </form>
+            </details>
 
             <button type="button" class="moment-menu__item moment-menu__item--danger" data-delete-moment>
                 Delete
