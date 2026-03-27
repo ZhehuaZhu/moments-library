@@ -1001,6 +1001,24 @@ def test_videos_page_renders_preview_media(admin_client, app):
     assert b"uploads/2026/03/preview.jpg" in detail_response.data
 
 
+def test_large_video_upload_shows_error_on_videos_page(admin_client, app):
+    app.config["VIDEO_MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024
+
+    response = admin_client.post(
+        "/videos",
+        data={
+            "title": "Too Big",
+            "video_file": (BytesIO(b"0" * (2 * 1024 * 1024)), "too-big.mp4"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Uploaded video is too large. Keep it under 1GB." in response.data
+    assert b"/videos" in response.request.path.encode()
+
+
 def test_admin_can_create_moment_with_multiple_folders_and_uploads(admin_client, app):
     with app.app_context():
         root = Category(name="Study Docs", description="Main study materials.")

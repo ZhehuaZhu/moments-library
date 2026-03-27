@@ -23,7 +23,7 @@ import {
     writeStoredPlayerState,
     normalizePlayerState,
 } from "./library-player-utils.js";
-import { initVideoCardPreviews } from "./library-video-previews.js";
+import { initVideoCardPreviews, initVideoUploadForms } from "./library-video-previews.js";
 
 const readerUiTimers = new WeakMap();
 let libraryPageController = null;
@@ -3014,6 +3014,7 @@ function initGlobalPlayer() {
 
 export function initLibraryFeatures() {
     initVideoCardPreviews();
+    initVideoUploadForms();
     initImmersiveReaderShells();
     initBookReaderSelection();
     initDocxReaders();
