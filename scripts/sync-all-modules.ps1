@@ -11,11 +11,20 @@ function Invoke-Git {
         [string[]]$CommandArgs
     )
 
-    $output = & git -C $RepositoryPath @CommandArgs 2>&1
-    if ($LASTEXITCODE -ne 0) {
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $output = & git -C $RepositoryPath @CommandArgs 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    if ($exitCode -ne 0) {
         throw "git $($CommandArgs -join ' ') failed in $RepositoryPath.`n$output"
     }
-    return $output
+
+    return @($output | ForEach-Object { "$_" })
 }
 
 $previewRoot = Split-Path -Parent $PSScriptRoot
