@@ -187,6 +187,7 @@ body.is-sidebar-open .sidebar-overlay {
     align-items: center;
     justify-content: space-between;
     gap: 14px;
+    overflow: visible;
     padding: 10px 12px;
     border: 1px solid var(--line);
     border-radius: 20px;
@@ -233,9 +234,15 @@ body.is-sidebar-open .sidebar-overlay {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
     justify-content: flex-end;
     min-width: 0;
+}
+
+.app-header__quicknav-track {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .language-switch {

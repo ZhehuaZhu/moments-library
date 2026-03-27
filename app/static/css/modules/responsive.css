@@ -214,7 +214,7 @@
         padding: 10px 10px 12px;
         border-radius: 18px;
         align-items: center;
-        overflow: hidden;
+        overflow: visible;
         box-shadow: 0 6px 14px rgba(21, 33, 42, 0.08);
         backdrop-filter: none;
     }
@@ -236,17 +236,23 @@
 
     .app-header__quicknav {
         grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
         width: 100%;
         max-width: 100%;
-        overflow-x: auto;
-        flex-wrap: nowrap;
         margin-inline: 0;
         padding-inline: 0;
-        justify-content: flex-start;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .app-header__quicknav-track {
+        width: 100%;
+        overflow-x: auto;
         padding-bottom: 2px;
     }
 
-    .app-header__quicknav::-webkit-scrollbar {
+    .app-header__quicknav-track::-webkit-scrollbar {
         display: none;
     }
 
@@ -959,6 +965,10 @@
         min-height: 32px;
         padding-inline: 12px;
         font-size: 0.8rem;
+    }
+
+    .app-header__quicknav {
+        gap: 6px;
     }
 
     .app-header__compose,
