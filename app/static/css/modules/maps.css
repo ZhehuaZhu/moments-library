@@ -1,5 +1,21 @@
 .page-header--atlas {
     align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+}
+
+.page-header--atlas h1 {
+    margin: 0;
+    flex: 1 1 auto;
+}
+
+.page-header--atlas .page-header__stats {
+    justify-content: flex-end;
+}
+
+.page-header--atlas .page-description {
+    width: 100%;
+    margin: 0;
 }
 
 .atlas-toolbar {
