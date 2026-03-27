@@ -644,20 +644,20 @@
     }
 
     .page-header.page-header--video-library {
-        gap: 10px;
+        gap: 8px;
     }
 
     .video-library-page__actions {
-        gap: 6px;
+        gap: 5px;
         flex-wrap: nowrap;
     }
 
     .page-header.page-header--video-library > h1 {
-        font-size: clamp(1.28rem, 5.8vw, 1.65rem);
+        font-size: clamp(1.18rem, 5.4vw, 1.5rem);
     }
 
     .video-library-page__aside {
-        gap: 5px;
+        gap: 4px;
     }
 
     .video-library-page__stats {
@@ -669,10 +669,10 @@
 
     .video-library-page__add-button,
     .video-library-page__folder-button {
-        width: 30px;
-        height: 30px;
-        border-radius: 10px;
-        font-size: 1.15rem;
+        width: 28px;
+        height: 28px;
+        border-radius: 9px;
+        font-size: 1.02rem;
     }
 
     .video-library-page__folder-glyph {
