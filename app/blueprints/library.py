@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import re
 from datetime import date, datetime
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
@@ -48,6 +50,17 @@ def redirect_back(default_endpoint: str):
     return redirect(target or url_for(default_endpoint))
 
 
+def redirect_back_with_added_tracks(default_endpoint: str, track_ids: list[int]):
+    target = request.form.get("next") or request.referrer or url_for(default_endpoint)
+    if not track_ids:
+        return redirect(target)
+
+    url = urlsplit(target)
+    params = [(key, value) for key, value in parse_qsl(url.query, keep_blank_values=True) if key != "added"]
+    params.append(("added", ",".join(str(track_id) for track_id in track_ids)))
+    return redirect(urlunsplit((url.scheme, url.netloc, url.path, urlencode(params), url.fragment)))
+
+
 def resolve_category(category_raw: str | None) -> Category | None:
     if category_raw in {None, ""}:
         return None
@@ -60,6 +73,25 @@ def normalize_track_audio_mime(metadata: dict[str, object]) -> dict[str, object]
     if extension == ".mp4":
         normalized["mime_type"] = "audio/mp4"
     return normalized
+
+
+def infer_track_title_from_filename(filename: str) -> str:
+    stem = Path(filename).stem.strip()
+    if not stem:
+        return ""
+
+    cleaned = re.sub(r"[_-]+", " ", stem)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned or stem
+
+
+def collect_uploaded_track_files() -> list:
+    files = []
+    for field_name in ("audio_files", "audio_file"):
+        for file_storage in request.files.getlist(field_name):
+            if file_storage is not None and file_storage.filename:
+                files.append(file_storage)
+    return files
 
 
 def parse_section_index(raw_value: str | None, total: int, *, one_based: bool = False) -> int:
@@ -772,6 +804,11 @@ def update_book(book_id: int):
 def tracks():
     search_query = (request.args.get("q") or "").strip()
     tracks_list = track_query(search_query).all()
+    added_track_ids = {
+        int(raw_id)
+        for raw_id in (request.args.get("added") or "").split(",")
+        if raw_id.isdigit()
+    }
     context = build_sidebar_context(
         active_nav="music",
         search_query=search_query,
@@ -782,6 +819,7 @@ def tracks():
         title=translate("module.music"),
         tracks=tracks_list,
         result_count=len(tracks_list),
+        added_track_ids=added_track_ids,
         **context,
     )
 
@@ -803,82 +841,99 @@ def music_player_window():
 @admin_required
 def create_track():
     title = (request.form.get("title") or "").strip()
-    if not title:
-        flash("Track title is required.", "error")
-        return redirect_back("library.tracks")
-
-    file_storage = request.files.get("audio_file")
-    if file_storage is None or not file_storage.filename:
+    audio_files = collect_uploaded_track_files()
+    if not audio_files:
         flash("Upload an audio file first.", "error")
         return redirect_back("library.tracks")
 
+    is_bulk_upload = len(audio_files) > 1
     lyrics_file = request.files.get("lyrics_file")
     cover_file = request.files.get("cover_file")
+    if is_bulk_upload and (
+        (lyrics_file is not None and lyrics_file.filename) or
+        (cover_file is not None and cover_file.filename)
+    ):
+        flash("Cover and lyrics can only be attached when uploading one track at a time.", "error")
+        return redirect_back("library.tracks")
 
+    saved_paths: list[str] = []
+    created_tracks: list[Track] = []
     try:
         category = resolve_category(request.form.get("category_id"))
-        metadata = save_upload(
-            file_storage,
-            current_app.config["UPLOAD_FOLDER"],
-            allowed_extensions=AUDIO_ALLOWED_EXTENSIONS,
-        )
-        metadata = normalize_track_audio_mime(metadata)
         lyrics_metadata = None
-        if lyrics_file is not None and lyrics_file.filename:
+        if not is_bulk_upload and lyrics_file is not None and lyrics_file.filename:
             lyrics_metadata = save_upload(
                 lyrics_file,
                 current_app.config["UPLOAD_FOLDER"],
                 allowed_extensions=LYRICS_ALLOWED_EXTENSIONS,
             )
+            saved_paths.append(str(lyrics_metadata["absolute_path"]))
         cover_metadata = None
-        if cover_file is not None and cover_file.filename:
+        if not is_bulk_upload and cover_file is not None and cover_file.filename:
             cover_metadata = save_upload(
                 cover_file,
                 current_app.config["UPLOAD_FOLDER"],
                 allowed_extensions=IMAGE_EXTENSIONS,
             )
+            saved_paths.append(str(cover_metadata["absolute_path"]))
+
+        for file_storage in audio_files:
+            metadata = save_upload(
+                file_storage,
+                current_app.config["UPLOAD_FOLDER"],
+                allowed_extensions=AUDIO_ALLOWED_EXTENSIONS,
+            )
+            metadata = normalize_track_audio_mime(metadata)
+            saved_paths.append(str(metadata["absolute_path"]))
+
+            track_title = (
+                title if len(audio_files) == 1 and title
+                else infer_track_title_from_filename(str(metadata["original_name"]))
+            )
+
+            track = Track(
+                title=track_title,
+                artist_name=(request.form.get("artist_name") or "").strip() or None,
+                description=(request.form.get("description") or "").strip() or None,
+                overall_review=(request.form.get("overall_review") or "").strip() or None,
+                mood=(request.form.get("mood") or "").strip() or None,
+                category=category,
+                owner_id=current_user.id,
+                original_name=metadata["original_name"],
+                stored_name=metadata["stored_name"],
+                relative_path=metadata["relative_path"],
+                mime_type=metadata["mime_type"],
+                lyrics_original_name=lyrics_metadata["original_name"] if lyrics_metadata else None,
+                lyrics_stored_name=lyrics_metadata["stored_name"] if lyrics_metadata else None,
+                lyrics_relative_path=lyrics_metadata["relative_path"] if lyrics_metadata else None,
+                lyrics_mime_type=lyrics_metadata["mime_type"] if lyrics_metadata else None,
+                cover_original_name=cover_metadata["original_name"] if cover_metadata else None,
+                cover_stored_name=cover_metadata["stored_name"] if cover_metadata else None,
+                cover_relative_path=cover_metadata["relative_path"] if cover_metadata else None,
+                cover_mime_type=cover_metadata["mime_type"] if cover_metadata else None,
+                size_bytes=metadata["size_bytes"],
+            )
+            db.session.add(track)
+            created_tracks.append(track)
     except (ValueError, TypeError):
+        cleanup_files(saved_paths)
         flash("Track collection selection is invalid.", "error")
         return redirect_back("library.tracks")
     except UploadValidationError as error:
-        paths_to_cleanup = []
-        if "metadata" in locals():
-            paths_to_cleanup.append(str(metadata["absolute_path"]))
-        if "lyrics_metadata" in locals() and lyrics_metadata:
-            paths_to_cleanup.append(str(lyrics_metadata["absolute_path"]))
-        if "cover_metadata" in locals() and cover_metadata:
-            paths_to_cleanup.append(str(cover_metadata["absolute_path"]))
-        cleanup_files(paths_to_cleanup)
+        cleanup_files(saved_paths)
         flash(str(error), "error")
         return redirect_back("library.tracks")
-
-    track = Track(
-        title=title,
-        artist_name=(request.form.get("artist_name") or "").strip() or None,
-        description=(request.form.get("description") or "").strip() or None,
-        overall_review=(request.form.get("overall_review") or "").strip() or None,
-        mood=(request.form.get("mood") or "").strip() or None,
-        category=category,
-        owner_id=current_user.id,
-        original_name=metadata["original_name"],
-        stored_name=metadata["stored_name"],
-        relative_path=metadata["relative_path"],
-        mime_type=metadata["mime_type"],
-        lyrics_original_name=lyrics_metadata["original_name"] if lyrics_metadata else None,
-        lyrics_stored_name=lyrics_metadata["stored_name"] if lyrics_metadata else None,
-        lyrics_relative_path=lyrics_metadata["relative_path"] if lyrics_metadata else None,
-        lyrics_mime_type=lyrics_metadata["mime_type"] if lyrics_metadata else None,
-        cover_original_name=cover_metadata["original_name"] if cover_metadata else None,
-        cover_stored_name=cover_metadata["stored_name"] if cover_metadata else None,
-        cover_relative_path=cover_metadata["relative_path"] if cover_metadata else None,
-        cover_mime_type=cover_metadata["mime_type"] if cover_metadata else None,
-        size_bytes=metadata["size_bytes"],
-    )
-    db.session.add(track)
     db.session.commit()
 
-    flash("Track added to the music library.", "success")
-    return redirect(url_for("library.track_detail", track_id=track.id))
+    if len(created_tracks) == 1:
+        flash("Track added to the music library.", "success")
+        return redirect(url_for("library.track_detail", track_id=created_tracks[0].id))
+
+    flash(f"{len(created_tracks)} tracks added to the music library.", "success")
+    return redirect_back_with_added_tracks(
+        "library.tracks",
+        [track.id for track in created_tracks],
+    )
 
 
 @library_bp.route("/music/<int:track_id>")

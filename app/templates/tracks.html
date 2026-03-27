@@ -36,8 +36,9 @@
 
     <section class="music-library-list">
         {% for track in tracks %}
+            {% set is_recently_added = track.id in added_track_ids|default([], true) %}
             {% set track_preview = track.overall_review or track.description %}
-            <article class="track-row">
+            <article class="track-row{% if is_recently_added %} track-row--fresh{% endif %}"{% if is_recently_added %} data-new-track="true"{% endif %}>
                 <div class="track-row__primary">
                     <a
                         class="track-row__artwork-link"
@@ -72,6 +73,9 @@
                                 {% endif %}
                                 {% if track.has_lyrics %}
                                     <span class="badge track-row__tag track-row__tag--lyrics">LRC</span>
+                                {% endif %}
+                                {% if is_recently_added %}
+                                    <span class="badge badge--accent track-row__tag track-row__tag--fresh">{{ t('music.just_added') }}</span>
                                 {% endif %}
                                 <span class="badge badge--edit track-row__tag track-row__tag--notes">{{ t('counts.notes', count=track.comments|length) }}</span>
                             </div>
@@ -136,13 +140,25 @@
         </div>
 
         <div class="folder-panel__body">
-            <form action="{{ url_for('library.create_track') }}" method="post" enctype="multipart/form-data" class="stack-form tracks-create-form">
+            <form
+                action="{{ url_for('library.create_track') }}"
+                method="post"
+                enctype="multipart/form-data"
+                class="stack-form tracks-create-form"
+                data-track-create-form
+            >
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
                 <div class="tracks-create-grid tracks-create-grid--identity">
                     <label class="field tracks-create-field tracks-create-field--title">
                         <span>{{ t('common.title') }}</span>
-                        <input type="text" name="title" class="input" required>
+                        <input
+                            type="text"
+                            name="title"
+                            class="input"
+                            placeholder="{{ t('music.title_from_filename') }}"
+                            data-track-title-input
+                        >
                     </label>
                     <label class="field tracks-create-field">
                         <span>{{ t('music.artist_alias') }}</span>
@@ -165,15 +181,39 @@
                 <div class="tracks-create-grid tracks-create-grid--files">
                     <label class="field tracks-create-field tracks-create-field--audio">
                         <span>{{ t('music.audio_file') }}</span>
-                        <input type="file" name="audio_file" class="input input--file" accept=".mp3,.m4a,.wav,.ogg,.webm,.flac,.mp4" required>
+                        <div class="tracks-upload-dropzone" data-track-upload-dropzone>
+                            <input
+                                type="file"
+                                name="audio_files"
+                                class="input input--file"
+                                accept=".mp3,.m4a,.wav,.ogg,.webm,.flac,.mp4"
+                                multiple
+                                required
+                                data-track-audio-input
+                            >
+                            <p class="helper-text tracks-upload-dropzone__hint">{{ t('music.bulk_upload_hint') }}</p>
+                            <p class="helper-text tracks-upload-dropzone__status" data-track-upload-status hidden></p>
+                        </div>
                     </label>
                     <label class="field tracks-create-field">
                         <span>{{ t('music.cover_optional') }}</span>
-                        <input type="file" name="cover_file" class="input input--file" accept=".jpg,.jpeg,.png,.gif,.webp">
+                        <input
+                            type="file"
+                            name="cover_file"
+                            class="input input--file"
+                            accept=".jpg,.jpeg,.png,.gif,.webp"
+                            data-track-cover-input
+                        >
                     </label>
                     <label class="field tracks-create-field">
                         <span>{{ t('music.lyrics_optional') }}</span>
-                        <input type="file" name="lyrics_file" class="input input--file" accept=".lrc">
+                        <input
+                            type="file"
+                            name="lyrics_file"
+                            class="input input--file"
+                            accept=".lrc"
+                            data-track-lyrics-input
+                        >
                     </label>
                 </div>
                 <div class="tracks-create-grid tracks-create-grid--notes">
