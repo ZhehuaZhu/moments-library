@@ -406,10 +406,7 @@ def test_admin_can_create_book_and_open_reader(admin_client, app):
         data={
             "title": "Draft Novel",
             "author_name": "Zhehua",
-            "status": "finished",
             "category_id": str(folder_id),
-            "started_at": "2026-03-01",
-            "finished_at": "2026-03-24",
             "overall_review": "A reflective first full pass.",
             "source_file": (BytesIO(b"First paragraph.\n\nSecond paragraph."), "novel.txt"),
         },
@@ -423,7 +420,9 @@ def test_admin_can_create_book_and_open_reader(admin_client, app):
 
     with app.app_context():
         book = Book.query.one()
-        assert book.status == "finished"
+        assert book.status == "want_to_read"
+        assert book.started_at is None
+        assert book.finished_at is None
         assert book.category.name == "Reading Shelf"
         book_id = book.id
 
@@ -448,12 +447,14 @@ def test_books_page_uses_bookshelf_layout_and_cover_upload(admin_client, app):
     assert b'id="book-create-panel"' in response.data
     assert b'data-open-folder-panel="create"' in response.data
     assert b"Optional if the file already has a title" in response.data
+    assert b'name="status"' not in response.data
+    assert b'name="started_at"' not in response.data
+    assert b'name="finished_at"' not in response.data
 
     create_response = admin_client.post(
         "/books",
         data={
             "title": "Shelf Test",
-            "status": "reading",
             "source_file": (BytesIO(b"Plain shelf text"), "shelf-test.txt"),
             "cover_file": (BytesIO(b"fake cover"), "cover.jpg"),
         },
@@ -472,7 +473,6 @@ def test_book_upload_can_infer_title_and_reader_marks_started(admin_client, app)
         "/books",
         data={
             "title": "",
-            "status": "want_to_read",
             "source_file": (BytesIO(b"Plain shelf text"), "quiet-atlas-notes.txt"),
         },
         content_type="multipart/form-data",
@@ -492,6 +492,19 @@ def test_book_upload_can_infer_title_and_reader_marks_started(admin_client, app)
     reader_response = admin_client.get(f"/books/{book_id}/reader")
     assert reader_response.status_code == 200
 
+    progress_response = admin_client.post(
+        f"/books/{book_id}/reader/progress",
+        data=json.dumps(
+            {
+                "scroll_ratio": 0.35,
+                "session_key": "session-start-threshold",
+                "session_elapsed_seconds": 301,
+            }
+        ),
+        content_type="application/json",
+    )
+    assert progress_response.status_code == 200
+
     with app.app_context():
         book = db.session.get(Book, book_id)
         assert book.started_at == date.today()
@@ -509,7 +522,6 @@ def test_admin_can_edit_book_metadata_and_cover(admin_client, app):
         "/books",
         data={
             "title": "Before Edit",
-            "status": "want_to_read",
             "source_file": (BytesIO(b"Plain shelf text"), "before-edit.txt"),
         },
         content_type="multipart/form-data",
@@ -526,10 +538,7 @@ def test_admin_can_edit_book_metadata_and_cover(admin_client, app):
         data={
             "title": "After Edit",
             "author_name": "Edited Author",
-            "status": "finished",
             "category_id": str(category_id),
-            "started_at": "2026-03-01",
-            "finished_at": "2026-03-08",
             "description": "A cleaner shelf record.",
             "overall_review": "Now editable from the side panel.",
             "cover_file": (BytesIO(b"new cover"), "edited-cover.png"),
@@ -546,10 +555,10 @@ def test_admin_can_edit_book_metadata_and_cover(admin_client, app):
         book = db.session.get(Book, book_id)
         assert book.title == "After Edit"
         assert book.author_name == "Edited Author"
-        assert book.status == "finished"
+        assert book.status == "want_to_read"
         assert book.category.name == "Edited Shelf"
-        assert str(book.started_at) == "2026-03-01"
-        assert str(book.finished_at) == "2026-03-08"
+        assert book.started_at is None
+        assert book.finished_at is None
         assert book.cover_relative_path is not None
 
 
@@ -651,7 +660,14 @@ def test_html_reader_resumes_from_saved_progress(admin_client, app):
 
     progress_response = admin_client.post(
         f"/books/{book_id}/reader/progress",
-        data=json.dumps({"section_index": 1, "scroll_ratio": 0.35}),
+        data=json.dumps(
+            {
+                "section_index": 1,
+                "scroll_ratio": 0.35,
+                "session_key": "resume-session",
+                "session_elapsed_seconds": 180,
+            }
+        ),
         content_type="application/json",
     )
     assert progress_response.status_code == 200
@@ -668,6 +684,47 @@ def test_html_reader_resumes_from_saved_progress(admin_client, app):
     assert b'data-section-initial-index="1"' in reader_response.data
     assert b'data-reader-resume-scroll-ratio="0.350000"' in reader_response.data
     assert b'data-reader-progress-endpoint="/books/' in reader_response.data
+
+
+def test_reader_progress_marks_book_finished_near_completion(admin_client, app):
+    response = admin_client.post(
+        "/books",
+        data={
+            "title": "Almost Finished",
+            "source_file": (
+                BytesIO(build_epub_with_front_matter_bytes("Almost Finished")),
+                "almost-finished.epub",
+            ),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+
+    with app.app_context():
+        book = Book.query.filter_by(title="Almost Finished").one()
+        book_id = book.id
+
+    progress_response = admin_client.post(
+        f"/books/{book_id}/reader/progress",
+        data=json.dumps(
+            {
+                "section_index": 3,
+                "scroll_ratio": 0.99,
+                "session_key": "finish-session",
+                "session_elapsed_seconds": 420,
+            }
+        ),
+        content_type="application/json",
+    )
+    assert progress_response.status_code == 200
+
+    with app.app_context():
+        book = db.session.get(Book, book_id)
+        assert book.status == "finished"
+        assert book.started_at == date.today()
+        assert book.finished_at == date.today()
 
 
 def test_html_reader_annotation_persists_precise_anchor(admin_client, app):

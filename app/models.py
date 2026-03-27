@@ -349,6 +349,9 @@ class Book(db.Model):
     last_read_section_index = db.Column(db.Integer, nullable=True)
     last_read_scroll_ratio = db.Column(db.Float, nullable=True)
     last_read_at = db.Column(db.DateTime, nullable=True)
+    total_reading_seconds = db.Column(db.Integer, nullable=False, default=0)
+    last_read_session_key = db.Column(db.String(64), nullable=True)
+    last_read_session_seconds = db.Column(db.Integer, nullable=False, default=0)
     size_bytes = db.Column(db.Integer, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
     updated_at = db.Column(

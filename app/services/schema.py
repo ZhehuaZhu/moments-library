@@ -55,6 +55,12 @@ def ensure_local_schema() -> None:
             db.session.execute(text("ALTER TABLE books ADD COLUMN last_read_scroll_ratio FLOAT"))
         if "last_read_at" not in book_columns:
             db.session.execute(text("ALTER TABLE books ADD COLUMN last_read_at DATETIME"))
+        if "total_reading_seconds" not in book_columns:
+            db.session.execute(text("ALTER TABLE books ADD COLUMN total_reading_seconds INTEGER NOT NULL DEFAULT 0"))
+        if "last_read_session_key" not in book_columns:
+            db.session.execute(text("ALTER TABLE books ADD COLUMN last_read_session_key TEXT"))
+        if "last_read_session_seconds" not in book_columns:
+            db.session.execute(text("ALTER TABLE books ADD COLUMN last_read_session_seconds INTEGER NOT NULL DEFAULT 0"))
 
     if "moments" in existing_tables:
         moment_columns = {column["name"] for column in inspector.get_columns("moments")}

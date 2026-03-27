@@ -172,6 +172,13 @@ function setElementScrollRatio(element, ratio) {
     element.scrollTop = maxScroll * normalizedRatio;
 }
 
+function createReaderSessionKey() {
+    if (typeof crypto?.randomUUID === "function") {
+        return crypto.randomUUID();
+    }
+    return `reader-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 function createReaderProgressSaver(endpoint, buildPayload) {
     if (!endpoint || typeof buildPayload !== "function") {
         return {
@@ -380,9 +387,16 @@ function initLinearReaderProgress() {
             Number.parseFloat(reader.getAttribute("data-reader-resume-scroll-ratio") || "0"),
         );
         let hasRestoredInitialPosition = initialRatio <= 0;
+        const sessionKey = createReaderSessionKey();
+        const sessionStartedAt = Date.now();
 
         const saver = createReaderProgressSaver(endpoint, () => ({
             scroll_ratio: getElementScrollRatio(reader),
+            session_key: sessionKey,
+            session_elapsed_seconds: Math.max(
+                Math.round((Date.now() - sessionStartedAt) / 1000),
+                0,
+            ),
         }));
 
         const restoreInitialPosition = () => {
@@ -775,6 +789,8 @@ function initSectionReaders() {
         let pendingResumeScrollRatio = clampReaderScrollRatio(
             Number.parseFloat(reader.getAttribute("data-reader-resume-scroll-ratio") || "0"),
         );
+        const sessionKey = createReaderSessionKey();
+        const sessionStartedAt = Date.now();
         const saveProgressEndpoint =
             (readerLayout instanceof Element
                 ? readerLayout.getAttribute("data-reader-progress-endpoint")
@@ -782,6 +798,11 @@ function initSectionReaders() {
         const progressSaver = createReaderProgressSaver(saveProgressEndpoint, () => ({
             section_index: activeIndex,
             scroll_ratio: getElementScrollRatio(reader),
+            session_key: sessionKey,
+            session_elapsed_seconds: Math.max(
+                Math.round((Date.now() - sessionStartedAt) / 1000),
+                0,
+            ),
         }));
 
         const clearAnnotationLocation = () => {

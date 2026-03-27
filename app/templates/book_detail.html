@@ -156,6 +156,9 @@
             <form action="{{ url_for('library.update_book', book_id=book.id) }}" method="post" enctype="multipart/form-data" class="stack-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+                <p class="helper-text">
+                    {{ '阅读状态、开始阅读和读完时间会根据你的阅读进度自动识别。' if current_lang == 'zh' else 'Reading status, started date, and finished date are tracked automatically from your reading progress.' }}
+                </p>
                 <div class="composer-grid">
                     <label class="field">
                         <span>{{ t('common.title') }}</span>
@@ -164,14 +167,6 @@
                     <label class="field">
                         <span>{{ t('common.author') }}</span>
                         <input type="text" name="author_name" class="input" value="{{ book.author_name or '' }}">
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.status') }}</span>
-                        <select name="status" class="input">
-                            {% for value, label in status_choices %}
-                                <option value="{{ value }}" {% if book.status == value %}selected{% endif %}>{{ label }}</option>
-                            {% endfor %}
-                        </select>
                     </label>
                     <label class="field">
                         <span>{{ t('common.collection') }}</span>
@@ -183,14 +178,6 @@
                                 </option>
                             {% endfor %}
                         </select>
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.started') }}</span>
-                        <input type="date" name="started_at" class="input" value="{{ book.started_at.isoformat() if book.started_at else '' }}">
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.finished') }}</span>
-                        <input type="date" name="finished_at" class="input" value="{{ book.finished_at.isoformat() if book.finished_at else '' }}">
                     </label>
                 </div>
                 <label class="field">
