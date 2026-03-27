@@ -31,7 +31,7 @@
 
 {% if can_manage %}
     <section
-        class="folder-panel folder-panel--create"
+        class="folder-panel folder-panel--create folder-panel--book-create"
         id="book-create-panel"
         data-folder-panel="book-create"
         role="dialog"
@@ -50,10 +50,10 @@
         </div>
 
         <div class="folder-panel__body">
-            <form action="{{ url_for('library.create_book') }}" method="post" enctype="multipart/form-data" class="stack-form">
+            <form action="{{ url_for('library.create_book') }}" method="post" enctype="multipart/form-data" class="stack-form books-create-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
-                <div class="composer-grid">
+                <div class="composer-grid books-create-grid books-create-grid--meta">
                     <label class="field">
                         <span>{{ t('common.title') }}</span>
                         <input type="text" name="title" class="input" placeholder="{{ t('books.title_optional_placeholder') }}">
@@ -88,7 +88,7 @@
                         <input type="date" name="finished_at" class="input">
                     </label>
                 </div>
-                <div class="composer-grid">
+                <div class="composer-grid books-create-grid books-create-grid--files">
                     <label class="field">
                         <span>{{ t('common.source_file') }}</span>
                         <input type="file" name="source_file" class="input input--file" accept=".pdf,.doc,.docx,.txt,.md,.epub,.mobi" required>
