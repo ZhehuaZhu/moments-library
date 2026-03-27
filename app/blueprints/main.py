@@ -401,6 +401,10 @@ def create_category():
     except IntegrityError:
         db.session.rollback()
         flash("Collection name already exists.", "error")
+        return redirect_back()
+
+    if request.form.get("video_folder_redirect") == "1":
+        return redirect(url_for("library.videos", folder_id=folder.id))
 
     return redirect_back()
 
