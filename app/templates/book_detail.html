@@ -27,35 +27,29 @@
                 </div>
             </div>
             <div class="book-detail-facts">
-                <article class="book-detail-fact-card">
-                    <div class="book-detail-fact-item">
-                        <span class="book-detail-fact-label">{{ t('common.author') }}</span>
-                        <strong class="book-detail-fact-value">{{ book.author_name or t('books.personal_archive') }}</strong>
-                    </div>
-                    <div class="book-detail-fact-item">
-                        <span class="book-detail-fact-label">{{ t('common.format') }}</span>
-                        <strong class="book-detail-fact-value">{{ book.source_format|upper }}</strong>
-                    </div>
+                <article class="book-detail-fact">
+                    <span class="book-detail-fact-label">{{ t('common.author') }}</span>
+                    <strong class="book-detail-fact-value">{{ book.author_name or t('books.personal_archive') }}</strong>
                 </article>
-                <article class="book-detail-fact-card">
-                    <div class="book-detail-fact-item">
-                        <span class="book-detail-fact-label">{{ t('common.collection') }}</span>
-                        <strong class="book-detail-fact-value">{{ book.category.name if book.category else t('common.no_collection') }}</strong>
-                    </div>
-                    <div class="book-detail-fact-item">
-                        <span class="book-detail-fact-label">{{ t('common.imported') }}</span>
-                        <strong class="book-detail-fact-value">{{ book.created_at|datetimeformat }}</strong>
-                    </div>
+                <article class="book-detail-fact">
+                    <span class="book-detail-fact-label">{{ t('common.format') }}</span>
+                    <strong class="book-detail-fact-value">{{ book.source_format|upper }}</strong>
                 </article>
-                <article class="book-detail-fact-card">
-                    <div class="book-detail-fact-item">
-                        <span class="book-detail-fact-label">{{ t('common.started') }}</span>
-                        <strong class="book-detail-fact-value">{{ book.started_at|dateformat if book.started_at else t('common.not_set') }}</strong>
-                    </div>
-                    <div class="book-detail-fact-item">
-                        <span class="book-detail-fact-label">{{ t('common.finished') }}</span>
-                        <strong class="book-detail-fact-value">{{ book.finished_at|dateformat if book.finished_at else t('common.not_set') }}</strong>
-                    </div>
+                <article class="book-detail-fact">
+                    <span class="book-detail-fact-label">{{ t('common.collection') }}</span>
+                    <strong class="book-detail-fact-value">{{ book.category.name if book.category else t('common.no_collection') }}</strong>
+                </article>
+                <article class="book-detail-fact">
+                    <span class="book-detail-fact-label">{{ t('common.imported') }}</span>
+                    <strong class="book-detail-fact-value">{{ book.created_at|datetimeformat }}</strong>
+                </article>
+                <article class="book-detail-fact">
+                    <span class="book-detail-fact-label">{{ t('common.started') }}</span>
+                    <strong class="book-detail-fact-value">{{ book.started_at|dateformat if book.started_at else t('common.not_set') }}</strong>
+                </article>
+                <article class="book-detail-fact">
+                    <span class="book-detail-fact-label">{{ t('common.finished') }}</span>
+                    <strong class="book-detail-fact-value">{{ book.finished_at|dateformat if book.finished_at else t('common.not_set') }}</strong>
                 </article>
             </div>
         </div>
