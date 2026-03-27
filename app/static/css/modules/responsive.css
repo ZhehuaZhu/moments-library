@@ -397,6 +397,19 @@
         gap: 16px 12px;
     }
 
+    .page-header.page-header--video-library,
+    .page-header.page-header--video-detail {
+        padding: 24px 22px;
+    }
+
+    .video-library-page__actions {
+        justify-items: start;
+    }
+
+    .video-library-page__stats {
+        justify-content: flex-start;
+    }
+
     .bookshelf-card__actions {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -562,6 +575,10 @@
 
     .library-detail-grid,
     .reader-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .video-library-grid {
         grid-template-columns: 1fr;
     }
 
