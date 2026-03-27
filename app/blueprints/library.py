@@ -241,27 +241,6 @@ def books():
     books_list = book_query(search_query).all()
     reading_count = sum(1 for book in books_list if book.status == "reading")
     finished_count = sum(1 for book in books_list if book.status == "finished")
-    want_to_read_count = sum(1 for book in books_list if book.status == "want_to_read")
-    collection_count = len({book.category_id for book in books_list if book.category_id is not None})
-    latest_added_book = max(books_list, key=lambda book: book.created_at, default=None)
-    latest_finished_book = max(
-        (book for book in books_list if book.finished_at is not None),
-        key=lambda book: book.finished_at,
-        default=None,
-    )
-    latest_read_book = max(
-        (book for book in books_list if book.last_read_at is not None),
-        key=lambda book: book.last_read_at,
-        default=None,
-    )
-    snapshot_book = next(
-        (
-            candidate
-            for candidate in (latest_read_book, latest_added_book, books_list[0] if books_list else None)
-            if candidate is not None
-        ),
-        None,
-    )
     context = build_sidebar_context(
         active_nav="books",
         search_query=search_query,
@@ -276,12 +255,6 @@ def books():
         result_count=len(books_list),
         reading_count=reading_count,
         finished_count=finished_count,
-        want_to_read_count=want_to_read_count,
-        collection_count=collection_count,
-        latest_added_book=latest_added_book,
-        latest_finished_book=latest_finished_book,
-        latest_read_book=latest_read_book,
-        snapshot_book=snapshot_book,
         **context,
     )
 

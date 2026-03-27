@@ -251,21 +251,6 @@
         border-radius: 24px;
     }
 
-    .app-body.books-page .app-header__quicknav {
-        width: 100%;
-        overflow: visible;
-        flex-wrap: wrap;
-        justify-content: flex-start;
-        gap: 8px;
-    }
-
-    .app-body.books-page .app-header__quicklink {
-        min-height: 32px;
-        padding-inline: 12px;
-        font-size: 0.8rem;
-        color: var(--muted);
-    }
-
     .app-body.books-page .bookshelf-header-bar {
         align-items: flex-start;
         gap: 12px;
@@ -1447,16 +1432,6 @@
 }
 
 @media (max-width: 480px) {
-    .app-body.books-page .app-header__quicknav {
-        gap: 6px;
-    }
-
-    .app-body.books-page .app-header__quicklink {
-        min-height: 30px;
-        padding-inline: 10px;
-        font-size: 0.76rem;
-    }
-
     .app-body.books-page .page-header--bookshelf {
         padding: 14px;
         border-radius: 20px;
