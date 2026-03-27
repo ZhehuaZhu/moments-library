@@ -21,6 +21,51 @@ function buildCitationCover(item, className) {
     return cover;
 }
 
+function resolveCitationDetail(item) {
+    const prefersExcerpt = ["book_annotation", "track_comment", "video_comment"].includes(item.kind);
+    if (prefersExcerpt) {
+        return item.excerpt || item.subtitle || "";
+    }
+    return item.subtitle || item.excerpt || "";
+}
+
+function buildCitationCopy(item) {
+    const copy = document.createElement("div");
+    copy.className = "composer-citation-card__copy";
+
+    const title = document.createElement("strong");
+    title.className = "composer-citation-card__title";
+    title.textContent = item.title || t("composer.untitled", {}, "Untitled");
+    copy.append(title);
+
+    const metaRow = document.createElement("div");
+    metaRow.className = "composer-citation-card__meta-line";
+
+    const label = document.createElement("span");
+    label.className = "composer-citation-card__label";
+    label.textContent = item.label || t("composer.citation_default", {}, "Citation");
+    metaRow.append(label);
+
+    const detailText = resolveCitationDetail(item);
+    if (detailText) {
+        const detail = document.createElement("span");
+        detail.className = "composer-citation-card__detail";
+        detail.textContent = detailText;
+        metaRow.append(detail);
+    }
+
+    copy.append(metaRow);
+    return copy;
+}
+
+function buildCitationBody(item) {
+    const body = document.createElement("div");
+    body.className = "composer-citation-card__body";
+    body.append(buildCitationCover(item, "composer-citation-card__cover"));
+    body.append(buildCitationCopy(item));
+    return body;
+}
+
 export function createComposerCitationController({
     signal,
     citationToggle,
@@ -69,45 +114,18 @@ export function createComposerCitationController({
 
         const article = document.createElement("article");
         article.className = "composer-citation-card composer-citation-card--selected";
-
-        const body = document.createElement("div");
-        body.className = "composer-citation-card__body";
-        body.append(buildCitationCover(selectedCitation, "composer-citation-card__cover"));
-
-        const copy = document.createElement("div");
-        copy.className = "composer-citation-card__copy";
-
-        const label = document.createElement("span");
-        label.className = "composer-citation-card__label";
-        label.textContent =
-            selectedCitation.label || t("composer.citation_default", {}, "Citation");
-        copy.append(label);
-
-        const title = document.createElement("strong");
-        title.textContent = selectedCitation.title || t("composer.untitled", {}, "Untitled");
-        copy.append(title);
-
-        if (selectedCitation.subtitle) {
-            const subtitle = document.createElement("span");
-            subtitle.className = "composer-citation-card__subtitle";
-            subtitle.textContent = selectedCitation.subtitle;
-            copy.append(subtitle);
-        }
-
-        if (selectedCitation.excerpt) {
-            const excerpt = document.createElement("p");
-            excerpt.className = "composer-citation-card__excerpt";
-            excerpt.textContent = selectedCitation.excerpt;
-            copy.append(excerpt);
-        }
-
-        body.append(copy);
-        article.append(body);
+        article.title = [
+            selectedCitation.title,
+            resolveCitationDetail(selectedCitation),
+        ].filter(Boolean).join(" · ");
+        article.append(buildCitationBody(selectedCitation));
 
         const remove = document.createElement("button");
         remove.type = "button";
-        remove.className = "button button--subtle button--compact";
-        remove.textContent = t("composer.remove", {}, "Remove");
+        remove.className = "composer-citation-card__remove";
+        remove.textContent = "\u00d7";
+        remove.setAttribute("aria-label", t("composer.remove", {}, "Remove"));
+        remove.title = t("composer.remove", {}, "Remove");
         remove.addEventListener("click", () => {
             selectedCitation = null;
             renderSelectedCitation();
@@ -141,39 +159,11 @@ export function createComposerCitationController({
             const button = document.createElement("button");
             button.type = "button";
             button.className = "composer-citation-card";
-
-            const body = document.createElement("div");
-            body.className = "composer-citation-card__body";
-            body.append(buildCitationCover(item, "composer-citation-card__cover"));
-
-            const copy = document.createElement("div");
-            copy.className = "composer-citation-card__copy";
-
-            const label = document.createElement("span");
-            label.className = "composer-citation-card__label";
-            label.textContent = item.label || t("composer.citation_default", {}, "Citation");
-            copy.append(label);
-
-            const title = document.createElement("strong");
-            title.textContent = item.title || t("composer.untitled", {}, "Untitled");
-            copy.append(title);
-
-            if (item.subtitle) {
-                const subtitle = document.createElement("span");
-                subtitle.className = "composer-citation-card__subtitle";
-                subtitle.textContent = item.subtitle;
-                copy.append(subtitle);
-            }
-
-            if (item.excerpt) {
-                const excerpt = document.createElement("p");
-                excerpt.className = "composer-citation-card__excerpt";
-                excerpt.textContent = item.excerpt;
-                copy.append(excerpt);
-            }
-
-            body.append(copy);
-            button.append(body);
+            button.title = [
+                item.title,
+                resolveCitationDetail(item),
+            ].filter(Boolean).join(" · ");
+            button.append(buildCitationBody(item));
 
             button.addEventListener("click", () => {
                 selectedCitation = item;
