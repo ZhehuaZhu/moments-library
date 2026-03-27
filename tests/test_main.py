@@ -280,6 +280,7 @@ def test_admin_feed_includes_composer_preview_workspace(admin_client):
     assert b"Attachment Order" in response.data
     assert b"data-citation-search" in response.data
     assert b"data-citation-results" in response.data
+    assert b"data-citation-load-more" in response.data
     assert b"vendor/mammoth.browser.min.js" not in response.data
     assert b"vendor/epub.min.js" not in response.data
     assert b"Cite" in response.data
@@ -1204,6 +1205,43 @@ def test_citation_search_endpoint_returns_library_items(admin_client, app):
     assert "track_comment" in kinds
     assert "video" in kinds
     assert "video_comment" in kinds
+
+
+def test_citation_search_endpoint_supports_pagination(admin_client, app):
+    with app.app_context():
+        for index in range(7):
+            book = Book(
+                title=f"Paged Book {index}",
+                author_name="Paged Author",
+                status="reading",
+                owner_id=1,
+                source_format="epub",
+                original_name=f"paged-{index}.epub",
+                stored_name=f"paged-{index}.epub",
+                relative_path=f"uploads/2026/03/paged-{index}.epub",
+                mime_type="application/epub+zip",
+                size_bytes=12 + index,
+            )
+            db.session.add(book)
+        db.session.commit()
+
+    first_page = admin_client.get("/api/citations/search?scope=books&q=Paged&limit=3")
+    assert first_page.status_code == 200
+    first_payload = first_page.get_json()
+    assert first_payload["limit"] == 3
+    assert first_payload["offset"] == 0
+    assert first_payload["has_more"] is True
+    assert len(first_payload["items"]) == 3
+
+    second_page = admin_client.get("/api/citations/search?scope=books&q=Paged&limit=3&offset=3")
+    assert second_page.status_code == 200
+    second_payload = second_page.get_json()
+    assert second_payload["offset"] == 3
+    assert len(second_payload["items"]) == 3
+
+    first_ids = {item["id"] for item in first_payload["items"]}
+    second_ids = {item["id"] for item in second_payload["items"]}
+    assert first_ids.isdisjoint(second_ids)
 
 
 def test_feed_renders_mixed_visual_media_grid_and_document_section(client, app):

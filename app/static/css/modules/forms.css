@@ -129,6 +129,7 @@
     background: transparent;
     box-shadow: none;
     overflow: visible;
+    will-change: transform;
 }
 
 .composer-file-card:hover,
@@ -151,6 +152,7 @@
 .composer-file-card--compact.is-pointer-dragging {
     z-index: 4;
     opacity: 0.96;
+    pointer-events: none;
 }
 
 .composer-file-card--add {
@@ -211,6 +213,11 @@
 .composer-file-card--compact.is-drop-target .composer-file-card__preview {
     transform: scale(0.96);
     box-shadow: 0 0 0 2px rgba(63, 111, 100, 0.18);
+}
+
+.composer-file-card--compact.is-sort-preview .composer-file-card__preview {
+    transform: scale(0.94);
+    box-shadow: 0 10px 18px rgba(21, 33, 42, 0.08);
 }
 
 .composer-file-card--compact.is-pointer-dragging .composer-file-card__preview {

@@ -197,6 +197,7 @@ TRANSLATIONS: dict[str, dict[str, object]] = {
             "citation_default": "Citation",
             "untitled": "Untitled",
             "loading": "Loading...",
+            "load_more": "Load more",
         },
         "cross_post": {
             "title": "Cross-Post Assistant",
@@ -610,6 +611,7 @@ TRANSLATIONS: dict[str, dict[str, object]] = {
             "citation_default": "引用",
             "untitled": "未命名",
             "loading": "加载中…",
+            "load_more": "加载更多",
         },
         "books": {
             "add_book": "添加书籍",

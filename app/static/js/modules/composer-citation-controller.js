@@ -72,6 +72,8 @@ export function createComposerCitationController({
     citationPanel,
     citationSearch,
     citationResults,
+    citationFooter,
+    citationLoadMore,
     selectedCitationShell,
     citationKindField,
     citationTargetIdField,
@@ -82,8 +84,23 @@ export function createComposerCitationController({
     let citationScope = "all";
     let citationSearchTimer = null;
     let citationRequestToken = 0;
+    let citationOffset = 0;
+    let citationHasMore = false;
+    const citationPageSize = 8;
 
     const hasToggleButton = citationToggle instanceof HTMLButtonElement;
+
+    function syncCitationFooter(isLoadingMore = false) {
+        if (!(citationFooter instanceof HTMLElement) || !(citationLoadMore instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        citationFooter.hidden = !citationHasMore && !isLoadingMore;
+        citationLoadMore.disabled = isLoadingMore;
+        citationLoadMore.textContent = isLoadingMore
+            ? t("composer.loading", {}, "Loading...")
+            : t("composer.load_more", {}, "Load more");
+    }
 
     function syncCitationFields() {
         if (
@@ -136,14 +153,19 @@ export function createComposerCitationController({
         selectedCitationShell.append(article);
     }
 
-    function renderCitationResults(items, query = "") {
+    function renderCitationResults(items, query = "", { append = false } = {}) {
         if (!(citationResults instanceof HTMLElement)) {
             return;
         }
 
-        citationResults.replaceChildren();
+        if (!append) {
+            citationResults.replaceChildren();
+        }
 
         if (!items.length) {
+            if (append) {
+                return;
+            }
             const empty = document.createElement("div");
             empty.className = "empty-state empty-state--compact";
             const message = document.createElement("p");
@@ -181,7 +203,7 @@ export function createComposerCitationController({
         });
     }
 
-    async function loadCitationResults() {
+    async function loadCitationResults({ append = false } = {}) {
         if (!(citationResults instanceof HTMLElement)) {
             return;
         }
@@ -189,17 +211,28 @@ export function createComposerCitationController({
         citationRequestToken += 1;
         const token = citationRequestToken;
         const query = citationSearch instanceof HTMLInputElement ? citationSearch.value.trim() : "";
+        const offset = append ? citationOffset : 0;
 
-        citationResults.replaceChildren();
-        const loading = document.createElement("div");
-        loading.className = "empty-state empty-state--compact";
-        loading.innerHTML = `<p>${t("composer.loading", {}, "Loading...")}</p>`;
-        citationResults.append(loading);
+        if (!append) {
+            citationOffset = 0;
+            citationHasMore = false;
+            citationResults.replaceChildren();
+            syncCitationFooter(false);
+
+            const loading = document.createElement("div");
+            loading.className = "empty-state empty-state--compact";
+            loading.innerHTML = `<p>${t("composer.loading", {}, "Loading...")}</p>`;
+            citationResults.append(loading);
+        } else {
+            syncCitationFooter(true);
+        }
 
         try {
             const params = new URLSearchParams({
                 q: query,
                 scope: citationScope,
+                offset: String(offset),
+                limit: String(citationPageSize),
             });
             const response = await fetch(`/api/citations/search?${params.toString()}`);
             if (!response.ok) {
@@ -209,20 +242,28 @@ export function createComposerCitationController({
             if (token !== citationRequestToken) {
                 return;
             }
-            renderCitationResults(Array.isArray(payload.items) ? payload.items : [], query);
+            const items = Array.isArray(payload.items) ? payload.items : [];
+            citationOffset = offset + items.length;
+            citationHasMore = Boolean(payload.has_more);
+            renderCitationResults(items, query, { append });
+            syncCitationFooter(false);
         } catch {
             if (token !== citationRequestToken) {
                 return;
             }
-            citationResults.replaceChildren();
-            const empty = document.createElement("div");
-            empty.className = "empty-state empty-state--compact";
-            empty.innerHTML = `<p>${t(
-                "composer.load_error",
-                {},
-                "Library citations could not be loaded right now.",
-            )}</p>`;
-            citationResults.append(empty);
+            citationHasMore = false;
+            syncCitationFooter(false);
+            if (!append) {
+                citationResults.replaceChildren();
+                const empty = document.createElement("div");
+                empty.className = "empty-state empty-state--compact";
+                empty.innerHTML = `<p>${t(
+                    "composer.load_error",
+                    {},
+                    "Library citations could not be loaded right now.",
+                )}</p>`;
+                citationResults.append(empty);
+            }
         }
     }
 
@@ -266,6 +307,12 @@ export function createComposerCitationController({
         citationSearchTimer = window.setTimeout(() => {
             void loadCitationResults();
         }, 180);
+    }, { signal });
+
+    citationLoadMore?.addEventListener("click", () => {
+        if (citationHasMore) {
+            void loadCitationResults({ append: true });
+        }
     }, { signal });
 
     signal.addEventListener("abort", () => {

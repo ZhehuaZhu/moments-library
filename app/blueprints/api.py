@@ -53,8 +53,30 @@ def geocode():
 def citation_search():
     search_query = (request.args.get("q") or "").strip()
     scope = normalize_citation_scope(request.args.get("scope"))
-    items = search_citation_payloads(search_query, scope=scope, limit=24)
-    return jsonify({"items": items, "scope": scope})
+    try:
+        offset = max(int(request.args.get("offset", 0)), 0)
+    except (TypeError, ValueError):
+        offset = 0
+    try:
+        limit = min(max(int(request.args.get("limit", 8)), 1), 24)
+    except (TypeError, ValueError):
+        limit = 8
+
+    items, has_more = search_citation_payloads(
+        search_query,
+        scope=scope,
+        limit=limit,
+        offset=offset,
+    )
+    return jsonify(
+        {
+            "items": items,
+            "scope": scope,
+            "offset": offset,
+            "limit": limit,
+            "has_more": has_more,
+        }
+    )
 
 
 def _update_moment_folders(moment_id: int, payload: dict):

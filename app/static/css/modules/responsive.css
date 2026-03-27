@@ -719,6 +719,15 @@
         height: 32px;
     }
 
+    .composer-citation__toolbar {
+        gap: 10px;
+    }
+
+    .composer-citation__results {
+        max-height: 264px;
+        padding-right: 2px;
+    }
+
     .moment-citation--music {
         grid-template-columns: 72px minmax(0, 1fr);
         gap: 14px;

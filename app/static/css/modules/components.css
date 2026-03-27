@@ -1072,6 +1072,11 @@ body.has-folder-panel-open {
     gap: 12px;
 }
 
+.composer-citation__toolbar {
+    display: grid;
+    gap: 12px;
+}
+
 .composer-citation__scopes {
     display: flex;
     gap: 8px;
@@ -1103,6 +1108,22 @@ body.has-folder-panel-open {
 .composer-citation__selected {
     display: grid;
     gap: 8px;
+}
+
+.composer-citation__results {
+    align-content: start;
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.composer-citation__footer {
+    display: flex;
+    justify-content: center;
+}
+
+.composer-citation__more {
+    min-width: 140px;
 }
 
 .composer-citation-card {
