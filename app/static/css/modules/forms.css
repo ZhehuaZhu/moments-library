@@ -15,7 +15,7 @@
 .composer-preview {
     display: grid;
     gap: 12px;
-    padding: 18px;
+    padding: 14px;
     border: 1px solid rgba(34, 48, 60, 0.08);
     border-radius: var(--radius-lg);
     background: rgba(244, 247, 248, 0.88);
@@ -107,8 +107,8 @@
 
 .composer-file-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+    gap: 10px;
 }
 
 .composer-file-card {
@@ -121,14 +121,36 @@
     transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
 }
 
+.composer-file-card--compact {
+    position: relative;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+}
+
 .composer-file-card:hover,
 .composer-file-card.is-drop-target {
     border-color: rgba(63, 111, 100, 0.24);
     box-shadow: 0 16px 28px rgba(21, 33, 42, 0.08);
 }
 
+.composer-file-card--compact:hover,
+.composer-file-card--compact.is-drop-target,
+.composer-file-list.is-sorting .composer-file-card--compact {
+    border-color: transparent;
+    box-shadow: none;
+}
+
 .composer-file-card.is-dragging {
     opacity: 0.72;
+}
+
+.composer-file-card--compact.is-pointer-dragging {
+    z-index: 4;
+    opacity: 0.96;
 }
 
 .composer-file-card__preview {
@@ -141,6 +163,18 @@
     border-radius: 18px;
     background: rgba(221, 228, 233, 0.92);
     cursor: pointer;
+}
+
+.composer-file-card--compact .composer-file-card__preview {
+    aspect-ratio: 1 / 1;
+    border-radius: 16px;
+    box-shadow: 0 12px 22px rgba(21, 33, 42, 0.08);
+    transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.composer-file-card--compact.is-drop-target .composer-file-card__preview {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 2px rgba(63, 111, 100, 0.18);
 }
 
 .composer-file-card__preview img,
@@ -199,6 +233,59 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.composer-file-card__order,
+.composer-file-card__remove,
+.composer-file-card__drag {
+    position: absolute;
+    z-index: 2;
+}
+
+.composer-file-card__order {
+    top: 8px;
+    left: 8px;
+    min-width: 24px;
+    height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: rgba(21, 33, 42, 0.72);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.composer-file-card__remove,
+.composer-file-card__drag {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.94);
+    color: var(--accent-strong);
+    box-shadow: 0 8px 16px rgba(21, 33, 42, 0.12);
+}
+
+.composer-file-card__remove {
+    top: 8px;
+    right: 8px;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.composer-file-card__drag {
+    right: 8px;
+    bottom: 8px;
+    font-size: 0.82rem;
+    letter-spacing: -0.1em;
+    touch-action: none;
+    cursor: grab;
 }
 
 .composer-actions--sticky {
