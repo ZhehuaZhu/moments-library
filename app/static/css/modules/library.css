@@ -100,7 +100,7 @@
 
 .page-header.page-header--video-library > h1 {
     flex: 1 1 auto;
-    font-size: clamp(1.7rem, 4vw, 2.2rem);
+    font-size: clamp(1.55rem, 3.4vw, 2rem);
     line-height: 0.98;
 }
 
@@ -108,7 +108,7 @@
     display: grid;
     justify-items: end;
     align-content: start;
-    gap: 6px;
+    gap: 4px;
     flex-shrink: 0;
 }
 
@@ -226,21 +226,21 @@
 
 .video-library-page__actions {
     display: inline-flex;
-    gap: 6px;
+    gap: 5px;
     align-items: center;
     flex-wrap: nowrap;
 }
 
 .video-library-page__add-button,
 .video-library-page__folder-button {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     padding: 0;
-    border-radius: 12px;
+    border-radius: 11px;
     border-color: rgba(34, 48, 60, 0.06);
     background: rgba(248, 250, 251, 0.92);
     box-shadow: none;
-    font-size: 1.15rem;
+    font-size: 1.08rem;
     font-weight: 500;
     line-height: 1;
 }
@@ -282,8 +282,8 @@
 }
 
 .video-library-page__stats .stat-chip {
-    padding: 6px 10px;
-    font-size: 0.8rem;
+    padding: 5px 9px;
+    font-size: 0.78rem;
 }
 
 .music-library-list {
