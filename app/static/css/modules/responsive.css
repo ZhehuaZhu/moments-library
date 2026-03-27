@@ -406,11 +406,6 @@
         gap: 4px;
     }
 
-    .video-library-page__topline {
-        gap: 10px;
-        align-items: start;
-    }
-
     .video-library-page__heading {
         gap: 6px;
     }
@@ -449,10 +444,11 @@
         gap: 6px;
     }
 
-    .video-folder-panel__chip {
-        min-height: 30px;
-        padding-inline: 10px;
-        font-size: 0.84rem;
+    .video-folder-panel__row {
+        min-height: 42px;
+        padding-inline: 12px;
+        border-radius: 14px;
+        font-size: 0.9rem;
     }
 
     .bookshelf-card__actions {
