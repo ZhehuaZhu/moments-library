@@ -53,9 +53,6 @@
             <form action="{{ url_for('library.create_book') }}" method="post" enctype="multipart/form-data" class="stack-form books-create-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
-                <p class="helper-text books-create-form__note">
-                    {{ '阅读状态、开始阅读和读完时间会根据你的阅读进度自动识别。' if current_lang == 'zh' else 'Reading status, started date, and finished date are tracked automatically from your reading progress.' }}
-                </p>
                 <div class="composer-grid books-create-grid books-create-grid--meta">
                     <label class="field">
                         <span>{{ t('common.title') }}</span>
