@@ -4,26 +4,23 @@
 <section class="video-library-page">
     <section class="page-header page-header--video-library">
         <div class="video-library-page__topline">
-            <div class="video-library-page__meta">
-                <p class="eyebrow">{{ t('common.library') }}</p>
+            <div class="video-library-page__heading">
+                <h1>{{ module_labels.videos }}</h1>
                 <p class="video-library-page__count">{{ t('counts.videos', count=result_count) }}</p>
             </div>
-            <div class="video-library-page__title-row">
-                <h1>{{ module_labels.videos }}</h1>
-                {% if can_manage %}
-                    <button
-                        type="button"
-                        class="icon-button icon-button--ghost video-library-page__add-button"
-                        data-open-folder-panel="video-create"
-                        aria-haspopup="dialog"
-                        aria-controls="video-create-panel"
-                        aria-expanded="false"
-                        aria-label="{{ t('videos.add_video') }}"
-                    >
-                        +
-                    </button>
-                {% endif %}
-            </div>
+            {% if can_manage %}
+                <button
+                    type="button"
+                    class="icon-button icon-button--ghost video-library-page__add-button"
+                    data-open-folder-panel="video-create"
+                    aria-haspopup="dialog"
+                    aria-controls="video-create-panel"
+                    aria-expanded="false"
+                    aria-label="{{ t('videos.add_video') }}"
+                >
+                    +
+                </button>
+            {% endif %}
         </div>
     </section>
 
@@ -89,6 +86,7 @@
 
     <section class="library-grid video-library-grid">
         {% for video in videos %}
+            {% set video_preview = video.overall_review or video.description %}
             <article class="work-card work-card--video">
                 <a
                     class="work-card__media-link work-card__media-link--video"
@@ -109,10 +107,11 @@
                     </video>
                 </a>
                 <div class="work-card__body video-library-card__body">
-                    <div class="video-library-card__header">
-                        <h3><a href="{{ url_for('library.video_detail', video_id=video.id) }}">{{ video.title }}</a></h3>
-                        <span class="video-library-card__date">{{ video.created_at|dateformat }}</span>
-                    </div>
+                    <h3><a href="{{ url_for('library.video_detail', video_id=video.id) }}">{{ video.title }}</a></h3>
+                    <p class="video-library-card__date">{{ video.created_at|dateformat }}</p>
+                    {% if video_preview %}
+                        <p class="work-card__summary">{{ video_preview }}</p>
+                    {% endif %}
                 </div>
             </article>
         {% else %}
