@@ -381,9 +381,9 @@ def _group_config(snapshot: dict[str, str | None], level: str, moment: Moment) -
         }
 
     return {
-        "id": snapshot["place_key"] or snapshot["spot_key"] or f"city:{moment.id}",
-        "name": snapshot["city_display_name"] or snapshot["spot_display_name"],
-        "subtitle": snapshot["city_subtitle"] or snapshot["spot_subtitle"],
+        "id": snapshot["spot_key"] or f"city:{moment.id}",
+        "name": snapshot["spot_display_name"] or snapshot["city_display_name"],
+        "subtitle": snapshot["spot_subtitle"] or snapshot["city_subtitle"],
         "city_name": snapshot["city_name"],
         "admin_area": snapshot["admin_area"],
         "country_name": snapshot["country_name"],
