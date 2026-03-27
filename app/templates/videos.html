@@ -24,9 +24,9 @@
                     <button
                         type="button"
                         class="icon-button icon-button--ghost video-library-page__folder-button"
-                        data-open-folder-panel="create"
+                        data-open-folder-panel="video-folder-create"
                         aria-haspopup="dialog"
-                        aria-controls="folder-create-panel"
+                        aria-controls="video-folder-create-panel"
                         aria-expanded="false"
                         aria-label="{{ t('folders.create_folder') }}"
                     >
@@ -36,6 +36,25 @@
             {% endif %}
         </div>
     </section>
+
+    {% if sidebar_folder_choices %}
+        <section class="video-library-folders" aria-label="{{ t('folders.collections') }}">
+            <a
+                class="video-library-folder-chip{% if not selected_video_folder_id %} is-active{% endif %}"
+                href="{{ url_for('library.videos', q=search_query or None) }}"
+            >
+                {{ t('common.all') }}
+            </a>
+            {% for choice in sidebar_folder_choices %}
+                <a
+                    class="video-library-folder-chip{% if selected_video_folder_id == choice.id %} is-active{% endif %}"
+                    href="{{ url_for('library.videos', q=search_query or None, folder_id=choice.id) }}"
+                >
+                    {{ choice.name }}
+                </a>
+            {% endfor %}
+        </section>
+    {% endif %}
 
     {% if can_manage %}
         <section
@@ -91,6 +110,58 @@
                     <div class="folder-panel__actions">
                         <button type="button" class="button button--subtle" data-close-folder-panel>{{ t('common.cancel') }}</button>
                         <button type="submit" class="button button--ghost">{{ t('videos.add_video') }}</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section
+            class="folder-panel folder-panel--create video-folder-panel"
+            id="video-folder-create-panel"
+            data-folder-panel="video-folder-create"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="video-folder-create-title"
+            hidden
+        >
+            <div class="folder-panel__header video-folder-panel__header">
+                <div>
+                    <p class="eyebrow">{{ t('folders.collections') }}</p>
+                    <h2 id="video-folder-create-title">{{ t('folders.create_folder') }}</h2>
+                </div>
+                <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('folders.close_creator') }}">
+                    &times;
+                </button>
+            </div>
+
+            <div class="folder-panel__body video-folder-panel__body">
+                <form action="{{ url_for('main.create_category') }}" method="post" class="stack-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+
+                    <label class="field">
+                        <span>{{ t('folders.create_folder') }}</span>
+                        <input type="text" name="name" class="input" placeholder="{{ t('folders.name_placeholder') }}" required>
+                    </label>
+
+                    <label class="field">
+                        <span>{{ t('folders.parent_folder') }} ({{ t('common.optional') }})</span>
+                        <select name="parent_id" class="input">
+                            <option value="">{{ t('folders.top_level') }}</option>
+                            {% for choice in sidebar_folder_choices %}
+                                <option value="{{ choice.id }}">{{ "-- " * choice.depth }}{{ choice.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>{{ t('common.description') }} ({{ t('common.optional') }})</span>
+                        <textarea name="description" class="input textarea textarea--compact" rows="3"></textarea>
+                    </label>
+
+                    <div class="folder-panel__actions">
+                        <button type="button" class="button button--subtle" data-close-folder-panel>{{ t('common.cancel') }}</button>
+                        <button type="submit" class="button button--ghost">{{ t('folders.create_folder') }}</button>
                     </div>
                 </form>
             </div>
