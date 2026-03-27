@@ -833,6 +833,16 @@
         padding: 14px;
     }
 
+    .composer-preview {
+        padding: 0;
+        border: 0;
+        background: transparent;
+    }
+
+    .composer-preview .section-title-row {
+        display: none;
+    }
+
     .composer-form {
         gap: 10px;
     }
@@ -844,6 +854,15 @@
 
     .composer-attachment-trigger {
         width: 100%;
+    }
+
+    .composer-file-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .composer-file-card--compact .composer-file-card__preview {
+        border-radius: 14px;
     }
 
     .composer-actions--sticky {
