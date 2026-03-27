@@ -644,9 +644,8 @@
     }
 
     .page-header.page-header--video-library {
-        flex-direction: row;
-        align-items: flex-start;
-        gap: 4px;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 10px 12px;
     }
 
     .video-library-page__heading {

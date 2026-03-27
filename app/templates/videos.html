@@ -3,10 +3,7 @@
 {% block content %}
 <section class="video-library-page">
     <section class="page-header page-header--video-library">
-        <div class="video-library-page__heading">
-            <h1>{{ module_labels.videos }}</h1>
-            <p class="video-library-page__count">{{ t('counts.videos', count=result_count) }}</p>
-        </div>
+        <h1>{{ module_labels.videos }}</h1>
         {% if can_manage %}
             <div class="video-library-page__actions">
                 <button
@@ -33,6 +30,9 @@
                 </button>
             </div>
         {% endif %}
+        <div class="page-header__stats video-library-page__stats">
+            <span class="stat-chip">{{ t('counts.videos', count=result_count) }}</span>
+        </div>
     </section>
 
     {% if can_manage %}
