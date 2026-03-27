@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import click
-from flask import Flask, jsonify, redirect, request, url_for
+from flask import Flask, flash, jsonify, redirect, request, url_for
 from flask import g
 from flask_wtf.csrf import CSRFError
 from sqlalchemy.orm import selectinload
@@ -41,7 +41,8 @@ def create_app(test_config: dict | None = None) -> Flask:
         SECRET_KEY=os.environ.get("SECRET_KEY", "dev-secret-change-me"),
         SQLALCHEMY_DATABASE_URI=f"sqlite:///{Path(app.instance_path) / 'app.db'}",
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
-        MAX_CONTENT_LENGTH=200 * 1024 * 1024,
+        MAX_CONTENT_LENGTH=1024 * 1024 * 1024,
+        VIDEO_MAX_CONTENT_LENGTH=20 * 1024 * 1024 * 1024,
         NOMINATIM_USER_AGENT=os.environ.get(
             "NOMINATIM_USER_AGENT", "personal-moments-library/1.0 (local)"
         ),
@@ -222,7 +223,12 @@ def register_error_handlers(app: Flask) -> None:
     @app.errorhandler(413)
     def handle_large_file(_error):
         if request.path.startswith("/api/"):
-            return jsonify({"error": "Uploaded file is too large. Keep it under 200MB."}), 413
+            return jsonify({"error": "Uploaded file is too large. Keep it under 1GB."}), 413
+        if request.path == "/videos":
+            video_limit = request.max_content_length or current_app.config.get("VIDEO_MAX_CONTENT_LENGTH")
+            video_limit_gb = max(1, int(video_limit // (1024 * 1024 * 1024))) if video_limit else 20
+            flash(f"Uploaded video is too large. Keep it under {video_limit_gb}GB.", "error")
+            return redirect(url_for("library.videos"))
         return redirect(url_for("main.index"))
 
 

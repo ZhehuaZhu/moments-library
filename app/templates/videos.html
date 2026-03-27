@@ -2,6 +2,9 @@
 
 {% block content %}
 <section class="video-library-page">
+    {% if can_manage %}
+        <span data-video-card-preview hidden></span>
+    {% endif %}
     <section class="page-header page-header--video-library">
         <h1>{{ module_labels.videos }}</h1>
         <div class="video-library-page__aside">
@@ -31,9 +34,7 @@
                     </button>
                 </div>
             {% endif %}
-            <div class="page-header__stats video-library-page__stats">
-                <span class="stat-chip">{{ t('counts.videos', count=result_count) }}</span>
-            </div>
+            <p class="video-library-page__meta">{{ t('counts.videos', count=result_count) }}</p>
         </div>
     </section>
 
@@ -58,7 +59,18 @@
             </div>
 
             <div class="folder-panel__body">
-                <form action="{{ url_for('library.create_video') }}" method="post" enctype="multipart/form-data" class="stack-form">
+                <form
+                    action="{{ url_for('library.create_video') }}"
+                    method="post"
+                    enctype="multipart/form-data"
+                    class="stack-form"
+                    data-video-create-form
+                    data-upload-limit-bytes="{{ video_upload_limit_bytes }}"
+                    data-upload-idle-message="{% if current_lang == 'zh' %}当前上传上限 {{ video_upload_limit_label }}。{% else %}Current upload limit: {{ video_upload_limit_label }}.{% endif %}"
+                    data-upload-too-large-message="{% if current_lang == 'zh' %}视频文件过大，请控制在 {{ video_upload_limit_label }} 以内。{% else %}Video file is too large. Keep it under {{ video_upload_limit_label }}.{% endif %}"
+                    data-uploading-message="{% if current_lang == 'zh' %}视频上传中，请稍等，较大的文件会花更久时间。{% else %}Uploading video. Larger files can take a while.{% endif %}"
+                    data-uploading-button-label="{% if current_lang == 'zh' %}上传中...{% else %}Uploading...{% endif %}"
+                >
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
                     <div class="composer-grid">
@@ -78,7 +90,17 @@
                     </div>
                     <label class="field">
                         <span>{{ t('videos.video_file') }}</span>
-                        <input type="file" name="video_file" class="input input--file" accept=".mp4,.mov,.webm" required>
+                        <input
+                            type="file"
+                            name="video_file"
+                            class="input input--file"
+                            accept=".mp4,.mov,.webm"
+                            required
+                            data-video-upload-input
+                        >
+                        <p class="helper-text video-upload-status" data-video-upload-status aria-live="polite">
+                            {% if current_lang == 'zh' %}当前上传上限 {{ video_upload_limit_label }}。{% else %}Current upload limit: {{ video_upload_limit_label }}.{% endif %}
+                        </p>
                     </label>
                     <label class="field">
                         <span>{{ t('common.description') }}</span>
@@ -90,7 +112,7 @@
                     </label>
                     <div class="folder-panel__actions">
                         <button type="button" class="button button--subtle" data-close-folder-panel>{{ t('common.cancel') }}</button>
-                        <button type="submit" class="button button--ghost">{{ t('videos.add_video') }}</button>
+                        <button type="submit" class="button button--ghost" data-video-upload-submit>{{ t('videos.add_video') }}</button>
                     </div>
                 </form>
             </div>

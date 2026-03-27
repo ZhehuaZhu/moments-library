@@ -277,6 +277,14 @@ def video_query(search_query: str, category_id: int | None = None):
     return query.order_by(VideoEntry.updated_at.desc(), VideoEntry.created_at.desc())
 
 
+def format_upload_limit_label(limit_bytes: int) -> str:
+    gigabyte = 1024 * 1024 * 1024
+    megabyte = 1024 * 1024
+    if limit_bytes >= gigabyte and limit_bytes % gigabyte == 0:
+        return f"{limit_bytes // gigabyte}GB"
+    return f"{max(1, limit_bytes // megabyte)}MB"
+
+
 def ensure_library_video_previews(videos: list[VideoEntry]) -> None:
     changed = False
     upload_root = current_app.config["UPLOAD_FOLDER"]
@@ -1002,6 +1010,11 @@ def videos():
 
     videos_list = video_query(search_query, selected_video_folder_id).all()
     ensure_library_video_previews(videos_list)
+    video_upload_limit_bytes = int(
+        current_app.config.get("VIDEO_MAX_CONTENT_LENGTH")
+        or current_app.config.get("MAX_CONTENT_LENGTH")
+        or 0
+    )
     context = build_sidebar_context(
         active_nav="videos",
         search_query=search_query,
@@ -1013,6 +1026,8 @@ def videos():
         videos=videos_list,
         result_count=len(videos_list),
         selected_video_folder_id=selected_video_folder_id,
+        video_upload_limit_bytes=video_upload_limit_bytes,
+        video_upload_limit_label=format_upload_limit_label(video_upload_limit_bytes),
         **context,
     )
 
@@ -1020,6 +1035,7 @@ def videos():
 @library_bp.route("/videos", methods=["POST"])
 @admin_required
 def create_video():
+    request.max_content_length = current_app.config.get("VIDEO_MAX_CONTENT_LENGTH")
     title = (request.form.get("title") or "").strip()
     if not title:
         flash("Video title is required.", "error")

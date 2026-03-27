@@ -644,35 +644,41 @@
     }
 
     .page-header.page-header--video-library {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
         gap: 8px;
+        padding: 11px 12px 9px;
     }
 
     .video-library-page__actions {
-        gap: 5px;
+        gap: 4px;
         flex-wrap: nowrap;
+        padding: 2px;
     }
 
     .page-header.page-header--video-library > h1 {
-        font-size: clamp(1.18rem, 5.4vw, 1.5rem);
+        font-size: clamp(1.08rem, 5vw, 1.32rem);
     }
 
     .video-library-page__aside {
-        gap: 4px;
+        gap: 3px;
     }
 
-    .video-library-page__stats {
-        width: auto;
-        margin: 0;
-        padding: 0;
-        overflow: visible;
+    .video-library-page__meta {
+        font-size: 0.69rem;
+    }
+
+    .video-upload-status {
+        font-size: 0.84rem;
     }
 
     .video-library-page__add-button,
     .video-library-page__folder-button {
-        width: 28px;
-        height: 28px;
-        border-radius: 9px;
-        font-size: 1.02rem;
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        font-size: 0.9rem;
     }
 
     .video-library-page__folder-glyph {
