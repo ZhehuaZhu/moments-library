@@ -652,16 +652,6 @@
         font-size: clamp(1.28rem, 5.8vw, 1.65rem);
     }
 
-    .video-library-folders {
-        gap: 6px;
-    }
-
-    .video-library-folder-chip {
-        min-height: 32px;
-        padding-inline: 11px;
-        font-size: 0.86rem;
-    }
-
     .video-library-page__actions {
         gap: 6px;
     }
@@ -686,6 +676,16 @@
     .video-folder-panel {
         width: auto;
         padding: 16px 14px;
+    }
+
+    .video-folder-panel__list {
+        gap: 6px;
+    }
+
+    .video-folder-panel__chip {
+        min-height: 30px;
+        padding-inline: 10px;
+        font-size: 0.84rem;
     }
 
     .bookshelf-card__actions {

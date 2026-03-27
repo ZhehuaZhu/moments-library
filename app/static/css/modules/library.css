@@ -194,6 +194,7 @@
 
 .video-library-page__heading {
     min-width: 0;
+    flex: 1 1 auto;
     display: grid;
     gap: 8px;
 }
@@ -216,6 +217,7 @@
 }
 
 .video-library-page__actions {
+    margin-left: auto;
     display: grid;
     gap: 8px;
     flex-shrink: 0;
@@ -274,39 +276,6 @@
     box-shadow: 0 16px 26px rgba(21, 33, 42, 0.08);
 }
 
-.video-library-folders {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding-inline: 2px;
-    scrollbar-width: none;
-}
-
-.video-library-folders::-webkit-scrollbar {
-    display: none;
-}
-
-.video-library-folder-chip {
-    flex: 0 0 auto;
-    display: inline-flex;
-    align-items: center;
-    min-height: 34px;
-    padding: 0 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(34, 48, 60, 0.06);
-    background: rgba(255, 255, 255, 0.9);
-    color: var(--muted);
-    text-decoration: none;
-    transition: background var(--transition), border-color var(--transition), color var(--transition);
-}
-
-.video-library-folder-chip:hover,
-.video-library-folder-chip.is-active {
-    background: rgba(63, 111, 100, 0.08);
-    border-color: rgba(63, 111, 100, 0.16);
-    color: var(--accent-strong);
-}
-
 .video-library-grid {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 14px;
@@ -328,6 +297,47 @@
 
 .video-folder-panel__body {
     gap: 16px;
+}
+
+.video-folder-panel__existing {
+    display: grid;
+    gap: 10px;
+}
+
+.video-folder-panel__caption {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.video-folder-panel__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 120px;
+    overflow: auto;
+    padding-right: 4px;
+}
+
+.video-folder-panel__chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 0 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(34, 48, 60, 0.06);
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--muted);
+    text-decoration: none;
+    transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.video-folder-panel__chip:hover,
+.video-folder-panel__chip.is-active {
+    background: rgba(63, 111, 100, 0.08);
+    border-color: rgba(63, 111, 100, 0.16);
+    color: var(--accent-strong);
 }
 
 .track-row {

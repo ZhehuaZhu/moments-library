@@ -37,25 +37,6 @@
         </div>
     </section>
 
-    {% if sidebar_folder_choices %}
-        <section class="video-library-folders" aria-label="{{ t('folders.collections') }}">
-            <a
-                class="video-library-folder-chip{% if not selected_video_folder_id %} is-active{% endif %}"
-                href="{{ url_for('library.videos', q=search_query or None) }}"
-            >
-                {{ t('common.all') }}
-            </a>
-            {% for choice in sidebar_folder_choices %}
-                <a
-                    class="video-library-folder-chip{% if selected_video_folder_id == choice.id %} is-active{% endif %}"
-                    href="{{ url_for('library.videos', q=search_query or None, folder_id=choice.id) }}"
-                >
-                    {{ choice.name }}
-                </a>
-            {% endfor %}
-        </section>
-    {% endif %}
-
     {% if can_manage %}
         <section
             class="folder-panel folder-panel--create"
@@ -138,6 +119,29 @@
                 <form action="{{ url_for('main.create_category') }}" method="post" class="stack-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+                    <input type="hidden" name="video_folder_redirect" value="1">
+
+                    {% if sidebar_folder_choices %}
+                        <section class="video-folder-panel__existing">
+                            <p class="video-folder-panel__caption">{{ t('folders.collections') }}</p>
+                            <div class="video-folder-panel__list">
+                                <a
+                                    class="video-folder-panel__chip{% if not selected_video_folder_id %} is-active{% endif %}"
+                                    href="{{ url_for('library.videos', q=search_query or None) }}"
+                                >
+                                    {{ t('common.all') }}
+                                </a>
+                                {% for choice in sidebar_folder_choices %}
+                                    <a
+                                        class="video-folder-panel__chip{% if selected_video_folder_id == choice.id %} is-active{% endif %}"
+                                        href="{{ url_for('library.videos', q=search_query or None, folder_id=choice.id) }}"
+                                    >
+                                        {{ choice.name }}
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </section>
+                    {% endif %}
 
                     <label class="field">
                         <span>{{ t('folders.create_folder') }}</span>
