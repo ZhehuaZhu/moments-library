@@ -7,17 +7,14 @@
 
 {% block content %}
 <section class="page-header page-header--atlas">
-    <div>
-        <p class="eyebrow">{{ t('common.home') }}</p>
-        <h1>{{ t('footprints.title') }}</h1>
-        {% if search_query %}
-            <p class="page-description">{{ t('home.showing_results', count=mapped_moment_count, query=search_query) }}</p>
-        {% endif %}
-    </div>
+    <h1>{{ t('footprints.title') }}</h1>
     <div class="page-header__stats">
         <span class="stat-chip" data-footprints-total-places>{{ t('footprints.visited_places', count=place_count) }}</span>
         <span class="stat-chip stat-chip--accent" data-footprints-total-moments>{{ t('footprints.mapped_moments', count=mapped_moment_count) }}</span>
     </div>
+    {% if search_query %}
+        <p class="page-description">{{ t('home.showing_results', count=mapped_moment_count, query=search_query) }}</p>
+    {% endif %}
 </section>
 
 {% if place_count %}
