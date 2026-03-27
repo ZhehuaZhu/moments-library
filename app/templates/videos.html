@@ -1,131 +1,144 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="page-header">
-    <div>
-        <p class="eyebrow">{{ t('common.library') }}</p>
-        <h1>{{ module_labels.videos }}</h1>
-        {% if search_query %}
-            <p class="page-description">{{ t('videos.showing_results', count=result_count, query=search_query) }}</p>
-        {% endif %}
-    </div>
-    <div class="page-header__stats">
-        <span class="stat-chip">{{ t('videos.inline_playback') }}</span>
-        <span class="stat-chip stat-chip--accent">{{ t('videos.timestamp_jump_notes') }}</span>
-        {% if can_manage %}
-            <button
-                type="button"
-                class="button button--ghost button--compact"
-                data-open-folder-panel="video-create"
-                aria-haspopup="dialog"
-                aria-controls="video-create-panel"
-                aria-expanded="false"
-            >
-                {{ t('videos.add_video') }}
-            </button>
-        {% endif %}
-    </div>
-</section>
-
-{% if can_manage %}
-    <section
-        class="folder-panel folder-panel--create"
-        id="video-create-panel"
-        data-folder-panel="video-create"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="video-create-title"
-        hidden
-    >
-        <div class="folder-panel__header">
-            <div>
-                <p class="eyebrow">{{ module_labels.videos }}</p>
-                <h2 id="video-create-title">{{ t('videos.add_video') }}</h2>
-            </div>
-            <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('videos.add_video') }}">
-                &times;
-            </button>
+<section class="video-library-page">
+    <section class="page-header page-header--video-library">
+        <div class="video-library-page__headline">
+            <p class="eyebrow">{{ t('common.library') }}</p>
+            <h1>{{ module_labels.videos }}</h1>
+            <p class="page-description">
+                {% if search_query %}
+                    {{ t('videos.showing_results', count=result_count, query=search_query) }}
+                {% else %}
+                    {{ t('videos.description') }}
+                {% endif %}
+            </p>
         </div>
-
-        <div class="folder-panel__body">
-            <form action="{{ url_for('library.create_video') }}" method="post" enctype="multipart/form-data" class="stack-form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
-                <div class="composer-grid">
-                    <label class="field">
-                        <span>{{ t('common.title') }}</span>
-                        <input type="text" name="title" class="input" required>
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.collection') }} ({{ t('common.optional') }})</span>
-                        <select name="category_id" class="input">
-                            <option value="">{{ t('common.no_collection') }}</option>
-                            {% for choice in sidebar_folder_choices %}
-                                <option value="{{ choice.id }}">{{ "-- " * choice.depth }}{{ choice.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </label>
-                </div>
-                <label class="field">
-                    <span>{{ t('videos.video_file') }}</span>
-                    <input type="file" name="video_file" class="input input--file" accept=".mp4,.mov,.webm" required>
-                </label>
-                <label class="field">
-                    <span>{{ t('common.description') }}</span>
-                    <textarea name="description" class="input textarea" rows="4"></textarea>
-                </label>
-                <label class="field">
-                    <span>{{ t('videos.overall_review') }}</span>
-                    <textarea name="overall_review" class="input textarea" rows="5"></textarea>
-                </label>
-                <div class="folder-panel__actions">
-                    <button type="button" class="button button--subtle" data-close-folder-panel>{{ t('common.cancel') }}</button>
-                    <button type="submit" class="button button--ghost">{{ t('videos.add_video') }}</button>
-                </div>
-            </form>
+        <div class="video-library-page__actions">
+            <div class="page-header__stats video-library-page__stats">
+                <span class="stat-chip">{{ t('counts.videos', count=result_count) }}</span>
+            </div>
+            {% if can_manage %}
+                <button
+                    type="button"
+                    class="button button--ghost button--compact"
+                    data-open-folder-panel="video-create"
+                    aria-haspopup="dialog"
+                    aria-controls="video-create-panel"
+                    aria-expanded="false"
+                >
+                    {{ t('videos.add_video') }}
+                </button>
+            {% endif %}
         </div>
     </section>
-{% endif %}
 
-<section class="library-grid">
-    {% for video in videos %}
-        <article class="work-card work-card--video">
-            <a
-                class="work-card__media-link work-card__media-link--video"
-                href="{{ url_for('library.video_detail', video_id=video.id) }}"
-                data-video-card-link
-            >
-                <video
-                    class="work-card__media work-card__media--video"
-                    muted
-                    loop
-                    playsinline
-                    preload="metadata"
-                    data-video-card-preview
-                    {% if video.poster_asset_path %}poster="{{ url_for('static', filename=video.poster_asset_path) }}"{% endif %}
-                >
-                    <source src="{{ url_for('static', filename=video.preview_asset_path) }}" type="{{ video.preview_asset_mime_type }}">
-                </video>
-                <span class="work-card__media-badge">Video</span>
-            </a>
-            <div class="work-card__body">
-                <div class="work-card__meta">
-                    {% if video.category %}
-                        <span class="badge badge--category">{{ t('common.collection') }} · {{ video.category.name }}</span>
-                    {% endif %}
-                    <span class="badge badge--edit">{{ t('counts.notes', count=video.comments|length) }}</span>
+    {% if can_manage %}
+        <section
+            class="folder-panel folder-panel--create"
+            id="video-create-panel"
+            data-folder-panel="video-create"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="video-create-title"
+            hidden
+        >
+            <div class="folder-panel__header">
+                <div>
+                    <p class="eyebrow">{{ module_labels.videos }}</p>
+                    <h2 id="video-create-title">{{ t('videos.add_video') }}</h2>
                 </div>
-                <h3>{{ video.title }}</h3>
-                <p class="work-card__summary">{{ video.overall_review or video.description or t('videos.no_review') }}</p>
-                <div class="work-card__footer">
-                    <a class="button button--subtle" href="{{ url_for('library.video_detail', video_id=video.id) }}">{{ t('videos.open_video') }}</a>
-                </div>
+                <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('videos.add_video') }}">
+                    &times;
+                </button>
             </div>
-        </article>
-    {% else %}
-        <div class="empty-state">
-            <h3>{{ t('videos.no_videos') }}</h3>
-        </div>
-    {% endfor %}
+
+            <div class="folder-panel__body">
+                <form action="{{ url_for('library.create_video') }}" method="post" enctype="multipart/form-data" class="stack-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+                    <div class="composer-grid">
+                        <label class="field">
+                            <span>{{ t('common.title') }}</span>
+                            <input type="text" name="title" class="input" required>
+                        </label>
+                        <label class="field">
+                            <span>{{ t('common.collection') }} ({{ t('common.optional') }})</span>
+                            <select name="category_id" class="input">
+                                <option value="">{{ t('common.no_collection') }}</option>
+                                {% for choice in sidebar_folder_choices %}
+                                    <option value="{{ choice.id }}">{{ "-- " * choice.depth }}{{ choice.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </div>
+                    <label class="field">
+                        <span>{{ t('videos.video_file') }}</span>
+                        <input type="file" name="video_file" class="input input--file" accept=".mp4,.mov,.webm" required>
+                    </label>
+                    <label class="field">
+                        <span>{{ t('common.description') }}</span>
+                        <textarea name="description" class="input textarea" rows="4"></textarea>
+                    </label>
+                    <label class="field">
+                        <span>{{ t('videos.overall_review') }}</span>
+                        <textarea name="overall_review" class="input textarea" rows="5"></textarea>
+                    </label>
+                    <div class="folder-panel__actions">
+                        <button type="button" class="button button--subtle" data-close-folder-panel>{{ t('common.cancel') }}</button>
+                        <button type="submit" class="button button--ghost">{{ t('videos.add_video') }}</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    {% endif %}
+
+    <section class="library-grid video-library-grid">
+        {% for video in videos %}
+            {% set video_preview = video.overall_review or video.description %}
+            <article class="work-card work-card--video">
+                <a
+                    class="work-card__media-link work-card__media-link--video"
+                    href="{{ url_for('library.video_detail', video_id=video.id) }}"
+                    data-video-card-link
+                    aria-label="{{ t('common.details') }} {{ video.title }}"
+                >
+                    <video
+                        class="work-card__media work-card__media--video"
+                        muted
+                        loop
+                        playsinline
+                        preload="metadata"
+                        data-video-card-preview
+                        {% if video.poster_asset_path %}poster="{{ url_for('static', filename=video.poster_asset_path) }}"{% endif %}
+                    >
+                        <source src="{{ url_for('static', filename=video.preview_asset_path) }}" type="{{ video.preview_asset_mime_type }}">
+                    </video>
+                    <span class="work-card__media-badge">{{ t('videos.title') }}</span>
+                </a>
+                <div class="work-card__body">
+                    <div class="work-card__meta">
+                        {% if video.category %}
+                            <span class="badge badge--category">{{ t('common.collection') }} / {{ video.category.name }}</span>
+                        {% endif %}
+                        <span class="badge">{{ video.created_at|dateformat }}</span>
+                    </div>
+                    <div class="video-library-card__copy">
+                        <h3><a href="{{ url_for('library.video_detail', video_id=video.id) }}">{{ video.title }}</a></h3>
+                        <p class="work-card__subtitle">{{ t('common.imported') }} {{ video.created_at|dateformat }}</p>
+                        <p class="work-card__summary">{{ video_preview or t('videos.no_review') }}</p>
+                    </div>
+                    <div class="work-card__footer">
+                        <a class="button button--subtle" href="{{ url_for('library.video_detail', video_id=video.id) }}">{{ t('common.details') }}</a>
+                    </div>
+                </div>
+            </article>
+        {% else %}
+            <div class="empty-state">
+                <h3>{{ t('videos.no_videos') }}</h3>
+                <p>{{ t('videos.empty_description') }}</p>
+            </div>
+        {% endfor %}
+    </section>
 </section>
 {% endblock %}
