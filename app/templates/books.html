@@ -2,43 +2,36 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="page-header page-header--shelf">
-    <div>
-        <p class="eyebrow">{{ t('common.library') }}</p>
-        <h1>{{ module_labels.books }}</h1>
-    </div>
-    <div class="page-header__stats">
-        <span class="stat-chip">{{ t('counts.titles', count=result_count) }}</span>
-        <span class="stat-chip">{{ t('book_status.reading') }} {{ reading_count }}</span>
-        <span class="stat-chip stat-chip--accent">{{ t('book_status.finished') }} {{ finished_count }}</span>
-        {% if can_manage %}
-            <button
-                type="button"
-                class="button button--subtle button--compact"
-                data-open-folder-panel="create"
-                aria-haspopup="dialog"
-                aria-controls="folder-create-panel"
-                aria-expanded="false"
-            >
-                {{ t('books.new_collection') }}
-            </button>
-            <button
-                type="button"
-                class="button button--ghost button--compact"
-                data-open-folder-panel="book-create"
-                aria-haspopup="dialog"
-                aria-controls="book-create-panel"
-                aria-expanded="false"
-            >
-                {{ t('books.add_book') }}
-            </button>
-        {% endif %}
+<section class="page-header page-header--shelf page-header--bookshelf">
+    <div class="bookshelf-header-bar">
+        <div class="bookshelf-header-bar__title">
+            <p class="eyebrow">{{ t('common.library') }}</p>
+            <h1>{{ module_labels.books }}</h1>
+        </div>
+        <div class="bookshelf-header-bar__meta">
+            <span class="stat-chip">{{ t('counts.titles', count=result_count) }}</span>
+            <span class="stat-chip">{{ t('book_status.reading') }} {{ reading_count }}</span>
+            <span class="stat-chip stat-chip--accent">{{ t('book_status.finished') }} {{ finished_count }}</span>
+            {% if can_manage %}
+                <button
+                    type="button"
+                    class="button button--ghost button--compact bookshelf-header-bar__add"
+                    data-open-folder-panel="book-create"
+                    aria-haspopup="dialog"
+                    aria-controls="book-create-panel"
+                    aria-expanded="false"
+                    aria-label="{{ t('books.add_book') }}"
+                >
+                    +
+                </button>
+            {% endif %}
+        </div>
     </div>
 </section>
 
 {% if can_manage %}
     <section
-        class="folder-panel folder-panel--create"
+        class="folder-panel folder-panel--create folder-panel--book-create"
         id="book-create-panel"
         data-folder-panel="book-create"
         role="dialog"
@@ -57,10 +50,13 @@
         </div>
 
         <div class="folder-panel__body">
-            <form action="{{ url_for('library.create_book') }}" method="post" enctype="multipart/form-data" class="stack-form">
+            <form action="{{ url_for('library.create_book') }}" method="post" enctype="multipart/form-data" class="stack-form books-create-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
-                <div class="composer-grid">
+                <p class="helper-text books-create-form__note">
+                    {{ '阅读状态、开始阅读和读完时间会根据你的阅读进度自动识别。' if current_lang == 'zh' else 'Reading status, started date, and finished date are tracked automatically from your reading progress.' }}
+                </p>
+                <div class="composer-grid books-create-grid books-create-grid--meta">
                     <label class="field">
                         <span>{{ t('common.title') }}</span>
                         <input type="text" name="title" class="input" placeholder="{{ t('books.title_optional_placeholder') }}">
@@ -68,14 +64,6 @@
                     <label class="field">
                         <span>{{ t('common.author') }}</span>
                         <input type="text" name="author_name" class="input" placeholder="{{ t('books.author_optional_placeholder') }}">
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.status') }}</span>
-                        <select name="status" class="input">
-                            {% for value, label in status_choices %}
-                                <option value="{{ value }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
                     </label>
                     <label class="field">
                         <span>{{ t('common.collection') }}</span>
@@ -86,16 +74,8 @@
                             {% endfor %}
                         </select>
                     </label>
-                    <label class="field">
-                        <span>{{ t('common.started') }}</span>
-                        <input type="date" name="started_at" class="input">
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.finished') }}</span>
-                        <input type="date" name="finished_at" class="input">
-                    </label>
                 </div>
-                <div class="composer-grid">
+                <div class="composer-grid books-create-grid books-create-grid--files">
                     <label class="field">
                         <span>{{ t('common.source_file') }}</span>
                         <input type="file" name="source_file" class="input input--file" accept=".pdf,.doc,.docx,.txt,.md,.epub,.mobi" required>
@@ -136,22 +116,21 @@
                 {% endif %}
                 <span class="bookshelf-card__status">{{ book_status_label(book.status) }}</span>
             </a>
+            <a class="bookshelf-card__detail-badge" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.details') }}</a>
             <div class="bookshelf-card__body">
-                <h3><a href="{{ url_for('library.book_reader', book_id=book.id) }}">{{ book.title }}</a></h3>
-                <p class="bookshelf-card__author">{{ book.author_name or t('books.personal_archive') }}</p>
-                <div class="bookshelf-card__meta">
-                    <span class="badge">{{ book.source_format|upper }}</span>
-                    {% if book.category %}
-                        <span class="badge badge--category">{{ t('common.collection') }} · {{ book.category.name }}</span>
-                    {% endif %}
-                    {% if book.finished_at %}
-                        <span class="badge badge--edit">{{ t('common.finished') }} {{ book.finished_at|dateformat }}</span>
-                    {% endif %}
-                </div>
-                <div class="bookshelf-card__actions">
-                    <a class="button button--subtle button--compact" href="{{ url_for('library.book_reader', book_id=book.id) }}">{{ t('common.read') }}</a>
-                    <a class="button button--ghost button--compact" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.details') }}</a>
-                </div>
+                <a class="bookshelf-card__summary" href="{{ url_for('library.book_reader', book_id=book.id) }}">
+                    <h3>{{ book.title }}</h3>
+                    <p class="bookshelf-card__author">{{ book.author_name or t('books.personal_archive') }}</p>
+                    <div class="bookshelf-card__meta">
+                        <span class="badge">{{ book.source_format|upper }}</span>
+                        {% if book.category %}
+                            <span class="badge badge--category">{{ t('common.collection') }} / {{ book.category.name }}</span>
+                        {% endif %}
+                        {% if book.finished_at %}
+                            <span class="badge badge--edit">{{ t('common.finished') }} {{ book.finished_at|dateformat }}</span>
+                        {% endif %}
+                    </div>
+                </a>
             </div>
         </article>
     {% else %}
