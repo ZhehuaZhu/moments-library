@@ -449,6 +449,44 @@
     outline: none;
 }
 
+.folder-panel--book-create {
+    width: min(680px, calc(100vw - 32px));
+}
+
+.books-create-form {
+    gap: 16px;
+}
+
+.books-create-grid {
+    gap: 12px;
+}
+
+.books-create-grid--meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.books-create-grid--files {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.books-create-form .field > span {
+    color: var(--text);
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.books-create-form .input {
+    min-height: 46px;
+}
+
+.books-create-form .input--file {
+    min-height: 54px;
+}
+
+.books-create-form .textarea {
+    min-height: 120px;
+}
+
 .work-card {
     padding: 22px;
     border: 1px solid var(--line);
