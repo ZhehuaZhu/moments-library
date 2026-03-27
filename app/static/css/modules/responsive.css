@@ -495,15 +495,49 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .composer-citation-card__body,
     .moment-citation:not(.moment-citation--music) {
         grid-template-columns: 1fr;
     }
 
-    .composer-citation-card__cover,
     .moment-citation__cover:not(.moment-citation__cover--music) {
         width: 48px;
         height: 48px;
+    }
+
+    .composer-citation-card {
+        padding: 10px 12px;
+        border-radius: 18px;
+    }
+
+    .composer-citation-card__body {
+        grid-template-columns: 44px minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .composer-citation-card__cover {
+        width: 44px;
+        height: 44px;
+    }
+
+    .composer-citation-card__meta-line {
+        gap: 6px;
+    }
+
+    .composer-citation-card__label {
+        padding: 3px 7px;
+    }
+
+    .composer-citation-card__title {
+        font-size: 0.95rem;
+    }
+
+    .composer-citation-card__detail {
+        font-size: 0.8rem;
+    }
+
+    .composer-citation-card__remove {
+        width: 32px;
+        height: 32px;
     }
 
     .moment-citation--music {

@@ -1102,14 +1102,14 @@ body.has-folder-panel-open {
 .composer-citation__results,
 .composer-citation__selected {
     display: grid;
-    gap: 10px;
+    gap: 8px;
 }
 
 .composer-citation-card {
     width: 100%;
     display: grid;
-    gap: 12px;
-    padding: 14px;
+    gap: 0;
+    padding: 10px 12px;
     border: 1px solid rgba(34, 48, 60, 0.08);
     border-radius: 22px;
     background: rgba(255, 255, 255, 0.92);
@@ -1126,7 +1126,9 @@ body.has-folder-panel-open {
 }
 
 .composer-citation-card--selected {
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 10px;
+    align-items: center;
 }
 
 .composer-citation-card__body {
@@ -1134,16 +1136,16 @@ body.has-folder-panel-open {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     gap: 12px;
-    align-items: start;
+    align-items: center;
 }
 
 .composer-citation-card__cover {
-    width: 52px;
-    height: 52px;
+    width: 44px;
+    height: 44px;
     display: grid;
     place-items: center;
     overflow: hidden;
-    border-radius: 16px;
+    border-radius: 14px;
     background:
         radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.28), transparent 34%),
         linear-gradient(145deg, rgba(110, 151, 139, 0.96), rgba(51, 92, 85, 1));
@@ -1152,7 +1154,7 @@ body.has-folder-panel-open {
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    box-shadow: 0 12px 20px rgba(21, 33, 42, 0.1);
+    box-shadow: 0 10px 18px rgba(21, 33, 42, 0.08);
 }
 
 .composer-citation-card__cover img {
@@ -1167,38 +1169,65 @@ body.has-folder-panel-open {
     gap: 4px;
 }
 
-.composer-citation-card__label {
-    color: var(--accent-strong);
-    font-size: 0.74rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
+.composer-citation-card__meta-line {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
 }
 
-.composer-citation-card__copy strong,
-.composer-citation-card__subtitle,
-.composer-citation-card__excerpt {
+.composer-citation-card__label {
+    flex-shrink: 0;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(63, 111, 100, 0.1);
+    color: var(--accent-strong);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: none;
+}
+
+.composer-citation-card__title,
+.composer-citation-card__detail {
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.composer-citation-card__copy strong {
+.composer-citation-card__title {
+    display: block;
     font-size: 1rem;
-}
-
-.composer-citation-card__subtitle {
-    color: var(--muted);
+    line-height: 1.24;
     white-space: nowrap;
 }
 
-.composer-citation-card__excerpt {
-    margin: 0;
+.composer-citation-card__detail {
+    min-width: 0;
     color: var(--muted);
-    line-height: 1.55;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    white-space: normal;
+    white-space: nowrap;
+    font-size: 0.84rem;
+}
+
+.composer-citation-card__remove {
+    width: 34px;
+    height: 34px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid rgba(34, 48, 60, 0.08);
+    border-radius: 12px;
+    background: rgba(248, 250, 251, 0.92);
+    color: var(--accent-strong);
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.composer-citation-card__remove:hover {
+    transform: translateY(-1px);
+    border-color: rgba(63, 111, 100, 0.18);
+    background: rgba(63, 111, 100, 0.08);
 }
 
 .moment-citation {
