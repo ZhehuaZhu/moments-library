@@ -3012,6 +3012,164 @@ function initGlobalPlayer() {
     initRemotePlayerShell(shell, elements);
 }
 
+function inferTrackTitleFromFilename(filename) {
+    const stem = String(filename || "").replace(/\.[^.]+$/, "").trim();
+    if (!stem) {
+        return "";
+    }
+    return stem.replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function initTrackCreateForm() {
+    const form = document.querySelector("[data-track-create-form]");
+    if (!(form instanceof HTMLFormElement) || form.dataset.trackCreateBound === "true") {
+        return;
+    }
+    form.dataset.trackCreateBound = "true";
+
+    const signal = getLibraryPageSignal();
+    const titleInput = form.querySelector("[data-track-title-input]");
+    const audioInput = form.querySelector("[data-track-audio-input]");
+    const dropzone = form.querySelector("[data-track-upload-dropzone]");
+    const status = form.querySelector("[data-track-upload-status]");
+    const coverInput = form.querySelector("[data-track-cover-input]");
+    const lyricsInput = form.querySelector("[data-track-lyrics-input]");
+
+    if (
+        !(titleInput instanceof HTMLInputElement) ||
+        !(audioInput instanceof HTMLInputElement) ||
+        !(dropzone instanceof HTMLElement) ||
+        !(status instanceof HTMLElement)
+    ) {
+        return;
+    }
+
+    const desktopDragEnabled = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const allowedAudioPattern = /\.(mp3|m4a|wav|ogg|webm|flac|mp4)$/i;
+    let userEditedTitle = false;
+
+    const updateSupplementalInputs = (enabled) => {
+        [coverInput, lyricsInput].forEach((input) => {
+            if (!(input instanceof HTMLInputElement)) {
+                return;
+            }
+            input.disabled = !enabled;
+            if (!enabled) {
+                input.value = "";
+            }
+            input.closest(".tracks-create-field")?.classList.toggle("is-field-disabled", !enabled);
+        });
+    };
+
+    const updateSelectionState = () => {
+        const files = Array.from(audioInput.files || []);
+        const count = files.length;
+        const isSingle = count === 1;
+        const isMultiple = count > 1;
+
+        titleInput.disabled = isMultiple;
+        titleInput.closest(".tracks-create-field")?.classList.toggle("is-field-disabled", isMultiple);
+        dropzone.classList.toggle("has-files", count > 0);
+        dropzone.classList.toggle("is-multiple-files", isMultiple);
+
+        if (isSingle) {
+            const inferredTitle = inferTrackTitleFromFilename(files[0].name);
+            if (!userEditedTitle || titleInput.dataset.autofilled === "true" || !titleInput.value.trim()) {
+                titleInput.value = inferredTitle;
+                titleInput.dataset.autofilled = "true";
+            }
+            status.textContent = t(
+                "music.bulk_upload_single",
+                { count },
+                `${count} file selected. Title defaults to the file name.`
+            );
+            status.hidden = false;
+        } else if (isMultiple) {
+            if (!userEditedTitle || titleInput.dataset.autofilled === "true") {
+                titleInput.value = "";
+                titleInput.dataset.autofilled = "true";
+            }
+            status.textContent = `${t(
+                "music.bulk_upload_multiple",
+                { count },
+                `${count} files selected. Each track will use its file name.`
+            )} · ${t(
+                "music.bulk_upload_assets_single_only",
+                {},
+                "Cover and lyrics stay available for single-track uploads."
+            )}`;
+            status.hidden = false;
+        } else {
+            if (titleInput.dataset.autofilled === "true") {
+                titleInput.value = "";
+            }
+            titleInput.dataset.autofilled = "false";
+            status.hidden = true;
+            status.textContent = "";
+        }
+
+        updateSupplementalInputs(!isMultiple);
+    };
+
+    titleInput.addEventListener("input", () => {
+        userEditedTitle = Boolean(titleInput.value.trim());
+        titleInput.dataset.autofilled = "false";
+    }, { signal });
+
+    audioInput.addEventListener("change", () => {
+        updateSelectionState();
+    }, { signal });
+
+    form.addEventListener("reset", () => {
+        window.setTimeout(() => {
+            userEditedTitle = false;
+            titleInput.disabled = false;
+            titleInput.dataset.autofilled = "false";
+            updateSupplementalInputs(true);
+            dropzone.classList.remove("has-files", "is-multiple-files", "is-dragover");
+            status.hidden = true;
+            status.textContent = "";
+        }, 0);
+    }, { signal });
+
+    if (desktopDragEnabled) {
+        dropzone.addEventListener("dragenter", (event) => {
+            event.preventDefault();
+            dropzone.classList.add("is-dragover");
+        }, { signal });
+
+        dropzone.addEventListener("dragover", (event) => {
+            event.preventDefault();
+            dropzone.classList.add("is-dragover");
+        }, { signal });
+
+        dropzone.addEventListener("dragleave", (event) => {
+            if (event.target === dropzone) {
+                dropzone.classList.remove("is-dragover");
+            }
+        }, { signal });
+
+        dropzone.addEventListener("drop", (event) => {
+            event.preventDefault();
+            dropzone.classList.remove("is-dragover");
+
+            const acceptedFiles = Array.from(event.dataTransfer?.files || []).filter((file) =>
+                allowedAudioPattern.test(file.name)
+            );
+            if (!acceptedFiles.length) {
+                return;
+            }
+
+            const transfer = new DataTransfer();
+            acceptedFiles.forEach((file) => transfer.items.add(file));
+            audioInput.files = transfer.files;
+            audioInput.dispatchEvent(new Event("change", { bubbles: true }));
+        }, { signal });
+    }
+
+    updateSelectionState();
+}
+
 export function initLibraryFeatures() {
     initVideoCardPreviews();
     initImmersiveReaderShells();
@@ -3022,5 +3180,6 @@ export function initLibraryFeatures() {
     initEpubReaders();
     initTimestampHelpers();
     initTrackLyrics();
+    initTrackCreateForm();
     initGlobalPlayer();
 }

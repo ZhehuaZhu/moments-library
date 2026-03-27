@@ -876,6 +876,57 @@ def test_admin_can_create_audio_only_mp4_track(admin_client, app):
         assert track.mime_type == "audio/mp4"
 
 
+def test_track_title_can_default_to_filename(admin_client, app):
+    response = admin_client.post(
+        "/music",
+        data={
+            "title": "",
+            "artist_name": "Zhehua",
+            "audio_file": (BytesIO(b"fake audio"), "quiet-night-draft.mp3"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Track added to the music library." in response.data
+    assert b"quiet night draft" in response.data
+
+    with app.app_context():
+        track = Track.query.filter_by(original_name="quiet-night-draft.mp3").one()
+        assert track.title == "quiet night draft"
+
+
+def test_admin_can_bulk_create_tracks_from_multiple_files(admin_client, app):
+    response = admin_client.post(
+        "/music",
+        data={
+            "title": "",
+            "artist_name": "Zhehua",
+            "mood": "Reflective",
+            "audio_files": [
+                (BytesIO(b"fake audio one"), "first-light-demo.mp3"),
+                (BytesIO(b"fake audio two"), "second-skyline.m4a"),
+            ],
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"2 tracks added to the music library." in response.data
+    assert b"first light demo" in response.data
+    assert b"second skyline" in response.data
+    assert response.data.count(b"Just added") == 2
+    assert response.data.count(b'data-new-track="true"') == 2
+
+    with app.app_context():
+        tracks = Track.query.order_by(Track.original_name.asc()).all()
+        assert [track.title for track in tracks] == ["first light demo", "second skyline"]
+        assert all(track.artist_name == "Zhehua" for track in tracks)
+        assert all(track.mood == "Reflective" for track in tracks)
+
+
 def test_admin_can_edit_track_metadata_and_cover(admin_client, app):
     create_response = admin_client.post(
         "/music",
