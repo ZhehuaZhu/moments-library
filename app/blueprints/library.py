@@ -241,6 +241,16 @@ def books():
     books_list = book_query(search_query).all()
     reading_count = sum(1 for book in books_list if book.status == "reading")
     finished_count = sum(1 for book in books_list if book.status == "finished")
+    want_to_read_count = sum(1 for book in books_list if book.status == "want_to_read")
+    paused_count = sum(1 for book in books_list if book.status == "paused")
+    recent_book = (
+        max(
+            books_list,
+            key=lambda book: book.last_read_at or book.updated_at or book.created_at,
+        )
+        if books_list
+        else None
+    )
     context = build_sidebar_context(
         active_nav="books",
         search_query=search_query,
@@ -254,6 +264,9 @@ def books():
         result_count=len(books_list),
         reading_count=reading_count,
         finished_count=finished_count,
+        want_to_read_count=want_to_read_count,
+        paused_count=paused_count,
+        recent_book=recent_book,
         **context,
     )
 

@@ -2,162 +2,199 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="page-header page-header--shelf">
-    <div>
-        <p class="eyebrow">{{ t('common.library') }}</p>
-        <h1>{{ module_labels.books }}</h1>
-    </div>
-    <div class="page-header__stats">
-        <span class="stat-chip">{{ t('counts.titles', count=result_count) }}</span>
-        <span class="stat-chip">{{ t('book_status.reading') }} {{ reading_count }}</span>
-        <span class="stat-chip stat-chip--accent">{{ t('book_status.finished') }} {{ finished_count }}</span>
-        {% if can_manage %}
-            <button
-                type="button"
-                class="button button--subtle button--compact"
-                data-open-folder-panel="create"
-                aria-haspopup="dialog"
-                aria-controls="folder-create-panel"
-                aria-expanded="false"
-            >
-                {{ t('books.new_collection') }}
-            </button>
-            <button
-                type="button"
-                class="button button--ghost button--compact"
-                data-open-folder-panel="book-create"
-                aria-haspopup="dialog"
-                aria-controls="book-create-panel"
-                aria-expanded="false"
-            >
-                {{ t('books.add_book') }}
-            </button>
-        {% endif %}
-    </div>
-</section>
-
-{% if can_manage %}
-    <section
-        class="folder-panel folder-panel--create"
-        id="book-create-panel"
-        data-folder-panel="book-create"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="book-create-title"
-        hidden
-    >
-        <div class="folder-panel__header">
-            <div>
-                <p class="eyebrow">{{ module_labels.books }}</p>
-                <h2 id="book-create-title">{{ t('books.add_book') }}</h2>
+<section class="books-library-page">
+    <section class="page-header page-header--books-library">
+        <div class="books-library-page__hero">
+            <p class="eyebrow">{{ t('common.library') }}</p>
+            <h1>{{ module_labels.books }}</h1>
+            <div class="page-header__stats books-library-page__stats">
+                <span class="stat-chip">{{ t('counts.titles', count=result_count) }}</span>
+                <span class="stat-chip">{{ t('book_status.reading') }} {{ reading_count }}</span>
+                <span class="stat-chip">{{ t('book_status.want_to_read') }} {{ want_to_read_count }}</span>
+                <span class="stat-chip stat-chip--accent">{{ t('book_status.finished') }} {{ finished_count }}</span>
+                {% if paused_count %}
+                    <span class="stat-chip">{{ t('book_status.paused') }} {{ paused_count }}</span>
+                {% endif %}
             </div>
-            <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('books.add_book') }}">
-                &times;
-            </button>
         </div>
 
-        <div class="folder-panel__body">
-            <form action="{{ url_for('library.create_book') }}" method="post" enctype="multipart/form-data" class="stack-form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
-                <div class="composer-grid">
-                    <label class="field">
-                        <span>{{ t('common.title') }}</span>
-                        <input type="text" name="title" class="input" placeholder="{{ t('books.title_optional_placeholder') }}">
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.author') }}</span>
-                        <input type="text" name="author_name" class="input" placeholder="{{ t('books.author_optional_placeholder') }}">
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.status') }}</span>
-                        <select name="status" class="input">
-                            {% for value, label in status_choices %}
-                                <option value="{{ value }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.collection') }}</span>
-                        <select name="category_id" class="input">
-                            <option value="">{{ t('common.no_collection') }}</option>
-                            {% for choice in sidebar_folder_choices %}
-                                <option value="{{ choice.id }}">{{ "-- " * choice.depth }}{{ choice.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.started') }}</span>
-                        <input type="date" name="started_at" class="input">
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.finished') }}</span>
-                        <input type="date" name="finished_at" class="input">
-                    </label>
-                </div>
-                <div class="composer-grid">
-                    <label class="field">
-                        <span>{{ t('common.source_file') }}</span>
-                        <input type="file" name="source_file" class="input input--file" accept=".pdf,.doc,.docx,.txt,.md,.epub,.mobi" required>
-                    </label>
-                    <label class="field">
-                        <span>{{ t('books.cover_optional') }}</span>
-                        <input type="file" name="cover_file" class="input input--file" accept=".jpg,.jpeg,.png,.gif,.webp">
-                    </label>
-                </div>
-                <label class="field">
-                    <span>{{ t('common.description') }}</span>
-                    <textarea name="description" class="input textarea" rows="4"></textarea>
-                </label>
-                <label class="field">
-                    <span>{{ t('common.review') }}</span>
-                    <textarea name="overall_review" class="input textarea" rows="5"></textarea>
-                </label>
-                <div class="folder-panel__actions">
-                    <button type="button" class="button button--subtle" data-close-folder-panel>{{ t('common.cancel') }}</button>
-                    <button type="submit" class="button button--ghost">{{ t('books.save_book') }}</button>
-                </div>
-            </form>
+        {% if recent_book %}
+            <a class="books-library-page__feature" href="{{ url_for('library.book_reader', book_id=recent_book.id) }}">
+                <span class="books-library-page__feature-cover">
+                    {% if recent_book.cover_relative_path %}
+                        <img src="{{ url_for('static', filename=recent_book.cover_relative_path) }}" alt="{{ recent_book.title }} cover" loading="lazy">
+                    {% else %}
+                        <span class="books-library-page__feature-placeholder">
+                            <span>{{ recent_book.author_name or recent_book.source_format|upper }}</span>
+                            <strong>{{ recent_book.cover_seed }}</strong>
+                        </span>
+                    {% endif %}
+                </span>
+                <span class="books-library-page__feature-copy">
+                    <span>{{ book_status_label(recent_book.status) }}</span>
+                    <strong>{{ recent_book.title }}</strong>
+                    {% if recent_book.last_read_at %}
+                        <small>{{ t('common.updated', time=recent_book.last_read_at|datetimeformat) }}</small>
+                    {% elif recent_book.finished_at %}
+                        <small>{{ t('common.finished') }} {{ recent_book.finished_at|dateformat }}</small>
+                    {% else %}
+                        <small>{{ recent_book.author_name or t('books.personal_archive') }}</small>
+                    {% endif %}
+                </span>
+            </a>
+        {% endif %}
+
+        <div class="books-library-page__toolbar">
+            {% if can_manage %}
+                <button
+                    type="button"
+                    class="button button--subtle button--compact books-library-page__collection-button"
+                    data-open-folder-panel="create"
+                    aria-haspopup="dialog"
+                    aria-controls="folder-create-panel"
+                    aria-expanded="false"
+                >
+                    {{ t('books.new_collection') }}
+                </button>
+                <button
+                    type="button"
+                    class="icon-button icon-button--ghost books-library-page__create-button"
+                    data-open-folder-panel="book-create"
+                    aria-haspopup="dialog"
+                    aria-controls="book-create-panel"
+                    aria-expanded="false"
+                    aria-label="{{ t('books.add_book') }}"
+                    title="{{ t('books.add_book') }}"
+                >
+                    <span aria-hidden="true">+</span>
+                </button>
+            {% endif %}
         </div>
     </section>
-{% endif %}
 
-<section class="bookshelf-grid">
-    {% for book in books %}
-        <article class="bookshelf-card">
-            <a class="bookshelf-card__cover" href="{{ url_for('library.book_reader', book_id=book.id) }}">
-                {% if book.cover_relative_path %}
-                    <img src="{{ url_for('static', filename=book.cover_relative_path) }}" alt="{{ book.title }} cover" loading="lazy">
-                {% else %}
-                    <div class="bookshelf-card__placeholder">
-                        <span>{{ book.author_name or book.source_format|upper }}</span>
-                        <strong>{{ book.title }}</strong>
-                    </div>
-                {% endif %}
-                <span class="bookshelf-card__status">{{ book_status_label(book.status) }}</span>
-            </a>
-            <div class="bookshelf-card__body">
-                <h3><a href="{{ url_for('library.book_reader', book_id=book.id) }}">{{ book.title }}</a></h3>
-                <p class="bookshelf-card__author">{{ book.author_name or t('books.personal_archive') }}</p>
-                <div class="bookshelf-card__meta">
-                    <span class="badge">{{ book.source_format|upper }}</span>
-                    {% if book.category %}
-                        <span class="badge badge--category">{{ t('common.collection') }} · {{ book.category.name }}</span>
-                    {% endif %}
-                    {% if book.finished_at %}
-                        <span class="badge badge--edit">{{ t('common.finished') }} {{ book.finished_at|dateformat }}</span>
-                    {% endif %}
+    {% if can_manage %}
+        <section
+            class="folder-panel folder-panel--create"
+            id="book-create-panel"
+            data-folder-panel="book-create"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="book-create-title"
+            hidden
+        >
+            <div class="folder-panel__header">
+                <div>
+                    <p class="eyebrow">{{ module_labels.books }}</p>
+                    <h2 id="book-create-title">{{ t('books.add_book') }}</h2>
                 </div>
-                <div class="bookshelf-card__actions">
-                    <a class="button button--subtle button--compact" href="{{ url_for('library.book_reader', book_id=book.id) }}">{{ t('common.read') }}</a>
-                    <a class="button button--ghost button--compact" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.details') }}</a>
-                </div>
+                <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('books.add_book') }}">
+                    &times;
+                </button>
             </div>
-        </article>
-    {% else %}
-        <div class="empty-state">
-            <h3>{{ t('books.no_books') }}</h3>
-        </div>
-    {% endfor %}
+
+            <div class="folder-panel__body">
+                <form action="{{ url_for('library.create_book') }}" method="post" enctype="multipart/form-data" class="stack-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
+                    <div class="composer-grid">
+                        <label class="field">
+                            <span>{{ t('common.title') }}</span>
+                            <input type="text" name="title" class="input" placeholder="{{ t('books.title_optional_placeholder') }}">
+                        </label>
+                        <label class="field">
+                            <span>{{ t('common.author') }}</span>
+                            <input type="text" name="author_name" class="input" placeholder="{{ t('books.author_optional_placeholder') }}">
+                        </label>
+                        <label class="field">
+                            <span>{{ t('common.status') }}</span>
+                            <select name="status" class="input">
+                                {% for value, label in status_choices %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>{{ t('common.collection') }}</span>
+                            <select name="category_id" class="input">
+                                <option value="">{{ t('common.no_collection') }}</option>
+                                {% for choice in sidebar_folder_choices %}
+                                    <option value="{{ choice.id }}">{{ "-- " * choice.depth }}{{ choice.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>{{ t('common.started') }}</span>
+                            <input type="date" name="started_at" class="input">
+                        </label>
+                        <label class="field">
+                            <span>{{ t('common.finished') }}</span>
+                            <input type="date" name="finished_at" class="input">
+                        </label>
+                    </div>
+                    <div class="composer-grid">
+                        <label class="field">
+                            <span>{{ t('common.source_file') }}</span>
+                            <input type="file" name="source_file" class="input input--file" accept=".pdf,.doc,.docx,.txt,.md,.epub,.mobi" required>
+                        </label>
+                        <label class="field">
+                            <span>{{ t('books.cover_optional') }}</span>
+                            <input type="file" name="cover_file" class="input input--file" accept=".jpg,.jpeg,.png,.gif,.webp">
+                        </label>
+                    </div>
+                    <label class="field">
+                        <span>{{ t('common.description') }}</span>
+                        <textarea name="description" class="input textarea" rows="4"></textarea>
+                    </label>
+                    <label class="field">
+                        <span>{{ t('common.review') }}</span>
+                        <textarea name="overall_review" class="input textarea" rows="5"></textarea>
+                    </label>
+                    <div class="folder-panel__actions">
+                        <button type="button" class="button button--subtle" data-close-folder-panel>{{ t('common.cancel') }}</button>
+                        <button type="submit" class="button button--ghost">{{ t('books.save_book') }}</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    {% endif %}
+
+    <section class="bookshelf-grid">
+        {% for book in books %}
+            <article class="bookshelf-card">
+                <a class="bookshelf-card__cover" href="{{ url_for('library.book_reader', book_id=book.id) }}">
+                    {% if book.cover_relative_path %}
+                        <img src="{{ url_for('static', filename=book.cover_relative_path) }}" alt="{{ book.title }} cover" loading="lazy">
+                    {% else %}
+                        <div class="bookshelf-card__placeholder">
+                            <span>{{ book.author_name or book.source_format|upper }}</span>
+                            <strong>{{ book.title }}</strong>
+                        </div>
+                    {% endif %}
+                    <span class="bookshelf-card__status">{{ book_status_label(book.status) }}</span>
+                </a>
+                <div class="bookshelf-card__body">
+                    <h3><a href="{{ url_for('library.book_reader', book_id=book.id) }}">{{ book.title }}</a></h3>
+                    <p class="bookshelf-card__author">{{ book.author_name or t('books.personal_archive') }}</p>
+                    <div class="bookshelf-card__meta">
+                        <span class="badge">{{ book.source_format|upper }}</span>
+                        {% if book.category %}
+                            <span class="badge badge--category">{{ t('common.collection') }} / {{ book.category.name }}</span>
+                        {% endif %}
+                        {% if book.finished_at %}
+                            <span class="badge badge--edit">{{ t('common.finished') }} {{ book.finished_at|dateformat }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="bookshelf-card__actions">
+                        <a class="button button--subtle button--compact" href="{{ url_for('library.book_reader', book_id=book.id) }}">{{ t('common.read') }}</a>
+                        <a class="button button--ghost button--compact" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.details') }}</a>
+                    </div>
+                </div>
+            </article>
+        {% else %}
+            <div class="empty-state">
+                <h3>{{ t('books.no_books') }}</h3>
+            </div>
+        {% endfor %}
+    </section>
 </section>
 {% endblock %}
