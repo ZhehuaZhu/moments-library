@@ -25,6 +25,7 @@ export function initComposerModal() {
     modal.dataset.composerInitialized = "true";
 
     const signal = getComposerSignal();
+    const headerComposeButtons = document.querySelectorAll("[data-mobile-compose]");
     const openButtons = document.querySelectorAll("[data-open-composer]");
     const closeButtons = modal.querySelectorAll("[data-close-composer]");
     const fileInput = modal.querySelector("[data-file-input]");
@@ -59,6 +60,16 @@ export function initComposerModal() {
 
     let fileController;
     let citationController;
+
+    const mobileComposeQuery = window.matchMedia("(max-width: 720px)");
+
+    function syncHeaderComposeVisibility() {
+        headerComposeButtons.forEach((button) => {
+            if (button instanceof HTMLElement) {
+                button.hidden = !mobileComposeQuery.matches;
+            }
+        });
+    }
 
     function syncQuickActionState() {
         quickActionButtons.forEach((button) => {
@@ -191,6 +202,8 @@ export function initComposerModal() {
     openButtons.forEach((button) => button.addEventListener("click", openModal, { signal }));
     closeButtons.forEach((button) => button.addEventListener("click", closeModal, { signal }));
     panelCloseButtons.forEach((button) => button.addEventListener("click", () => closeComposerPanels(), { signal }));
+    syncHeaderComposeVisibility();
+    mobileComposeQuery.addEventListener("change", syncHeaderComposeVisibility, { signal });
 
     quickActionButtons.forEach((button) => {
         button.addEventListener("click", () => {
