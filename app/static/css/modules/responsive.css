@@ -389,6 +389,13 @@
         border-radius: 20px;
     }
 
+    .feed-list > .moment-card {
+        content-visibility: visible;
+        contain-intrinsic-size: none;
+        width: 100%;
+        max-width: 100%;
+    }
+
     .moment-card__header {
         flex-direction: row;
         align-items: flex-start;
