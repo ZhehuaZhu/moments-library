@@ -10,6 +10,19 @@ Moments Library is a private, single-user-first archive built with Flask, SQLite
 
 This README is written for maintainers. It explains how the app is structured, how data flows through it, how the modules relate to each other, and what to be careful about in production.
 
+## Team Docs
+
+For the current multi-workspace workflow, also read:
+
+- `TEAM-WORKFLOW.md`
+- `MODULE-OWNERSHIP.md`
+
+These files document:
+
+- which branch is the integration baseline
+- which files each module should usually own
+- how to sync all module workspaces before starting a new change
+
 ## 1. Product Intent
 
 The app is not a generic CMS. It is designed as a personal media archive with a soft social-feed presentation:
