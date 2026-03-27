@@ -168,12 +168,14 @@ def track_query(search_query: str):
     return query.order_by(Track.updated_at.desc(), Track.created_at.desc())
 
 
-def video_query(search_query: str):
+def video_query(search_query: str, category_id: int | None = None):
     query = VideoEntry.query.options(
         selectinload(VideoEntry.category),
         selectinload(VideoEntry.owner),
         selectinload(VideoEntry.comments),
     )
+    if category_id is not None:
+        query = query.filter(VideoEntry.category_id == category_id)
     if search_query:
         pattern = f"%{search_query}%"
         query = query.filter(
@@ -886,7 +888,15 @@ def create_track_comment(track_id: int):
 @library_bp.route("/videos")
 def videos():
     search_query = (request.args.get("q") or "").strip()
-    videos_list = video_query(search_query).all()
+    selected_video_folder_id = None
+    try:
+        selected_video_folder = resolve_category(request.args.get("folder_id"))
+    except (TypeError, ValueError):
+        selected_video_folder = None
+    if selected_video_folder is not None:
+        selected_video_folder_id = selected_video_folder.id
+
+    videos_list = video_query(search_query, selected_video_folder_id).all()
     ensure_library_video_previews(videos_list)
     context = build_sidebar_context(
         active_nav="videos",
@@ -898,6 +908,7 @@ def videos():
         title=translate("module.videos"),
         videos=videos_list,
         result_count=len(videos_list),
+        selected_video_folder_id=selected_video_folder_id,
         **context,
     )
 
