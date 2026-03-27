@@ -471,9 +471,9 @@
     position: absolute;
     top: calc(100% + 10px);
     right: 0;
-    width: min(252px, calc(100vw - 20px));
-    min-width: 220px;
-    max-width: 272px;
+    width: min(196px, calc(100vw - 16px));
+    min-width: 188px;
+    max-width: 208px;
     display: grid;
     gap: 6px;
     max-height: min(72vh, 520px);
@@ -514,7 +514,7 @@
     cursor: pointer;
     transition: background var(--transition), transform var(--transition);
     text-align: left;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
 }
 
 .moment-menu__item:hover {
@@ -549,7 +549,20 @@
 }
 
 .moment-menu__field .folder-picker {
+    justify-items: start;
     max-height: 160px;
+    padding: 6px;
+    gap: 6px;
+}
+
+.moment-menu__field .folder-picker .folder-picker__option {
+    width: fit-content;
+    max-width: 100%;
+    padding: 6px 8px;
+}
+
+.moment-menu__field .folder-picker .folder-picker__body {
+    min-width: auto;
 }
 
 .moment-menu__item--share {
@@ -581,7 +594,7 @@
     gap: 10px;
     padding: 4px 8px;
     color: var(--accent-strong);
-    font-size: 0.82rem;
+    font-size: 0.9rem;
     font-weight: 700;
     cursor: pointer;
     list-style: none;
@@ -620,7 +633,7 @@
 }
 
 .moment-share-option .helper-text {
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     line-height: 1.38;
 }
 
@@ -668,7 +681,7 @@
     .moment-menu {
         top: calc(100% + 8px);
         right: -4px;
-        width: min(224px, calc(100vw - 14px));
+        width: min(196px, calc(100vw - 10px));
         min-width: 0;
         max-height: min(68vh, 400px);
         padding: 8px;
@@ -680,12 +693,12 @@
     .moment-menu__item:visited {
         padding: 7px 8px;
         border-radius: 9px;
-        font-size: 0.86rem;
+        font-size: 0.95rem;
     }
 
     .moment-menu__summary {
         padding: 4px 6px;
-        font-size: 0.78rem;
+        font-size: 0.9rem;
     }
 
     .moment-menu__section-body {
