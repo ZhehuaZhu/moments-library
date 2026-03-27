@@ -56,10 +56,10 @@
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
         "title actions"
-        ". stats";
-    align-items: flex-start;
-    gap: 10px 14px;
-    padding: 14px 16px;
+        "title stats";
+    align-items: start;
+    gap: 8px 12px;
+    padding: 16px 16px 14px;
     border-radius: 24px;
     background: rgba(255, 255, 255, 0.96);
     box-shadow: 0 10px 18px rgba(21, 33, 42, 0.05);
@@ -103,6 +103,9 @@
 
 .page-header.page-header--video-library > h1 {
     grid-area: title;
+    align-self: start;
+    font-size: clamp(1.7rem, 4vw, 2.2rem);
+    line-height: 0.98;
 }
 
 .music-library-page__actions {
@@ -219,22 +222,23 @@
 
 .video-library-page__actions {
     grid-area: actions;
-    display: grid;
+    display: inline-flex;
     gap: 8px;
-    flex-shrink: 0;
-    justify-items: end;
+    align-items: center;
+    justify-self: end;
+    align-self: start;
 }
 
 .video-library-page__add-button,
 .video-library-page__folder-button {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     padding: 0;
-    border-radius: 10px;
+    border-radius: 12px;
     border-color: rgba(34, 48, 60, 0.06);
     background: rgba(248, 250, 251, 0.92);
     box-shadow: none;
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     font-weight: 500;
     line-height: 1;
 }
@@ -271,6 +275,12 @@
     grid-area: stats;
     justify-self: end;
     justify-content: flex-end;
+    align-self: end;
+}
+
+.video-library-page__stats .stat-chip {
+    padding: 6px 10px;
+    font-size: 0.8rem;
 }
 
 .music-library-list {
