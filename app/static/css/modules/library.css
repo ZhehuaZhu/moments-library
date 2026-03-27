@@ -457,6 +457,10 @@
     gap: 16px;
 }
 
+.books-create-form__note {
+    margin-bottom: 0;
+}
+
 .books-create-grid {
     gap: 12px;
 }

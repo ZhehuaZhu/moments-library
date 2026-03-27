@@ -18,13 +18,12 @@ from ..services.books import (
     read_reader_sections,
     render_reader_section_markup,
 )
-from ..services.i18n import get_annotation_tag_choices, get_book_status_choices, translate
+from ..services.i18n import get_annotation_tag_choices, translate
 from ..services.library import (
     AUDIO_ALLOWED_EXTENSIONS,
     LYRICS_ALLOWED_EXTENSIONS,
     VIDEO_ALLOWED_EXTENSIONS,
     parse_lrc_text,
-    parse_optional_date,
     parse_optional_timestamp,
     read_text_asset,
 )
@@ -39,6 +38,9 @@ from ..services.video_previews import ensure_video_entry_preview
 from .main import build_sidebar_context
 
 library_bp = Blueprint("library", __name__)
+
+BOOK_READING_START_THRESHOLD_SECONDS = 5 * 60
+BOOK_FINISH_PROGRESS_THRESHOLD = 0.99
 
 
 def redirect_back(default_endpoint: str):
@@ -127,6 +129,93 @@ def serialize_reader_annotations(book: Book) -> list[dict[str, object]]:
         )
 
     return serialized
+
+
+def clamp_progress_ratio(value: float | None) -> float | None:
+    if value is None:
+        return None
+    return max(0.0, min(float(value), 1.0))
+
+
+def compute_book_completion_ratio(
+    book: Book,
+    upload_root: str,
+    *,
+    section_index: int | None = None,
+    scroll_ratio: float | None = None,
+) -> float | None:
+    ratio = clamp_progress_ratio(scroll_ratio)
+    if ratio is None:
+        return None
+
+    if book.reader_kind == "html":
+        sections = read_reader_sections(upload_root, book.reader_asset_path)
+        if not sections:
+            return None
+        active_index = parse_section_index(str(section_index or 0), len(sections))
+        return clamp_progress_ratio((active_index + ratio) / len(sections))
+
+    if book.reader_kind in {"text", "docx"}:
+        return ratio
+
+    return None
+
+
+def apply_book_reading_progress(
+    book: Book,
+    upload_root: str,
+    *,
+    section_index: int | None = None,
+    scroll_ratio: float | None = None,
+    session_key: str | None = None,
+    session_elapsed_seconds: int | None = None,
+) -> tuple[bool, float | None]:
+    changed = False
+    normalized_session_key = (session_key or "").strip() or None
+    normalized_elapsed_seconds = max(int(session_elapsed_seconds or 0), 0)
+
+    if normalized_session_key is not None:
+        if book.last_read_session_key == normalized_session_key:
+            delta_seconds = max(normalized_elapsed_seconds - (book.last_read_session_seconds or 0), 0)
+        else:
+            delta_seconds = normalized_elapsed_seconds
+            book.last_read_session_key = normalized_session_key
+            changed = True
+
+        if delta_seconds:
+            book.total_reading_seconds = max((book.total_reading_seconds or 0) + delta_seconds, 0)
+            changed = True
+
+        if (book.last_read_session_seconds or 0) != normalized_elapsed_seconds:
+            book.last_read_session_seconds = normalized_elapsed_seconds
+            changed = True
+
+    progress_ratio = compute_book_completion_ratio(
+        book,
+        upload_root,
+        section_index=section_index,
+        scroll_ratio=scroll_ratio,
+    )
+
+    if progress_ratio is not None and progress_ratio >= BOOK_FINISH_PROGRESS_THRESHOLD:
+        if book.started_at is None:
+            book.started_at = date.today()
+            changed = True
+        if book.status != "finished":
+            book.status = "finished"
+            changed = True
+        if book.finished_at is None:
+            book.finished_at = date.today()
+            changed = True
+    elif (book.total_reading_seconds or 0) >= BOOK_READING_START_THRESHOLD_SECONDS:
+        if book.started_at is None:
+            book.started_at = date.today()
+            changed = True
+        if book.status in {"want_to_read", "paused"}:
+            book.status = "reading"
+            changed = True
+
+    return changed, progress_ratio
 
 
 def book_query(search_query: str):
@@ -272,7 +361,6 @@ def books():
         title=translate("module.books"),
         body_class="books-page",
         books=books_list,
-        status_choices=get_book_status_choices(),
         result_count=len(books_list),
         reading_count=reading_count,
         finished_count=finished_count,
@@ -295,8 +383,6 @@ def create_book():
         return redirect_back("library.books")
 
     try:
-        started_at = parse_optional_date(request.form.get("started_at"))
-        finished_at = parse_optional_date(request.form.get("finished_at"))
         category = resolve_category(request.form.get("category_id"))
         assets = normalize_book_upload(
             file_storage,
@@ -304,7 +390,7 @@ def create_book():
             cover_file=request.files.get("cover_file"),
         )
     except (ValueError, TypeError):
-        flash("Book dates or collection selection are invalid.", "error")
+        flash("Book collection selection is invalid.", "error")
         return redirect_back("library.books")
     except UploadValidationError as error:
         flash(str(error), "error")
@@ -314,21 +400,14 @@ def create_book():
     reader_metadata = assets["reader"]
     cover_metadata = assets["cover"]
     identity = extract_book_identity(current_app.config["UPLOAD_FOLDER"], metadata)
-    status = (request.form.get("status") or "reading").strip() or "reading"
+    status = "want_to_read"
     title = (request.form.get("title") or "").strip() or (identity["title"] or "").strip()
     author_name = (request.form.get("author_name") or "").strip() or (
         (identity["author"] or "").strip() or None
     )
-    today = date.today()
-
     if not title:
         flash("Book title could not be inferred. Add a title and try again.", "error")
         return redirect_back("library.books")
-
-    if started_at is None and status in {"reading", "finished"}:
-        started_at = today
-    if finished_at is None and status == "finished":
-        finished_at = today
 
     book = Book(
         title=title,
@@ -336,8 +415,8 @@ def create_book():
         description=(request.form.get("description") or "").strip() or None,
         overall_review=(request.form.get("overall_review") or "").strip() or None,
         status=status,
-        started_at=started_at,
-        finished_at=finished_at,
+        started_at=None,
+        finished_at=None,
         category=category,
         owner_id=current_user.id,
         source_format=Path(metadata["original_name"]).suffix.lower().lstrip("."),
@@ -373,7 +452,6 @@ def book_detail(book_id: int):
         "book_detail.html",
         title=book.title,
         book=book,
-        status_choices=get_book_status_choices(),
         annotation_tag_choices=get_annotation_tag_choices(),
         **context,
     )
@@ -383,13 +461,6 @@ def book_detail(book_id: int):
 def book_reader(book_id: int):
     book = get_book_or_404(book_id)
     book_changed = ensure_book_reader_ready(book, current_app.config["UPLOAD_FOLDER"])
-    if current_user.is_authenticated and current_user.is_admin:
-        if book.started_at is None:
-            book.started_at = date.today()
-            book_changed = True
-        if book.status == "want_to_read":
-            book.status = "reading"
-            book_changed = True
     if book_changed:
         db.session.commit()
 
@@ -534,6 +605,12 @@ def save_book_reader_progress(book_id: int):
             minimum=0.0,
             maximum=1.0,
         )
+        session_elapsed_seconds = parse_optional_int(
+            str(payload.get("session_elapsed_seconds"))
+            if payload.get("session_elapsed_seconds") is not None
+            else None,
+            minimum=0,
+        )
     except (TypeError, ValueError):
         return jsonify({"error": "Reader progress is invalid."}), 400
 
@@ -547,6 +624,16 @@ def save_book_reader_progress(book_id: int):
 
     book.last_read_scroll_ratio = scroll_ratio
     book.last_read_at = datetime.utcnow()
+    book_changed, progress_ratio = apply_book_reading_progress(
+        book,
+        current_app.config["UPLOAD_FOLDER"],
+        section_index=section_index,
+        scroll_ratio=scroll_ratio,
+        session_key=(payload.get("session_key") or "").strip() or None,
+        session_elapsed_seconds=session_elapsed_seconds,
+    )
+    if book_changed:
+        book.updated_at = datetime.utcnow()
     db.session.commit()
 
     return jsonify(
@@ -554,6 +641,8 @@ def save_book_reader_progress(book_id: int):
             "ok": True,
             "section_index": book.last_read_section_index,
             "scroll_ratio": book.last_read_scroll_ratio,
+            "status": book.status,
+            "progress_ratio": progress_ratio,
         }
     )
 
@@ -625,7 +714,6 @@ def update_book(book_id: int):
     book = get_book_or_404(book_id)
     fallback_target = url_for("library.book_detail", book_id=book.id)
     title = (request.form.get("title") or "").strip() or book.title
-    status = (request.form.get("status") or book.status or "reading").strip() or "reading"
     cover_file = request.files.get("cover_file")
 
     if not title:
@@ -633,11 +721,9 @@ def update_book(book_id: int):
         return redirect(request.form.get("next") or request.referrer or fallback_target)
 
     try:
-        started_at = parse_optional_date(request.form.get("started_at"))
-        finished_at = parse_optional_date(request.form.get("finished_at"))
         category = resolve_category(request.form.get("category_id"))
     except (ValueError, TypeError):
-        flash("Book dates or collection selection are invalid.", "error")
+        flash("Book collection selection is invalid.", "error")
         return redirect(request.form.get("next") or request.referrer or fallback_target)
 
     new_cover_metadata = None
@@ -655,22 +741,13 @@ def update_book(book_id: int):
         flash(str(error), "error")
         return redirect(request.form.get("next") or request.referrer or fallback_target)
 
-    today = date.today()
-    if started_at is None and status in {"reading", "finished"}:
-        started_at = book.started_at or today
-    if finished_at is None and status == "finished":
-        finished_at = book.finished_at or today
-
     previous_cover_path = book.cover_relative_path if new_cover_metadata else None
 
     book.title = title
     book.author_name = (request.form.get("author_name") or "").strip() or None
     book.description = (request.form.get("description") or "").strip() or None
     book.overall_review = (request.form.get("overall_review") or "").strip() or None
-    book.status = status
     book.category = category
-    book.started_at = started_at
-    book.finished_at = finished_at
 
     if new_cover_metadata:
         book.cover_original_name = new_cover_metadata["original_name"]
