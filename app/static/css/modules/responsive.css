@@ -321,6 +321,21 @@
         border-radius: 24px;
     }
 
+    .app-body.books-page .app-header__quicknav {
+        width: 100%;
+        overflow: visible;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 8px;
+    }
+
+    .app-body.books-page .app-header__quicklink {
+        min-height: 32px;
+        padding-inline: 12px;
+        font-size: 0.8rem;
+        color: var(--muted);
+    }
+
     .app-body.books-page .bookshelf-header-bar {
         align-items: flex-start;
         gap: 12px;
@@ -352,66 +367,6 @@
         min-height: 38px;
         border-radius: 13px;
         font-size: 1.35rem;
-    }
-
-    .app-body.books-page .bookshelf-overview {
-        margin-top: 12px;
-        border-radius: 22px;
-    }
-
-    .app-body.books-page .bookshelf-overview__summary {
-        grid-template-columns: 54px minmax(0, 1fr) auto;
-        gap: 12px;
-        padding: 12px 14px;
-    }
-
-    .app-body.books-page .bookshelf-overview__thumb {
-        width: 54px;
-        height: 54px;
-        border-radius: 16px;
-    }
-
-    .app-body.books-page .bookshelf-overview__copy strong {
-        font-size: 0.94rem;
-    }
-
-    .app-body.books-page .bookshelf-overview__copy span {
-        font-size: 0.82rem;
-    }
-
-    .app-body.books-page .bookshelf-overview__toggle {
-        min-height: 32px;
-        padding: 0 10px;
-        font-size: 0.76rem;
-    }
-
-    .app-body.books-page .bookshelf-overview__panel {
-        gap: 12px;
-        padding: 0 14px 14px;
-    }
-
-    .app-body.books-page .bookshelf-overview__stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-    }
-
-    .app-body.books-page .bookshelf-overview__stat {
-        padding: 11px 12px;
-        border-radius: 16px;
-    }
-
-    .app-body.books-page .bookshelf-overview__stat span {
-        font-size: 0.7rem;
-    }
-
-    .app-body.books-page .bookshelf-overview__stat strong {
-        font-size: 1rem;
-    }
-
-    .app-body.books-page .bookshelf-overview__insights p {
-        padding: 11px 12px;
-        border-radius: 16px;
-        font-size: 0.82rem;
     }
 
     .sidebar {
@@ -1877,6 +1832,16 @@
 }
 
 @media (max-width: 480px) {
+    .app-body.books-page .app-header__quicknav {
+        gap: 6px;
+    }
+
+    .app-body.books-page .app-header__quicklink {
+        min-height: 30px;
+        padding-inline: 10px;
+        font-size: 0.76rem;
+    }
+
     .app-body.books-page .page-header--bookshelf {
         padding: 14px;
         border-radius: 20px;
@@ -1905,37 +1870,6 @@
         min-height: 34px;
         border-radius: 12px;
         font-size: 1.2rem;
-    }
-
-    .app-body.books-page .bookshelf-overview__summary {
-        grid-template-columns: 48px minmax(0, 1fr);
-        gap: 10px;
-    }
-
-    .app-body.books-page .bookshelf-overview__thumb {
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
-    }
-
-    .app-body.books-page .bookshelf-overview__toggle {
-        display: none;
-    }
-
-    .app-body.books-page .bookshelf-overview__copy strong {
-        font-size: 0.9rem;
-    }
-
-    .app-body.books-page .bookshelf-overview__copy span {
-        font-size: 0.78rem;
-    }
-
-    .app-body.books-page .bookshelf-overview__stats {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .app-body.books-page .bookshelf-overview__insights p {
-        font-size: 0.78rem;
     }
 }
 
