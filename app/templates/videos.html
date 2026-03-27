@@ -4,34 +4,36 @@
 <section class="video-library-page">
     <section class="page-header page-header--video-library">
         <h1>{{ module_labels.videos }}</h1>
-        {% if can_manage %}
-            <div class="video-library-page__actions">
-                <button
-                    type="button"
-                    class="icon-button icon-button--ghost video-library-page__add-button"
-                    data-open-folder-panel="video-create"
-                    aria-haspopup="dialog"
-                    aria-controls="video-create-panel"
-                    aria-expanded="false"
-                    aria-label="{{ t('videos.add_video') }}"
-                >
-                    +
-                </button>
-                <button
-                    type="button"
-                    class="icon-button icon-button--ghost video-library-page__folder-button"
-                    data-open-folder-panel="video-folders"
-                    aria-haspopup="dialog"
-                    aria-controls="video-folders-panel"
-                    aria-expanded="false"
-                    aria-label="{{ t('folders.collections') }}"
-                >
-                    <span class="video-library-page__folder-glyph" aria-hidden="true"></span>
-                </button>
+        <div class="video-library-page__aside">
+            {% if can_manage %}
+                <div class="video-library-page__actions">
+                    <button
+                        type="button"
+                        class="icon-button icon-button--ghost video-library-page__add-button"
+                        data-open-folder-panel="video-create"
+                        aria-haspopup="dialog"
+                        aria-controls="video-create-panel"
+                        aria-expanded="false"
+                        aria-label="{{ t('videos.add_video') }}"
+                    >
+                        +
+                    </button>
+                    <button
+                        type="button"
+                        class="icon-button icon-button--ghost video-library-page__folder-button"
+                        data-open-folder-panel="video-folders"
+                        aria-haspopup="dialog"
+                        aria-controls="video-folders-panel"
+                        aria-expanded="false"
+                        aria-label="{{ t('folders.collections') }}"
+                    >
+                        <span class="video-library-page__folder-glyph" aria-hidden="true"></span>
+                    </button>
+                </div>
+            {% endif %}
+            <div class="page-header__stats video-library-page__stats">
+                <span class="stat-chip">{{ t('counts.videos', count=result_count) }}</span>
             </div>
-        {% endif %}
-        <div class="page-header__stats video-library-page__stats">
-            <span class="stat-chip">{{ t('counts.videos', count=result_count) }}</span>
         </div>
     </section>
 
