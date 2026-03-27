@@ -214,8 +214,14 @@
     font-weight: 600;
 }
 
-.video-library-page__add-button {
+.video-library-page__actions {
     justify-self: end;
+    display: grid;
+    gap: 8px;
+}
+
+.video-library-page__add-button,
+.video-library-page__folder-button {
     width: 32px;
     height: 32px;
     padding: 0;
@@ -226,6 +232,34 @@
     font-size: 1.2rem;
     font-weight: 500;
     line-height: 1;
+}
+
+.video-library-page__folder-button {
+    position: relative;
+    font-size: 0;
+}
+
+.video-library-page__folder-glyph {
+    position: relative;
+    width: 16px;
+    height: 11px;
+    display: inline-block;
+    border: 1.8px solid currentColor;
+    border-radius: 3px;
+    color: var(--accent-strong);
+}
+
+.video-library-page__folder-glyph::before {
+    content: "";
+    position: absolute;
+    top: -4px;
+    left: 1px;
+    width: 7px;
+    height: 4px;
+    border: 1.8px solid currentColor;
+    border-bottom: 0;
+    border-radius: 3px 3px 0 0;
+    background: rgba(248, 250, 251, 0.92);
 }
 
 .music-library-list {

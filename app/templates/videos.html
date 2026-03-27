@@ -9,17 +9,30 @@
                 <p class="video-library-page__count">{{ t('counts.videos', count=result_count) }}</p>
             </div>
             {% if can_manage %}
-                <button
-                    type="button"
-                    class="icon-button icon-button--ghost video-library-page__add-button"
-                    data-open-folder-panel="video-create"
-                    aria-haspopup="dialog"
-                    aria-controls="video-create-panel"
-                    aria-expanded="false"
-                    aria-label="{{ t('videos.add_video') }}"
-                >
-                    +
-                </button>
+                <div class="video-library-page__actions">
+                    <button
+                        type="button"
+                        class="icon-button icon-button--ghost video-library-page__add-button"
+                        data-open-folder-panel="video-create"
+                        aria-haspopup="dialog"
+                        aria-controls="video-create-panel"
+                        aria-expanded="false"
+                        aria-label="{{ t('videos.add_video') }}"
+                    >
+                        +
+                    </button>
+                    <button
+                        type="button"
+                        class="icon-button icon-button--ghost video-library-page__folder-button"
+                        data-open-folder-panel="create"
+                        aria-haspopup="dialog"
+                        aria-controls="folder-create-panel"
+                        aria-expanded="false"
+                        aria-label="{{ t('folders.create_folder') }}"
+                    >
+                        <span class="video-library-page__folder-glyph" aria-hidden="true"></span>
+                    </button>
+                </div>
             {% endif %}
         </div>
     </section>
