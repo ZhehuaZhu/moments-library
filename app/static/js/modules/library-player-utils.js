@@ -364,6 +364,7 @@ export function renderPlayerQueue(queuePanel, queue, currentIndex, handlers = {}
         const item = document.createElement("div");
         item.className = `audio-player__queue-item${index === currentIndex ? " is-active" : ""}`;
         item.dataset.playerQueueItem = "true";
+        item.dataset.playerQueueIndex = String(index);
 
         const main = document.createElement("div");
         main.className = "audio-player__queue-main";
@@ -384,21 +385,12 @@ export function renderPlayerQueue(queuePanel, queue, currentIndex, handlers = {}
         const actions = document.createElement("div");
         actions.className = "audio-player__queue-actions";
 
-        const moveUp = document.createElement("button");
-        moveUp.type = "button";
-        moveUp.className = "icon-button icon-button--ghost audio-player__queue-action audio-player__queue-action--move";
-        moveUp.innerHTML = '<span aria-hidden="true">&#8593;</span>';
-        moveUp.disabled = index === 0;
-        moveUp.setAttribute("aria-label", t("player.queue_move_up", {}, "Move track earlier"));
-        moveUp.addEventListener("click", () => handlers.onMove?.(index, -1));
-
-        const moveDown = document.createElement("button");
-        moveDown.type = "button";
-        moveDown.className = "icon-button icon-button--ghost audio-player__queue-action audio-player__queue-action--move";
-        moveDown.innerHTML = '<span aria-hidden="true">&#8595;</span>';
-        moveDown.disabled = index === queue.length - 1;
-        moveDown.setAttribute("aria-label", t("player.queue_move_down", {}, "Move track later"));
-        moveDown.addEventListener("click", () => handlers.onMove?.(index, 1));
+        const dragHandle = document.createElement("button");
+        dragHandle.type = "button";
+        dragHandle.className = "icon-button icon-button--ghost audio-player__queue-action audio-player__queue-action--drag";
+        dragHandle.innerHTML = '<span aria-hidden="true">&#8942;&#8942;</span>';
+        dragHandle.setAttribute("aria-label", t("player.queue_drag_handle", {}, "Drag to reorder track"));
+        dragHandle.addEventListener("pointerdown", (event) => handlers.onDragStart?.(event, index));
 
         const remove = document.createElement("button");
         remove.type = "button";
@@ -407,7 +399,7 @@ export function renderPlayerQueue(queuePanel, queue, currentIndex, handlers = {}
         remove.setAttribute("aria-label", t("player.remove_from_queue", {}, "Remove track from queue"));
         remove.addEventListener("click", () => handlers.onRemove?.(index));
 
-        actions.append(moveUp, moveDown, remove);
+        actions.append(dragHandle, remove);
         item.append(main, actions);
         queuePanel.append(item);
     });

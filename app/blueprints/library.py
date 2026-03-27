@@ -54,6 +54,14 @@ def resolve_category(category_raw: str | None) -> Category | None:
     return db.session.get(Category, int(category_raw))
 
 
+def normalize_track_audio_mime(metadata: dict[str, object]) -> dict[str, object]:
+    normalized = dict(metadata)
+    extension = Path(str(normalized.get("original_name") or "")).suffix.lower()
+    if extension == ".mp4":
+        normalized["mime_type"] = "audio/mp4"
+    return normalized
+
+
 def parse_section_index(raw_value: str | None, total: int, *, one_based: bool = False) -> int:
     if total <= 0:
         return 0
@@ -806,6 +814,7 @@ def create_track():
             current_app.config["UPLOAD_FOLDER"],
             allowed_extensions=AUDIO_ALLOWED_EXTENSIONS,
         )
+        metadata = normalize_track_audio_mime(metadata)
         lyrics_metadata = None
         if lyrics_file is not None and lyrics_file.filename:
             lyrics_metadata = save_upload(
