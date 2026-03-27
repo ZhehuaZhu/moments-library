@@ -20,6 +20,18 @@ export function createComposerFileController({
     let selectedFiles = [];
     let dragIndex = null;
     let pointerSortState = null;
+    let suppressPreviewClick = false;
+
+    function triggerPicker(input) {
+        if (!(input instanceof HTMLInputElement)) {
+            return;
+        }
+        if (typeof input.showPicker === "function") {
+            input.showPicker();
+            return;
+        }
+        input.click();
+    }
 
     function syncInputFiles() {
         updateFileSummary(modal, selectedFiles.length);
@@ -51,18 +63,50 @@ export function createComposerFileController({
         onFilesChange();
     }
 
+    function startPointerSort(event, article, index, { immediate = false } = {}) {
+        if (!(event instanceof PointerEvent) || event.button !== 0) {
+            return;
+        }
+
+        const pointerId = event.pointerId;
+        const state = {
+            pointerId,
+            article,
+            index,
+            targetIndex: index,
+            startX: event.clientX,
+            startY: event.clientY,
+            active: false,
+            activationTimer: null,
+        };
+
+        const activate = () => {
+            if (pointerSortState !== state) {
+                return;
+            }
+            state.active = true;
+            article.classList.add("is-pointer-dragging");
+            previewList?.classList.add("is-sorting");
+            suppressPreviewClick = true;
+        };
+
+        pointerSortState = state;
+        if (immediate) {
+            activate();
+        } else {
+            state.activationTimer = window.setTimeout(activate, 180);
+        }
+
+        event.currentTarget?.setPointerCapture?.(pointerId);
+        event.preventDefault();
+    }
+
     function renderPreviewList() {
         if (!previewSection || !previewList) {
             return;
         }
 
         previewList.replaceChildren();
-
-        if (!selectedFiles.length) {
-            previewSection.hidden = true;
-            return;
-        }
-
         previewSection.hidden = false;
 
         selectedFiles.forEach((entry, index) => {
@@ -85,6 +129,17 @@ export function createComposerFileController({
                 `${t("composer.preview", {}, "Preview")} ${entry.file.name}`,
             );
             previewButton.previewPayload = { file: entry.file };
+            previewButton.addEventListener("pointerdown", (event) => {
+                startPointerSort(event, article, index);
+            }, { signal });
+            previewButton.addEventListener("click", (event) => {
+                if (!suppressPreviewClick) {
+                    return;
+                }
+                event.preventDefault();
+                event.stopPropagation();
+                suppressPreviewClick = false;
+            }, { signal, capture: true });
 
             if (entry.kind === "image") {
                 const image = document.createElement("img");
@@ -171,36 +226,7 @@ export function createComposerFileController({
                 onFilesChange();
             }, { signal });
 
-            const orderBadge = document.createElement("span");
-            orderBadge.className = "composer-file-card__order";
-            orderBadge.textContent = String(index + 1);
-
-            const dragHandle = document.createElement("button");
-            dragHandle.type = "button";
-            dragHandle.className = "composer-file-card__drag";
-            dragHandle.setAttribute("aria-label", t("composer.reorder", {}, "Drag to reorder"));
-            dragHandle.innerHTML = "&#8942;&#8942;";
-
-            dragHandle.addEventListener("pointerdown", (event) => {
-                if (!(event instanceof PointerEvent) || event.button !== 0) {
-                    return;
-                }
-
-                pointerSortState = {
-                    pointerId: event.pointerId,
-                    article,
-                    index,
-                    targetIndex: index,
-                    startX: event.clientX,
-                    startY: event.clientY,
-                    active: false,
-                };
-
-                dragHandle.setPointerCapture?.(event.pointerId);
-                event.preventDefault();
-            }, { signal });
-
-            article.append(previewButton, orderBadge, remove, dragHandle);
+            article.append(previewButton, remove);
 
             article.addEventListener("dragstart", () => {
                 dragIndex = index;
@@ -235,6 +261,44 @@ export function createComposerFileController({
 
             previewList.append(article);
         });
+
+        const buildActionTile = ({ className, label, glyph, onClick }) => {
+            const tile = document.createElement("button");
+            tile.type = "button";
+            tile.className = `composer-file-card composer-file-card--add ${className}`;
+            tile.setAttribute("aria-label", label);
+
+            const glyphNode = document.createElement("span");
+            glyphNode.className = "composer-file-card__add-glyph";
+            glyphNode.textContent = glyph;
+
+            const labelNode = document.createElement("span");
+            labelNode.className = "composer-file-card__add-label";
+            labelNode.textContent = label;
+
+            tile.append(glyphNode, labelNode);
+            tile.addEventListener("click", onClick, { signal });
+            return tile;
+        };
+
+        if (selectedFiles.length < 9) {
+            previewList.append(
+                buildActionTile({
+                    className: "composer-file-card--library",
+                    label: t("composer.choose_media", {}, "Choose Existing Media"),
+                    glyph: "+",
+                    onClick: () => triggerPicker(libraryInput),
+                }),
+            );
+            previewList.append(
+                buildActionTile({
+                    className: "composer-file-card--camera",
+                    label: t("composer.open_camera", {}, "Take Photo / Video"),
+                    glyph: "\ud83d\udcf7",
+                    onClick: () => triggerPicker(cameraInput),
+                }),
+            );
+        }
     }
 
     function clearPointerSortState() {
@@ -246,6 +310,9 @@ export function createComposerFileController({
             pointerSortState.article.classList.remove("is-pointer-dragging");
             pointerSortState.article.style.removeProperty("transform");
             pointerSortState.article.style.removeProperty("z-index");
+        }
+        if (pointerSortState?.activationTimer) {
+            window.clearTimeout(pointerSortState.activationTimer);
         }
         pointerSortState = null;
     }
@@ -277,9 +344,12 @@ export function createComposerFileController({
         const deltaY = event.clientY - pointerSortState.startY;
 
         if (!pointerSortState.active && Math.hypot(deltaX, deltaY) > 6) {
-            pointerSortState.active = true;
-            pointerSortState.article.classList.add("is-pointer-dragging");
-            previewList?.classList.add("is-sorting");
+            if (pointerSortState.activationTimer) {
+                window.clearTimeout(pointerSortState.activationTimer);
+                pointerSortState.activationTimer = null;
+            }
+            clearPointerSortState();
+            return;
         }
 
         if (!pointerSortState.active) {
@@ -316,6 +386,7 @@ export function createComposerFileController({
         clearPointerSortState();
 
         if (!active || targetIndex === index) {
+            suppressPreviewClick = false;
             return;
         }
 
@@ -323,6 +394,9 @@ export function createComposerFileController({
         syncInputFiles();
         renderPreviewList();
         onFilesChange();
+        window.setTimeout(() => {
+            suppressPreviewClick = false;
+        }, 0);
     };
 
     document.addEventListener("pointerup", finishPointerSort, { signal });
