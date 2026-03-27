@@ -1411,12 +1411,62 @@
 
 .book-detail-overview {
     display: grid;
-    grid-template-columns: 180px minmax(0, 1fr);
-    gap: 22px;
+    grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+    gap: 28px;
     align-items: start;
 }
 
+.detail-card--book-detail {
+    display: grid;
+    gap: 24px;
+}
+
+.book-detail-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.book-detail-hero__copy {
+    min-width: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.book-detail-hero__copy .eyebrow {
+    margin-bottom: 0;
+}
+
+.book-detail-hero__copy h1 {
+    margin: 0;
+    font-size: clamp(1.85rem, 3vw, 2.65rem);
+    line-height: 1.02;
+    letter-spacing: -0.05em;
+}
+
+.book-detail-hero__subtitle {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.98rem;
+}
+
+.book-detail-hero__meta {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.book-detail-overview__cover-frame {
+    display: flex;
+    justify-content: center;
+}
+
 .book-detail-overview__cover {
+    width: min(100%, 220px);
     overflow: hidden;
     border-radius: 24px;
     aspect-ratio: 0.72;
@@ -1433,6 +1483,7 @@
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    align-items: center;
 }
 
 .folder-panel__header-actions {
@@ -2961,6 +3012,15 @@
     .books-library-page__toolbar {
         justify-content: flex-start;
     }
+
+    .library-detail-grid--book {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .library-detail-grid--book .book-detail-overview {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 20px;
+    }
 }
 
 @media (max-width: 720px) {
@@ -3096,6 +3156,22 @@
         width: 34px;
         height: 34px;
         border-radius: 10px;
+    }
+
+    .library-detail-grid--book .detail-card--book-detail {
+        gap: 20px;
+    }
+
+    .library-detail-grid--book .book-detail-hero {
+        gap: 14px;
+    }
+
+    .library-detail-grid--book .book-detail-hero__copy h1 {
+        font-size: clamp(1.5rem, 6vw, 2rem);
+    }
+
+    .library-detail-grid--book .meta-row {
+        align-items: flex-start;
     }
 }
 
@@ -3260,5 +3336,24 @@
 
     .books-library-page__create-button span {
         font-size: 1.08rem;
+    }
+
+    .library-detail-grid--book .book-detail-hero__meta {
+        gap: 6px;
+    }
+
+    .library-detail-grid--book .book-detail-overview {
+        gap: 16px;
+    }
+
+    .library-detail-grid--book .meta-row {
+        flex-direction: column;
+        gap: 6px;
+        padding: 9px 0;
+    }
+
+    .library-detail-grid--book .books-detail-actions .button {
+        flex: 1 1 100%;
+        justify-content: center;
     }
 }

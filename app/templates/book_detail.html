@@ -2,58 +2,34 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="page-header page-header--shelf">
-    <div>
-        <p class="eyebrow">{{ module_labels.books }}</p>
-        <h1>{{ book.title }}</h1>
-    </div>
-    <div class="page-header__stats">
-        <span class="stat-chip">{{ book_status_label(book.status) }}</span>
-        <span class="stat-chip">{{ t('common.imported') }} {{ book.created_at|datetimeformat }}</span>
-        {% if book.finished_at %}
-            <span class="stat-chip stat-chip--accent">{{ t('common.finished') }} {{ book.finished_at|dateformat }}</span>
-        {% endif %}
-        {% if can_manage %}
-            <button
-                type="button"
-                class="button button--subtle button--compact"
-                data-open-folder-panel="create"
-                aria-haspopup="dialog"
-                aria-controls="folder-create-panel"
-                aria-expanded="false"
-            >
-                {{ t('books.new_collection') }}
-            </button>
-            <button
-                type="button"
-                class="button button--ghost button--compact"
-                data-open-folder-panel="book-edit"
-                aria-haspopup="dialog"
-                aria-controls="book-edit-panel"
-                aria-expanded="false"
-            >
-                {{ t('common.edit') }}
-            </button>
-        {% endif %}
-    </div>
-</section>
-
-<section class="library-detail-grid">
-    <article class="detail-card">
-        <div class="section-title-row section-title-row--compact">
-            <div><h2>{{ t('common.book') }}</h2></div>
-            <a class="button" href="{{ url_for('library.book_reader', book_id=book.id) }}">{{ t('common.read') }}</a>
+<section class="library-detail-grid library-detail-grid--book">
+    <article class="detail-card detail-card--book-detail">
+        <div class="book-detail-hero">
+            <div class="book-detail-hero__copy">
+                <p class="eyebrow">{{ module_labels.books }}</p>
+                <h1>{{ book.title }}</h1>
+                <p class="book-detail-hero__subtitle">{{ book.author_name or t('books.personal_archive') }}</p>
+            </div>
+            <div class="book-detail-hero__meta">
+                <span class="stat-chip">{{ book_status_label(book.status) }}</span>
+                <span class="stat-chip">{{ book.source_format|upper }}</span>
+                {% if book.category %}
+                    <span class="stat-chip">{{ t('common.collection') }} / {{ book.category.name }}</span>
+                {% endif %}
+            </div>
         </div>
         <div class="book-detail-overview">
-            <div class="book-detail-overview__cover">
-                {% if book.cover_relative_path %}
-                    <img src="{{ url_for('static', filename=book.cover_relative_path) }}" alt="{{ book.title }} cover">
-                {% else %}
-                    <div class="bookshelf-card__placeholder">
-                        <span>{{ book.author_name or book.source_format|upper }}</span>
-                        <strong>{{ book.title }}</strong>
-                    </div>
-                {% endif %}
+            <div class="book-detail-overview__cover-frame">
+                <div class="book-detail-overview__cover">
+                    {% if book.cover_relative_path %}
+                        <img src="{{ url_for('static', filename=book.cover_relative_path) }}" alt="{{ book.title }} cover">
+                    {% else %}
+                        <div class="bookshelf-card__placeholder">
+                            <span>{{ book.author_name or book.source_format|upper }}</span>
+                            <strong>{{ book.title }}</strong>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
             <div class="meta-stack">
                 <div class="meta-row"><strong>{{ t('common.author') }}</strong><span>{{ book.author_name or t('books.personal_archive') }}</span></div>
@@ -70,6 +46,18 @@
         </div>
         <div class="books-detail-actions">
             <a class="button" href="{{ url_for('library.book_reader', book_id=book.id) }}">{{ t('common.read') }}</a>
+            {% if can_manage %}
+                <button
+                    type="button"
+                    class="button button--subtle"
+                    data-open-folder-panel="book-edit"
+                    aria-haspopup="dialog"
+                    aria-controls="book-edit-panel"
+                    aria-expanded="false"
+                >
+                    {{ t('common.edit') }}
+                </button>
+            {% endif %}
             <a class="button button--ghost" href="{{ url_for('static', filename=book.relative_path) }}" target="_blank" rel="noopener">{{ t('common.open_source_file') }}</a>
         </div>
     </article>
