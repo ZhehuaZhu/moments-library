@@ -307,7 +307,9 @@
     }
 
     .page-header--atlas {
+        flex-direction: row;
         align-items: center;
+        justify-content: space-between;
     }
 
     .page-header--atlas .page-header__stats {
@@ -318,6 +320,12 @@
         padding-inline: 0;
         padding-bottom: 0;
         justify-content: flex-end;
+    }
+
+    .page-header--atlas h1 {
+        flex: 0 1 auto;
+        width: auto;
+        text-align: left;
     }
 
     .button,
