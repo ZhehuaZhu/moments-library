@@ -7,7 +7,7 @@ from pathlib import Path
 from .storage import resolve_storage_path
 
 BOOK_ALLOWED_EXTENSIONS = {".pdf", ".doc", ".docx", ".txt", ".md", ".epub", ".mobi"}
-AUDIO_ALLOWED_EXTENSIONS = {".mp3", ".m4a", ".wav", ".ogg", ".webm", ".flac"}
+AUDIO_ALLOWED_EXTENSIONS = {".mp3", ".m4a", ".wav", ".ogg", ".webm", ".flac", ".mp4"}
 LYRICS_ALLOWED_EXTENSIONS = {".lrc"}
 VIDEO_ALLOWED_EXTENSIONS = {".mp4", ".mov", ".webm"}
 

@@ -112,7 +112,7 @@
 
 {% if can_manage %}
     <section
-        class="folder-panel folder-panel--create"
+        class="folder-panel folder-panel--create folder-panel--track-create"
         id="track-create-panel"
         data-folder-panel="track-create"
         role="dialog"
@@ -120,34 +120,39 @@
         aria-labelledby="track-create-title"
         hidden
     >
-        <div class="folder-panel__header">
-            <div>
+        <div class="folder-panel__header folder-panel__header--track-create">
+            <div class="tracks-create-header">
                 <p class="eyebrow">{{ module_labels.music }}</p>
                 <h2 id="track-create-title">{{ t('music.add_track') }}</h2>
             </div>
-            <button type="button" class="icon-button icon-button--ghost" data-close-folder-panel aria-label="{{ t('music.add_track') }}">
+            <button
+                type="button"
+                class="icon-button icon-button--ghost tracks-create-close"
+                data-close-folder-panel
+                aria-label="{{ t('common.close') }}"
+            >
                 &times;
             </button>
         </div>
 
         <div class="folder-panel__body">
-            <form action="{{ url_for('library.create_track') }}" method="post" enctype="multipart/form-data" class="stack-form">
+            <form action="{{ url_for('library.create_track') }}" method="post" enctype="multipart/form-data" class="stack-form tracks-create-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="next" value="{{ request.full_path.rstrip('?') }}">
-                <div class="composer-grid">
-                    <label class="field">
+                <div class="tracks-create-grid tracks-create-grid--identity">
+                    <label class="field tracks-create-field tracks-create-field--title">
                         <span>{{ t('common.title') }}</span>
                         <input type="text" name="title" class="input" required>
                     </label>
-                    <label class="field">
+                    <label class="field tracks-create-field">
                         <span>{{ t('music.artist_alias') }}</span>
                         <input type="text" name="artist_name" class="input" placeholder="{{ t('common.optional') }}">
                     </label>
-                    <label class="field">
+                    <label class="field tracks-create-field">
                         <span>{{ t('music.mood') }}</span>
                         <input type="text" name="mood" class="input" placeholder="{{ t('music.mood_placeholder') }}">
                     </label>
-                    <label class="field">
+                    <label class="field tracks-create-field">
                         <span>{{ t('common.collection') }}</span>
                         <select name="category_id" class="input">
                             <option value="">{{ t('common.no_collection') }}</option>
@@ -157,26 +162,30 @@
                         </select>
                     </label>
                 </div>
-                <label class="field">
-                    <span>{{ t('music.audio_file') }}</span>
-                    <input type="file" name="audio_file" class="input input--file" accept=".mp3,.m4a,.wav,.ogg,.webm,.flac" required>
-                </label>
-                <label class="field">
-                    <span>{{ t('music.cover_optional') }}</span>
-                    <input type="file" name="cover_file" class="input input--file" accept=".jpg,.jpeg,.png,.gif,.webp">
-                </label>
-                <label class="field">
-                    <span>{{ t('music.lyrics_optional') }}</span>
-                    <input type="file" name="lyrics_file" class="input input--file" accept=".lrc">
-                </label>
-                <label class="field">
-                    <span>{{ t('common.description') }}</span>
-                    <textarea name="description" class="input textarea" rows="4"></textarea>
-                </label>
-                <label class="field">
-                    <span>{{ t('music.overall_review') }}</span>
-                    <textarea name="overall_review" class="input textarea" rows="5"></textarea>
-                </label>
+                <div class="tracks-create-grid tracks-create-grid--files">
+                    <label class="field tracks-create-field tracks-create-field--audio">
+                        <span>{{ t('music.audio_file') }}</span>
+                        <input type="file" name="audio_file" class="input input--file" accept=".mp3,.m4a,.wav,.ogg,.webm,.flac,.mp4" required>
+                    </label>
+                    <label class="field tracks-create-field">
+                        <span>{{ t('music.cover_optional') }}</span>
+                        <input type="file" name="cover_file" class="input input--file" accept=".jpg,.jpeg,.png,.gif,.webp">
+                    </label>
+                    <label class="field tracks-create-field">
+                        <span>{{ t('music.lyrics_optional') }}</span>
+                        <input type="file" name="lyrics_file" class="input input--file" accept=".lrc">
+                    </label>
+                </div>
+                <div class="tracks-create-grid tracks-create-grid--notes">
+                    <label class="field tracks-create-field">
+                        <span>{{ t('common.description') }}</span>
+                        <textarea name="description" class="input textarea" rows="4"></textarea>
+                    </label>
+                    <label class="field tracks-create-field">
+                        <span>{{ t('music.overall_review') }}</span>
+                        <textarea name="overall_review" class="input textarea" rows="5"></textarea>
+                    </label>
+                </div>
                 <div class="folder-panel__actions">
                     <button type="button" class="button button--subtle" data-close-folder-panel>{{ t('common.cancel') }}</button>
                     <button type="submit" class="button button--ghost">{{ t('music.save_track') }}</button>

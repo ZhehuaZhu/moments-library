@@ -854,6 +854,28 @@ def test_admin_can_create_flac_track(admin_client, app):
         assert track.original_name.endswith(".flac")
 
 
+def test_admin_can_create_audio_only_mp4_track(admin_client, app):
+    response = admin_client.post(
+        "/music",
+        data={
+            "title": "Container Audio",
+            "artist_name": "Zhehua",
+            "audio_file": (BytesIO(b"fake audio in mp4"), "container-audio.mp4", "video/mp4"),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert b"Track added to the music library." in response.data
+    assert b"Container Audio" in response.data
+
+    with app.app_context():
+        track = Track.query.filter_by(title="Container Audio").one()
+        assert track.original_name.endswith(".mp4")
+        assert track.mime_type == "audio/mp4"
+
+
 def test_admin_can_edit_track_metadata_and_cover(admin_client, app):
     create_response = admin_client.post(
         "/music",

@@ -1793,6 +1793,7 @@ function initRemotePlayerShell(shell, elements) {
     let customPosition = readStoredJson(playerDockPositionKey);
     let dragState = null;
     let resizeState = null;
+    let queueDragState = null;
     let suppressBubbleClick = false;
     let suppressPanelClick = false;
     let lastPersistAt = 0;
@@ -2040,6 +2041,108 @@ function initRemotePlayerShell(shell, elements) {
         customPosition = nextPosition;
     };
 
+    const syncQueueDragPreview = () => {
+        queuePanel.querySelectorAll("[data-player-queue-item]").forEach((item) => {
+            if (!(item instanceof HTMLElement)) {
+                return;
+            }
+
+            const itemIndex = Number(item.dataset.playerQueueIndex);
+            item.classList.toggle("is-drag-source", itemIndex === queueDragState?.fromIndex);
+            item.classList.toggle(
+                "is-drop-target",
+                itemIndex === queueDragState?.targetIndex && itemIndex !== queueDragState?.fromIndex
+            );
+        });
+    };
+
+    const clearQueueDragState = () => {
+        queueDragState = null;
+        queuePanel.classList.remove("is-queue-dragging");
+        queuePanel.querySelectorAll(".is-drag-source, .is-drop-target").forEach((node) => {
+            node.classList.remove("is-drag-source", "is-drop-target");
+        });
+    };
+
+    const reorderTrackInQueue = (fromIndex, toIndex) => {
+        if (
+            fromIndex < 0 ||
+            toIndex < 0 ||
+            fromIndex >= playerState.queue.length ||
+            toIndex >= playerState.queue.length ||
+            fromIndex === toIndex
+        ) {
+            return;
+        }
+
+        const nextQueue = [...playerState.queue];
+        const [movedTrack] = nextQueue.splice(fromIndex, 1);
+        nextQueue.splice(toIndex, 0, movedTrack);
+
+        let nextCurrentIndex = playerState.currentIndex;
+        if (playerState.currentIndex === fromIndex) {
+            nextCurrentIndex = toIndex;
+        } else if (
+            fromIndex < toIndex &&
+            playerState.currentIndex > fromIndex &&
+            playerState.currentIndex <= toIndex
+        ) {
+            nextCurrentIndex -= 1;
+        } else if (
+            fromIndex > toIndex &&
+            playerState.currentIndex >= toIndex &&
+            playerState.currentIndex < fromIndex
+        ) {
+            nextCurrentIndex += 1;
+        }
+
+        playerState = writeStoredPlayerState(
+            {
+                ...playerState,
+                queue: nextQueue,
+                currentIndex: nextCurrentIndex,
+            },
+            pageCatalog
+        );
+        renderShell();
+    };
+
+    const updateQueueDragTarget = (clientX, clientY) => {
+        if (!queueDragState) {
+            return;
+        }
+
+        const target = document.elementFromPoint(clientX, clientY)?.closest("[data-player-queue-item]");
+        if (!(target instanceof HTMLElement) || !queuePanel.contains(target)) {
+            return;
+        }
+
+        const targetIndex = Number(target.dataset.playerQueueIndex);
+        if (!Number.isInteger(targetIndex)) {
+            return;
+        }
+
+        queueDragState.targetIndex = targetIndex;
+        syncQueueDragPreview();
+    };
+
+    const beginQueueDrag = (event, index) => {
+        if (!(event instanceof PointerEvent) || event.button !== 0 || !queueOpen) {
+            return;
+        }
+
+        queueDragState = {
+            pointerId: event.pointerId,
+            fromIndex: index,
+            targetIndex: index,
+        };
+        queuePanel.classList.add("is-queue-dragging");
+        syncQueueDragPreview();
+        event.currentTarget?.setPointerCapture?.(event.pointerId);
+        event.preventDefault();
+        event.stopPropagation();
+    };
+
     const applyCollapsedState = () => {
         shell.classList.toggle("is-audio-player-collapsed", isCollapsed);
         bubble.setAttribute("aria-expanded", String(!isCollapsed));
@@ -2053,6 +2156,7 @@ function initRemotePlayerShell(shell, elements) {
         if (isCollapsed) {
             queueOpen = false;
             queuePanel.hidden = true;
+            clearQueueDragState();
             shell.style.removeProperty("--player-panel-width");
             shell.style.removeProperty("--player-panel-height");
         } else {
@@ -2180,19 +2284,24 @@ function initRemotePlayerShell(shell, elements) {
         queuePanel.hidden = !queueOpen;
         if (queueOpen) {
             updateQueuePlacement();
+        } else {
+            clearQueueDragState();
         }
         renderPlayerQueue(queuePanel, playerState.queue, playerState.currentIndex, {
             onClose() {
                 queueOpen = false;
                 renderShell();
             },
+            onDragStart(event, index) {
+                beginQueueDrag(event, index);
+            },
+            onReorder(fromIndex, toIndex) {
+                reorderTrackInQueue(fromIndex, toIndex);
+            },
             onSelect(index) {
                 queueOpen = false;
                 void loadTrack(index, true, 0);
                 renderShell();
-            },
-            onMove(index, delta) {
-                moveTrackInQueue(index, delta);
             },
             onRemove(index) {
                 removeTrackFromQueue(index);
@@ -2772,6 +2881,11 @@ function initRemotePlayerShell(shell, elements) {
             return;
         }
 
+        if (queueDragState && event.pointerId === queueDragState.pointerId) {
+            updateQueueDragTarget(event.clientX, event.clientY);
+            return;
+        }
+
         if (!dragState || event.pointerId !== dragState.pointerId) {
             return;
         }
@@ -2807,6 +2921,13 @@ function initRemotePlayerShell(shell, elements) {
             if (customPosition) {
                 persistDockPosition(customPosition);
             }
+            return;
+        }
+
+        if (queueDragState && event.pointerId === queueDragState.pointerId) {
+            const { fromIndex, targetIndex } = queueDragState;
+            clearQueueDragState();
+            reorderTrackInQueue(fromIndex, targetIndex);
             return;
         }
 

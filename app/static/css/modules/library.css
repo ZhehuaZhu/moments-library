@@ -500,6 +500,65 @@
     font-size: 0.66rem;
 }
 
+.folder-panel--track-create {
+    width: min(720px, calc(100vw - 40px));
+}
+
+.folder-panel__header--track-create {
+    align-items: center;
+}
+
+.tracks-create-header {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.tracks-create-form {
+    gap: 12px;
+}
+
+.tracks-create-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.tracks-create-grid--identity {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.95fr);
+}
+
+.tracks-create-grid--files,
+.tracks-create-grid--notes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tracks-create-field--audio {
+    grid-column: 1 / -1;
+}
+
+.tracks-create-form .field > span {
+    color: var(--text);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.tracks-create-form .input {
+    min-height: 46px;
+}
+
+.tracks-create-form .input--file {
+    min-height: 52px;
+    padding: 8px 10px;
+}
+
+.tracks-create-form .textarea {
+    min-height: 120px;
+}
+
+.tracks-create-close {
+    flex-shrink: 0;
+}
+
 .books-library-page {
     display: grid;
     gap: 18px;
@@ -2845,6 +2904,20 @@
     border-color: rgba(63, 111, 100, 0.16);
 }
 
+.audio-player__queue.is-queue-dragging {
+    user-select: none;
+}
+
+.audio-player__queue-item.is-drag-source {
+    opacity: 0.72;
+    transform: scale(0.985);
+}
+
+.audio-player__queue-item.is-drop-target {
+    border-color: rgba(63, 111, 100, 0.2);
+    box-shadow: inset 0 0 0 2px rgba(63, 111, 100, 0.1);
+}
+
 .audio-player__queue-main {
     min-width: 0;
     display: grid;
@@ -2923,6 +2996,15 @@
 
 .audio-player__queue-action[disabled] {
     opacity: 0.34;
+}
+
+.audio-player__queue-action--drag {
+    cursor: grab;
+    touch-action: none;
+}
+
+.audio-player__queue-action--drag:active {
+    cursor: grabbing;
 }
 
 .audio-player__queue-action--remove {
@@ -3025,6 +3107,65 @@
 }
 
 @media (max-width: 720px) {
+    .folder-panel--track-create {
+        width: min(100vw - 24px, 720px);
+    }
+
+    .folder-panel--track-create .folder-panel__header {
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .folder-panel--track-create .folder-panel__body {
+        gap: 14px;
+    }
+
+    .tracks-create-form {
+        gap: 10px;
+    }
+
+    .tracks-create-grid {
+        gap: 10px;
+    }
+
+    .tracks-create-grid--identity {
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    }
+
+    .tracks-create-grid--notes {
+        grid-template-columns: 1fr;
+    }
+
+    .tracks-create-form .field {
+        gap: 6px;
+    }
+
+    .tracks-create-form .field > span {
+        font-size: 0.74rem;
+    }
+
+    .tracks-create-form .input {
+        min-height: 44px;
+        padding: 11px 12px;
+    }
+
+    .tracks-create-form .input--file {
+        min-height: 48px;
+        padding: 7px 9px;
+    }
+
+    .tracks-create-form .textarea {
+        min-height: 104px;
+    }
+
+    .tracks-create-close {
+        width: 38px;
+        min-width: 38px;
+        min-height: 38px;
+        border-radius: 12px;
+    }
+
     body .audio-player:not(.audio-player--window) .audio-player__summary {
         grid-template-columns: calc(48px * var(--player-ui-scale)) minmax(0, 1fr) !important;
     }
@@ -3357,6 +3498,31 @@
 }
 
 @media (max-width: 540px) {
+    .folder-panel--track-create .folder-panel__header {
+        gap: 8px;
+    }
+
+    .tracks-create-grid--identity,
+    .tracks-create-grid--files {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .tracks-create-grid--notes {
+        gap: 8px;
+    }
+
+    .tracks-create-form .field > span {
+        font-size: 0.72rem;
+    }
+
+    .tracks-create-close {
+        width: 36px;
+        min-width: 36px;
+        min-height: 36px;
+        border-radius: 11px;
+    }
+
     body .audio-player:not(.audio-player--window) .audio-player__summary {
         grid-template-columns: calc(42px * var(--player-ui-scale)) minmax(0, 1fr) !important;
     }
