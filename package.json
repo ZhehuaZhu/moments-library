@@ -1,11 +1,11 @@
 {
   "name": "moments-library-app-shell",
   "version": "0.1.0",
-  "description": "Capacitor Android app shell for Moments Library.",
+  "description": "Capacitor iOS app shell for Moments Library.",
   "scripts": {
-    "cap:add:android": "npx cap add android",
-    "cap:sync": "npx cap sync android",
-    "cap:open:android": "npx cap open android"
+    "cap:add:ios": "npx cap add ios",
+    "cap:sync:ios": "npx cap sync ios",
+    "cap:open:ios": "npx cap open ios"
   },
   "repository": {
     "type": "git",
@@ -20,9 +20,9 @@
   },
   "homepage": "https://github.com/ZhehuaZhu/moments-library#readme",
   "dependencies": {
-    "@capacitor/android": "^8.3.0",
     "@capacitor/cli": "^8.3.0",
-    "@capacitor/core": "^8.3.0"
+    "@capacitor/core": "^8.3.0",
+    "@capacitor/ios": "^8.3.0"
   },
   "devDependencies": {
     "typescript": "^6.0.2"

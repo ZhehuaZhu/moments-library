@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Moments Library</string>
-    <string name="title_activity_main">Moments Library</string>
-    <string name="package_name">com.zhzhehua.moments</string>
-    <string name="custom_url_scheme">com.zhzhehua.moments</string>
-</resources>

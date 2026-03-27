@@ -11,7 +11,3 @@ app/static/uploads/*
 !app/static/uploads/.gitkeep
 moments-deploy.tar.gz
 node_modules/
-android/.gradle/
-android/local.properties
-android/app/build/
-android/build/
