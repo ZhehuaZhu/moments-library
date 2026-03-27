@@ -365,18 +365,28 @@ export function renderPlayerQueue(queuePanel, queue, currentIndex, handlers = {}
         item.className = `audio-player__queue-item${index === currentIndex ? " is-active" : ""}`;
         item.dataset.playerQueueItem = "true";
 
+        const main = document.createElement("div");
+        main.className = "audio-player__queue-main";
+
+        const order = document.createElement("span");
+        order.className = "audio-player__queue-order";
+        order.setAttribute("aria-hidden", "true");
+        order.textContent = index === currentIndex ? "\u266A" : String(index + 1).padStart(2, "0");
+
         const button = document.createElement("button");
         button.type = "button";
         button.className = "audio-player__queue-track";
         button.textContent = getPlayerLabel(track);
+        button.title = getPlayerLabel(track);
         button.addEventListener("click", () => handlers.onSelect?.(index));
+        main.append(order, button);
 
         const actions = document.createElement("div");
         actions.className = "audio-player__queue-actions";
 
         const moveUp = document.createElement("button");
         moveUp.type = "button";
-        moveUp.className = "icon-button icon-button--ghost audio-player__queue-action";
+        moveUp.className = "icon-button icon-button--ghost audio-player__queue-action audio-player__queue-action--move";
         moveUp.innerHTML = '<span aria-hidden="true">&#8593;</span>';
         moveUp.disabled = index === 0;
         moveUp.setAttribute("aria-label", t("player.queue_move_up", {}, "Move track earlier"));
@@ -384,7 +394,7 @@ export function renderPlayerQueue(queuePanel, queue, currentIndex, handlers = {}
 
         const moveDown = document.createElement("button");
         moveDown.type = "button";
-        moveDown.className = "icon-button icon-button--ghost audio-player__queue-action";
+        moveDown.className = "icon-button icon-button--ghost audio-player__queue-action audio-player__queue-action--move";
         moveDown.innerHTML = '<span aria-hidden="true">&#8595;</span>';
         moveDown.disabled = index === queue.length - 1;
         moveDown.setAttribute("aria-label", t("player.queue_move_down", {}, "Move track later"));
@@ -392,13 +402,13 @@ export function renderPlayerQueue(queuePanel, queue, currentIndex, handlers = {}
 
         const remove = document.createElement("button");
         remove.type = "button";
-        remove.className = "icon-button icon-button--ghost audio-player__queue-action";
+        remove.className = "icon-button icon-button--ghost audio-player__queue-action audio-player__queue-action--remove";
         remove.innerHTML = '<span aria-hidden="true">&#10005;</span>';
         remove.setAttribute("aria-label", t("player.remove_from_queue", {}, "Remove track from queue"));
         remove.addEventListener("click", () => handlers.onRemove?.(index));
 
         actions.append(moveUp, moveDown, remove);
-        item.append(button, actions);
+        item.append(main, actions);
         queuePanel.append(item);
     });
 }
