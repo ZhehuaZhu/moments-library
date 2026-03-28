@@ -9,6 +9,48 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Moments Library">
     <title>{{ title or "Moments Library" }}</title>
+    <script>
+        (function () {
+            var isStandalone = false;
+            try {
+                isStandalone =
+                    (window.matchMedia && (
+                        window.matchMedia("(display-mode: standalone)").matches ||
+                        window.matchMedia("(display-mode: fullscreen)").matches
+                    )) ||
+                    window.navigator.standalone === true;
+            } catch (error) {
+                isStandalone = window.navigator.standalone === true;
+            }
+
+            if (isStandalone) {
+                document.documentElement.classList.add("is-standalone-launch");
+            }
+        })();
+    </script>
+    <style>
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            background:
+                radial-gradient(circle at top, rgba(255, 248, 243, 0.92), rgba(244, 239, 234, 0.86) 42%, rgba(239, 236, 232, 0.92)),
+                linear-gradient(180deg, rgba(250, 248, 245, 0.98), rgba(237, 240, 237, 0.94));
+        }
+
+        .launch-screen {
+            display: none;
+        }
+
+        html.is-standalone-launch .launch-screen {
+            display: grid;
+            opacity: 1;
+        }
+
+        html.is-standalone-launch body {
+            opacity: 1;
+        }
+    </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="manifest" href="{{ url_for('main.web_manifest') }}">
     <link rel="apple-touch-icon" href="{{ url_for('main.apple_touch_icon') }}">
@@ -17,6 +59,36 @@
     <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
 </head>
 <body class="app-body {{ body_class or '' }}">
+    <div class="launch-screen" data-launch-screen aria-hidden="true">
+        <div class="launch-screen__mist launch-screen__mist--one"></div>
+        <div class="launch-screen__mist launch-screen__mist--two"></div>
+        <div class="launch-screen__panel">
+            <div class="launch-screen__icon-shell">
+                <img
+                    class="launch-screen__icon"
+                    src="{{ url_for('static', filename='pwa/icons/icon-512.png') }}"
+                    alt="Moments Library icon"
+                >
+            </div>
+            <div class="launch-screen__copy">
+                <p class="launch-screen__eyebrow">
+                    {{ 'Private archive' if current_lang != 'zh' else '私人档案馆' }}
+                </p>
+                <h1>Moments Library</h1>
+                <p class="launch-screen__tagline">
+                    {{ 'Follow the footprints home' if current_lang != 'zh' else '沿着脚印回到你的小木屋' }}
+                </p>
+            </div>
+            <div class="launch-screen__steps" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </div>
     <div data-app-shell>
         <div class="page-shell {% if show_sidebar is defined and not show_sidebar %}page-shell--auth{% endif %}">
             {% if show_sidebar is not defined or show_sidebar %}

@@ -1,4 +1,5 @@
 @import url("./modules/foundation.css");
+@import url("./modules/pwa-shell.css");
 @import url("./modules/layout.css");
 @import url("./modules/forms.css");
 @import url("./modules/components.css");

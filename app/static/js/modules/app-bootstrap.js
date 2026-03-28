@@ -102,8 +102,9 @@ export async function bootstrapPage() {
 }
 
 export async function initApp() {
-    const { initBodyFade } = await loadModule("ui");
+    const { initBodyFade, initLaunchScreen } = await loadModule("ui");
     initBodyFade();
+    initLaunchScreen();
 
     await bootstrapPage();
 
