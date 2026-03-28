@@ -6,18 +6,28 @@
 >
     <audio data-player-audio preload="metadata"></audio>
     {% if player_variant != 'window' %}
-        <button
-            type="button"
-            class="audio-player__bubble"
-            data-player-bubble
-            aria-label="{{ t('player.open_mini_player') }}"
-            aria-expanded="false"
-        >
-            <span class="audio-player__bubble-pulse" aria-hidden="true"></span>
-            <span class="audio-player__artwork audio-player__artwork--bubble" data-player-artwork>
-                <span class="audio-player__artwork-label" data-player-artwork-label>&#9835;</span>
-            </span>
-        </button>
+        <div class="audio-player__bubble-shell">
+            <button
+                type="button"
+                class="audio-player__bubble"
+                data-player-bubble
+                aria-label="{{ t('player.open_mini_player') }}"
+                aria-expanded="false"
+            >
+                <span class="audio-player__bubble-pulse" aria-hidden="true"></span>
+                <span class="audio-player__artwork audio-player__artwork--bubble" data-player-artwork>
+                    <span class="audio-player__artwork-label" data-player-artwork-label>&#9835;</span>
+                </span>
+            </button>
+            <button
+                type="button"
+                class="audio-player__bubble-close"
+                data-player-bubble-close
+                aria-label="{{ t('common.close') }}"
+            >
+                <span aria-hidden="true">&#10005;</span>
+            </button>
+        </div>
     {% endif %}
     <div class="audio-player__panel" data-player-panel>
         {% if player_variant != 'window' %}

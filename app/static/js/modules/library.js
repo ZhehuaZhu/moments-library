@@ -1800,10 +1800,12 @@ function initRemotePlayerShell(shell, elements) {
     let playerState = readStoredPlayerState(pageCatalog);
     let queueOpen = false;
     let settingsOpen = false;
-    let isCollapsed = readStoredJson(playerDockStateKey)?.collapsed;
+    const initialDockState = readStoredJson(playerDockStateKey) || {};
+    let isCollapsed = initialDockState?.collapsed;
     if (typeof isCollapsed !== "boolean") {
         isCollapsed = true;
     }
+    let isDismissed = Boolean(initialDockState?.dismissed);
     let customPosition = readStoredJson(playerDockPositionKey);
     let dragState = null;
     let resizeState = null;
@@ -2022,8 +2024,26 @@ function initRemotePlayerShell(shell, elements) {
     const persistDockState = () => {
         window.localStorage.setItem(
             playerDockStateKey,
-            JSON.stringify({ collapsed: Boolean(isCollapsed) })
+            JSON.stringify({
+                collapsed: Boolean(isCollapsed),
+                dismissed: Boolean(isDismissed),
+            })
         );
+    };
+
+    const revealDismissedPlayer = ({ expand = false } = {}) => {
+        let changed = false;
+        if (isDismissed) {
+            isDismissed = false;
+            changed = true;
+        }
+        if (expand && isCollapsed) {
+            isCollapsed = false;
+            changed = true;
+        }
+        if (changed) {
+            persistDockState();
+        }
     };
 
     const persistDockPosition = (position) => {
@@ -2040,27 +2060,70 @@ function initRemotePlayerShell(shell, elements) {
         shell.style.removeProperty("bottom");
     };
 
+    const isCompactPlayerViewport = () => window.innerWidth <= 720;
+
+    const getDockMetrics = () => {
+        const compact = isCompactPlayerViewport();
+        const margin = compact ? 10 : 12;
+        const collapsedSize = compact ? (window.innerWidth <= 540 ? 58 : 64) : 72;
+        const shellWidth = Math.max(shell.offsetWidth || 0, isCollapsed ? collapsedSize : 280);
+        const shellHeight = Math.max(shell.offsetHeight || 0, isCollapsed ? collapsedSize : 180);
+        return {
+            compact,
+            margin,
+            shellWidth,
+            shellHeight,
+        };
+    };
+
     const clampDockPosition = (left, top) => {
-        const margin = 12;
-        const shellWidth = Math.max(shell.offsetWidth || 0, isCollapsed ? 68 : 280);
-        const shellHeight = Math.max(shell.offsetHeight || 0, isCollapsed ? 68 : 180);
+        const { margin, shellWidth, shellHeight } = getDockMetrics();
         return {
             left: Math.min(Math.max(left, margin), Math.max(margin, window.innerWidth - shellWidth - margin)),
             top: Math.min(Math.max(top, margin), Math.max(margin, window.innerHeight - shellHeight - margin)),
         };
     };
 
+    const resolveDockPosition = (position) => {
+        if (!position || typeof position.left !== "number" || typeof position.top !== "number") {
+            return null;
+        }
+
+        const { compact, margin, shellWidth } = getDockMetrics();
+        let left = position.left;
+        if (compact && isCollapsed && (position.edge === "left" || position.edge === "right")) {
+            left = position.edge === "right" ? window.innerWidth - shellWidth - margin : margin;
+        }
+
+        return {
+            ...clampDockPosition(left, position.top),
+            edge: compact && isCollapsed ? position.edge : undefined,
+        };
+    };
+
+    const snapCollapsedBubbleToEdge = (position) => {
+        const resolved = resolveDockPosition(position);
+        if (!resolved) {
+            return position;
+        }
+
+        const { margin, shellWidth } = getDockMetrics();
+        const bubbleMidpoint = resolved.left + shellWidth / 2;
+        const edge = bubbleMidpoint >= window.innerWidth / 2 ? "right" : "left";
+        return {
+            ...resolved,
+            left: edge === "right" ? window.innerWidth - shellWidth - margin : margin,
+            edge,
+        };
+    };
+
     const applyDockPosition = () => {
-        if (
-            !customPosition ||
-            typeof customPosition.left !== "number" ||
-            typeof customPosition.top !== "number"
-        ) {
+        const nextPosition = resolveDockPosition(customPosition);
+        if (!nextPosition) {
             clearDockPosition();
             return;
         }
 
-        const nextPosition = clampDockPosition(customPosition.left, customPosition.top);
         shell.style.left = `${nextPosition.left}px`;
         shell.style.top = `${nextPosition.top}px`;
         shell.style.right = "auto";
@@ -2226,7 +2289,7 @@ function initRemotePlayerShell(shell, elements) {
         panel.hidden = isCollapsed;
         settings.hidden = isCollapsed || !settingsOpen;
         settingsToggle.setAttribute("aria-expanded", String(!isCollapsed && settingsOpen));
-        if (!shell.hidden) {
+        if (!shell.hidden && !isDismissed) {
             window.requestAnimationFrame(() => {
                 if (!isCollapsed) {
                     playerSize = applyPlayerSize(shell, playerSize);
@@ -2307,7 +2370,12 @@ function initRemotePlayerShell(shell, elements) {
 
     const renderShell = () => {
         const track = playerState.queue[playerState.currentIndex];
+        if (!track && isDismissed) {
+            isDismissed = false;
+            persistDockState();
+        }
         shell.hidden = !track;
+        shell.classList.toggle("is-audio-player-dismissed", Boolean(track) && isDismissed);
         previous.disabled = playerState.currentIndex <= 0;
         next.disabled =
             playerState.currentIndex < 0 || playerState.currentIndex >= playerState.queue.length - 1;
@@ -2549,6 +2617,7 @@ function initRemotePlayerShell(shell, elements) {
             return;
         }
 
+        revealDismissedPlayer();
         if (!playerState.queue[playerState.currentIndex]) {
             isCollapsed = false;
         }
@@ -2573,6 +2642,7 @@ function initRemotePlayerShell(shell, elements) {
                 return;
             }
 
+            revealDismissedPlayer();
             isCollapsed = false;
             playerState = normalizePlayerState(
                 {
@@ -2659,8 +2729,26 @@ function initRemotePlayerShell(shell, elements) {
         }
 
         isCollapsed = false;
+        isDismissed = false;
         applyCollapsedState();
     });
+
+    const bubbleClose = shell.querySelector("[data-player-bubble-close]");
+    if (bubbleClose instanceof HTMLButtonElement) {
+        bubbleClose.addEventListener("pointerdown", (event) => {
+            event.stopPropagation();
+        });
+
+        bubbleClose.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            queueOpen = false;
+            settingsOpen = false;
+            isDismissed = true;
+            persistDockState();
+            renderShell();
+        });
+    }
 
     dragHandle.addEventListener("pointerdown", (event) => {
         beginDrag(event, "handle");
@@ -3044,6 +3132,10 @@ function initRemotePlayerShell(shell, elements) {
         shell.classList.remove("is-audio-player-dragging");
 
         if (didMove && customPosition) {
+            if (isCollapsed && isCompactPlayerViewport()) {
+                customPosition = snapCollapsedBubbleToEdge(customPosition);
+                applyDockPosition();
+            }
             persistDockPosition(customPosition);
             suppressBubbleClick = source === "bubble";
             suppressPanelClick = source === "panel";
@@ -3055,7 +3147,7 @@ function initRemotePlayerShell(shell, elements) {
         if (!isCollapsed) {
             playerSize = writePlayerSize(playerSize);
         }
-        if (!shell.hidden) {
+        if (!shell.hidden && !isDismissed) {
             applyDockPosition();
             if (queueOpen) {
                 updateQueuePlacement();
