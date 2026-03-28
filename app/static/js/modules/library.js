@@ -96,6 +96,21 @@ function openReaderPanels(shell, panels = ["top", "bottom"]) {
     scheduleReaderUiHide(shell);
 }
 
+function toggleReaderChrome(shell) {
+    if (!(shell instanceof HTMLElement)) {
+        return;
+    }
+
+    const isTopVisible = shell.classList.contains("is-reader-top-visible");
+    const isBottomVisible = shell.classList.contains("is-reader-bottom-visible");
+    if (isTopVisible || isBottomVisible) {
+        closeReaderPanels(shell);
+        return;
+    }
+
+    openReaderPanels(shell);
+}
+
 function toggleReaderPanel(shell, panel) {
     if (!(shell instanceof HTMLElement)) {
         return;
@@ -543,12 +558,12 @@ function initImmersiveReaderShells() {
 
         topToggle?.addEventListener("click", (event) => {
             event.preventDefault();
-            toggleReaderPanel(shell, "top");
+            toggleReaderChrome(shell);
         }, { signal });
 
         bottomToggle?.addEventListener("click", (event) => {
             event.preventDefault();
-            toggleReaderPanel(shell, "bottom");
+            toggleReaderChrome(shell);
         }, { signal });
 
         shell.querySelectorAll("[data-reader-open-notes]").forEach((button) => {
