@@ -49,7 +49,7 @@ def client(app):
 def admin_client(client):
     response = client.post(
         "/login",
-        data={"username": "admin", "password": "password123"},
+        data={"username": "admin", "password": "password123", "remember_device": "1"},
         follow_redirects=True,
     )
     assert response.status_code == 200

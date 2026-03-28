@@ -20,10 +20,11 @@ def login():
     if request.method == "POST":
         username = (request.form.get("username") or "").strip()
         password = request.form.get("password") or ""
+        remember_device = request.form.get("remember_device") == "1"
 
         user = User.query.filter_by(username=username).first()
         if user and user.is_admin and check_password_hash(user.password_hash, password):
-            login_user(user)
+            login_user(user, remember=remember_device)
             return redirect(next_url or url_for("main.index"))
 
         flash("Invalid username or password.", "error")
@@ -33,6 +34,7 @@ def login():
         title="Admin Login",
         show_sidebar=False,
         next_url=next_url or url_for("main.index"),
+        remember_device_default=True,
     )
 
 

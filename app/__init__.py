@@ -43,6 +43,11 @@ def create_app(test_config: dict | None = None) -> Flask:
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         MAX_CONTENT_LENGTH=1024 * 1024 * 1024,
         VIDEO_MAX_CONTENT_LENGTH=20 * 1024 * 1024 * 1024,
+        REMEMBER_COOKIE_DURATION=timedelta(days=30),
+        REMEMBER_COOKIE_HTTPONLY=True,
+        REMEMBER_COOKIE_SAMESITE="Lax",
+        REMEMBER_COOKIE_SECURE=bool(os.environ.get("COOKIE_SECURE", "")),
+        REMEMBER_COOKIE_REFRESH_EACH_REQUEST=False,
         NOMINATIM_USER_AGENT=os.environ.get(
             "NOMINATIM_USER_AGENT", "personal-moments-library/1.0 (local)"
         ),
