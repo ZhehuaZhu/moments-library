@@ -18,6 +18,15 @@
             <span>Password</span>
             <input type="password" name="password" class="input" autocomplete="current-password" required>
         </label>
+        <label class="checkbox-field">
+            <input
+                type="checkbox"
+                name="remember_device"
+                value="1"
+                {% if remember_device_default %}checked{% endif %}
+            >
+            <span>Remember this device for 30 days</span>
+        </label>
         <button type="submit" class="button">Login</button>
         <a href="{{ url_for('main.index') }}" class="text-link">Back to the public feed</a>
     </form>
