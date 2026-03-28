@@ -111,10 +111,17 @@
 
 .video-library-page__aside {
     display: grid;
-    justify-items: end;
+    justify-items: stretch;
     align-content: center;
-    gap: 2px;
+    gap: 5px;
     flex-shrink: 0;
+    min-width: 88px;
+    padding: 4px 4px 6px;
+    border: 1px solid rgba(63, 111, 100, 0.08);
+    border-radius: 18px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 248, 0.94));
+    box-shadow: 0 8px 18px rgba(21, 33, 42, 0.04);
 }
 
 .music-library-page__actions {
@@ -276,11 +283,13 @@
 
 .video-library-page__meta {
     margin: 0;
+    width: 100%;
     color: var(--muted);
     font-size: 0.73rem;
     font-weight: 600;
     line-height: 1.2;
     letter-spacing: 0.01em;
+    text-align: center;
 }
 
 .video-upload-status {
@@ -1091,13 +1100,13 @@
 
 .work-card--video {
     display: grid;
-    gap: 10px;
-    padding: 10px;
+    gap: 12px;
+    padding: 12px;
     border: 1px solid rgba(63, 111, 100, 0.08);
-    border-radius: 22px;
+    border-radius: 24px;
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 248, 0.95));
-    box-shadow: 0 14px 24px rgba(21, 33, 42, 0.06);
+    box-shadow: 0 16px 28px rgba(21, 33, 42, 0.06);
 }
 
 .work-card__body,
@@ -1168,12 +1177,12 @@
     position: relative;
     display: block;
     overflow: hidden;
-    border-radius: 20px;
+    border-radius: 22px;
     border: 1px solid rgba(34, 48, 60, 0.08);
     background:
         radial-gradient(circle at top left, rgba(63, 111, 100, 0.16), transparent 42%),
         linear-gradient(180deg, rgba(230, 236, 239, 0.9), rgba(213, 223, 229, 0.96));
-    box-shadow: 0 14px 24px rgba(21, 33, 42, 0.1);
+    box-shadow: 0 16px 26px rgba(21, 33, 42, 0.1);
     transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
 }
 
@@ -1195,6 +1204,22 @@
     letter-spacing: -0.02em;
 }
 
+.video-library-card__body {
+    gap: 6px;
+    padding: 2px 4px 4px;
+}
+
+.video-library-card__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.video-library-card__header h3 {
+    min-width: 0;
+}
+
 .work-card--video h3 a {
     color: inherit;
     text-decoration: none;
@@ -1204,6 +1229,32 @@
 .work-card--video h3 a:focus-visible {
     color: var(--accent-strong);
     outline: none;
+}
+
+.video-library-card__header h3 a,
+.work-card--video h3 a {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.video-library-card__date {
+    margin: 0;
+    flex-shrink: 0;
+    color: var(--muted);
+    font-size: 0.76rem;
+    letter-spacing: 0.01em;
+}
+
+.video-library-card__summary {
+    display: -webkit-box;
+    overflow: hidden;
+    color: rgba(68, 82, 93, 0.92);
+    font-size: 0.92rem;
+    line-height: 1.58;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 .video-library-card__body {
