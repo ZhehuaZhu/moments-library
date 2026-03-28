@@ -36,7 +36,7 @@
         <header class="reader-overlay reader-overlay--top" data-reader-top-panel>
             <div class="reader-overlay__row reader-overlay__row--top reader-overlay__row--top-compact">
                 <div class="reader-overlay__edge reader-overlay__edge--leading">
-                    <a class="button button--ghost button--compact" href="{{ url_for('library.books') }}">{{ t('common.back') }}</a>
+                    <a class="button button--ghost button--compact reader-toolbar-button reader-toolbar-button--back" href="{{ url_for('library.books') }}">{{ t('common.back') }}</a>
                 </div>
 
                 <div class="reader-book-badge">
@@ -56,13 +56,7 @@
                             <span class="reader-book-badge__meta-line">
                                 <span data-section-title>{{ current_section_label }}</span>
                                 <span class="reader-book-badge__separator" aria-hidden="true">·</span>
-                                <span data-section-progress>
-                                    {% if section_manifest %}
-                                        {{ t('books.section') }} {{ current_section_number }} / {{ total_sections }}
-                                    {% else %}
-                                        {{ t('books.preparing') }}
-                                    {% endif %}
-                                </span>
+                                <span data-section-progress>{% if section_manifest %}{{ current_section_number }}/{{ total_sections }}{% else %}--/--{% endif %}</span>
                                 <span class="reader-book-badge__separator" aria-hidden="true">·</span>
                                 <span data-reader-progress-percent>{{ current_progress_percent }}%</span>
                             </span>
@@ -73,11 +67,11 @@
                 </div>
 
                 <div class="reader-overlay__edge reader-overlay__edge--trailing">
-                    <button type="button" class="button button--ghost button--compact" data-reader-open-notes>
+                    <button type="button" class="button button--ghost button--compact reader-toolbar-button reader-toolbar-button--notes" data-reader-open-notes>
                         {{ t('common.notes') }}
                         <span class="reader-overlay__count">{{ reader_note_count }}</span>
                     </button>
-                    <a class="button button--ghost button--compact" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.info') }}</a>
+                    <a class="button button--ghost button--compact reader-toolbar-button reader-toolbar-button--info" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.info') }}</a>
                 </div>
             </div>
         </header>
