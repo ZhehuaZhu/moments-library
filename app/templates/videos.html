@@ -12,10 +12,10 @@
             <p class="video-library-page__meta">{{ t('counts.videos', count=result_count) }}</p>
         </div>
         {% if can_manage %}
-            <div class="video-library-page__actions">
+            <div class="video-library-page__controls">
                 <button
                     type="button"
-                    class="icon-button icon-button--ghost video-library-page__add-button"
+                    class="icon-button icon-button--ghost video-library-page__control"
                     data-open-folder-panel="video-create"
                     aria-haspopup="dialog"
                     aria-controls="video-create-panel"
@@ -26,7 +26,7 @@
                 </button>
                 <button
                     type="button"
-                    class="icon-button icon-button--ghost video-library-page__folder-button"
+                    class="icon-button icon-button--ghost video-library-page__control video-library-page__control--folder"
                     data-open-folder-panel="video-folders"
                     aria-haspopup="dialog"
                     aria-controls="video-folders-panel"
@@ -263,12 +263,10 @@
                     </video>
                 </a>
                 <div class="work-card__body video-library-card__body">
-                    <div class="video-library-card__header">
-                        <h3><a href="{{ url_for('library.video_detail', video_id=video.id) }}">{{ video.title }}</a></h3>
-                        <p class="video-library-card__date">{{ video.created_at|dateformat }}</p>
-                    </div>
+                    <h3><a href="{{ url_for('library.video_detail', video_id=video.id) }}">{{ video.title }}</a></h3>
+                    <p class="video-library-card__date">{{ video.created_at|dateformat }}</p>
                     {% if video_preview %}
-                        <p class="work-card__summary video-library-card__summary">{{ video_preview }}</p>
+                        <p class="video-library-card__summary">{{ video_preview }}</p>
                     {% endif %}
                 </div>
             </article>

@@ -220,26 +220,25 @@
 .video-library-page__hero {
     min-width: 0;
     display: grid;
-    gap: 6px;
+    gap: 4px;
 }
 
 .video-library-page__hero h1 {
     margin: 0;
-    font-size: clamp(1.48rem, 3.2vw, 1.9rem);
+    font-size: clamp(1.54rem, 3.2vw, 1.92rem);
     font-weight: 700;
     letter-spacing: -0.05em;
     line-height: 1;
 }
 
-.video-library-page__actions {
+.video-library-page__controls {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
 }
 
-.video-library-page__add-button,
-.video-library-page__folder-button {
+.video-library-page__control {
     width: 36px;
     height: 36px;
     padding: 0;
@@ -252,8 +251,7 @@
     line-height: 1;
 }
 
-.video-library-page__add-button:hover,
-.video-library-page__folder-button:hover {
+.video-library-page__control:hover {
     background: rgba(63, 111, 100, 0.08);
 }
 
@@ -278,7 +276,7 @@
     color: var(--danger);
 }
 
-.video-library-page__folder-button {
+.video-library-page__control--folder {
     position: relative;
     font-size: 0;
 }
@@ -1180,18 +1178,7 @@
 
 .video-library-card__body {
     gap: 6px;
-    padding: 2px 4px 4px;
-}
-
-.video-library-card__header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.video-library-card__header h3 {
-    min-width: 0;
+    padding: 2px 4px 6px;
 }
 
 .work-card--video h3 a {
@@ -1205,7 +1192,6 @@
     outline: none;
 }
 
-.video-library-card__header h3 a,
 .work-card--video h3 a {
     display: block;
     overflow: hidden;
@@ -1215,9 +1201,8 @@
 
 .video-library-card__date {
     margin: 0;
-    flex-shrink: 0;
     color: var(--muted);
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     letter-spacing: 0.01em;
 }
 
@@ -1225,30 +1210,8 @@
     display: -webkit-box;
     overflow: hidden;
     color: rgba(68, 82, 93, 0.92);
-    font-size: 0.92rem;
-    line-height: 1.58;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-}
-
-.video-library-card__body {
-    gap: 5px;
-    padding: 2px 2px 4px;
-}
-
-.video-library-card__date {
-    margin: 0;
-    color: var(--muted);
-    font-size: 0.78rem;
-    letter-spacing: 0.01em;
-}
-
-.work-card--video .work-card__summary {
-    display: -webkit-box;
-    overflow: hidden;
-    color: rgba(70, 84, 96, 0.9);
-    font-size: 0.92rem;
-    line-height: 1.58;
+    font-size: 0.9rem;
+    line-height: 1.56;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
 }
