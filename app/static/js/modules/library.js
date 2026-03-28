@@ -755,9 +755,7 @@ function initSectionReaders() {
             !(reader instanceof HTMLElement) ||
             !(previous instanceof HTMLButtonElement) ||
             !(next instanceof HTMLButtonElement) ||
-            !(toc instanceof HTMLSelectElement) ||
-            !(title instanceof HTMLElement) ||
-            !(progress instanceof HTMLElement)
+            !(toc instanceof HTMLSelectElement)
         ) {
             return;
         }
@@ -778,7 +776,9 @@ function initSectionReaders() {
                 {},
                 "No sections found",
             )}</option>`;
-            progress.textContent = t("books.unavailable", {}, "Unavailable");
+            if (progress instanceof HTMLElement) {
+                progress.textContent = t("books.unavailable", {}, "Unavailable");
+            }
             return;
         }
 
@@ -1021,8 +1021,12 @@ function initSectionReaders() {
                 ? `${t("books.front_matter", {}, "Front matter")} - ${t("books.section", {}, "Section")} ${progressLabel}`
                 : `${t("books.section", {}, "Section")} ${progressLabel}`;
 
-            title.textContent = label;
-            progress.textContent = topProgressLabel;
+            if (title instanceof HTMLElement) {
+                title.textContent = label;
+            }
+            if (progress instanceof HTMLElement) {
+                progress.textContent = topProgressLabel;
+            }
             sectionLabels.forEach((node) => {
                 node.textContent = label;
                 node.setAttribute("title", label);
