@@ -646,29 +646,25 @@
     .page-header.page-header--video-library {
         flex-direction: row;
         justify-content: space-between;
-        align-items: center;
-        gap: 8px;
-        padding: 11px 12px 9px;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 13px 12px 11px;
     }
 
     .video-library-page__actions {
-        grid-template-columns: repeat(2, 24px);
-        gap: 0;
-        padding: 2px;
+        gap: 6px;
     }
 
-    .page-header.page-header--video-library > h1 {
-        font-size: clamp(1.08rem, 5vw, 1.32rem);
+    .video-library-page__hero {
+        gap: 4px;
     }
 
-    .video-library-page__aside {
-        gap: 3px;
-        min-width: 76px;
-        padding: 3px 3px 5px;
+    .video-library-page__hero h1 {
+        font-size: clamp(1.22rem, 5.6vw, 1.52rem);
     }
 
     .video-library-page__meta {
-        font-size: 0.69rem;
+        font-size: 0.72rem;
     }
 
     .video-upload-status {
@@ -677,10 +673,10 @@
 
     .video-library-page__add-button,
     .video-library-page__folder-button {
-        width: 24px;
-        height: 24px;
-        border-radius: 8px;
-        font-size: 0.9rem;
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        font-size: 0.94rem;
     }
 
     .video-library-page__folder-glyph {
