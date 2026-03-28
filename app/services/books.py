@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import shutil
 from copy import deepcopy
 from html import escape
@@ -721,6 +722,37 @@ def rewrite_epub_media_nodes(
         append_media_caption(wrapper, iframe.get("title") or iframe.get("aria-label"))
 
 
+def normalize_reader_label(value: str) -> str:
+    return re.sub(r"[\W_]+", "", str(value or "").casefold())
+
+
+def drop_redundant_leading_heading(body, label: str) -> None:
+    normalized_label = normalize_reader_label(label)
+    if not normalized_label:
+        return
+
+    first_heading = None
+    for node in body.iterdescendants():
+        if not isinstance(node.tag, str):
+            continue
+        if node.tag.lower() in {"h1", "h2", "h3"}:
+            first_heading = node
+            break
+
+    if first_heading is None:
+        return
+
+    heading_text = " ".join(first_heading.text_content().split())
+    if normalize_reader_label(heading_text) != normalized_label:
+        return
+
+    parent = first_heading.getparent()
+    if parent is None:
+        return
+
+    parent.remove(first_heading)
+
+
 def render_reader_body_section(
     body,
     *,
@@ -731,6 +763,7 @@ def render_reader_body_section(
 ) -> dict[str, object] | None:
     anchor = f"reader-section-{index + 1}"
     rewrite_epub_media_nodes(body, file_name, asset_map)
+    drop_redundant_leading_heading(body, label)
     text_content = " ".join(body.text_content().split())
     has_embedded_media = bool(
         body.xpath(".//*[contains(concat(' ', normalize-space(@class), ' '), ' book-reader-media-card ')]")

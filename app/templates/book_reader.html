@@ -54,10 +54,8 @@
                         <strong>{{ book.title }}</strong>
                         {% if book.reader_kind == "html" %}
                             <span class="reader-book-badge__meta-line">
-                                <span data-section-title>{{ current_section_label }}</span>
-                                <span class="reader-book-badge__separator" aria-hidden="true">·</span>
-                                <span data-section-progress>{% if section_manifest %}{{ current_section_number }}/{{ total_sections }}{% else %}--/--{% endif %}</span>
-                                <span class="reader-book-badge__separator" aria-hidden="true">·</span>
+                                <span>{{ book.author_name or t('books.reading') }}</span>
+                                <span class="reader-book-badge__separator" aria-hidden="true">&middot;</span>
                                 <span data-reader-progress-percent>{{ current_progress_percent }}%</span>
                             </span>
                         {% else %}
@@ -67,11 +65,11 @@
                 </div>
 
                 <div class="reader-overlay__edge reader-overlay__edge--trailing">
-                    <button type="button" class="button button--ghost button--compact reader-toolbar-button reader-toolbar-button--notes" data-reader-open-notes>
+                    <button type="button" class="button button--ghost button--compact reader-toolbar-button reader-toolbar-button--notes" data-reader-open-notes aria-label="{{ t('common.notes') }}">
                         {{ t('common.notes') }}
                         <span class="reader-overlay__count">{{ reader_note_count }}</span>
                     </button>
-                    <a class="button button--ghost button--compact reader-toolbar-button reader-toolbar-button--info" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.info') }}</a>
+                    <a class="button button--ghost button--compact reader-toolbar-button reader-toolbar-button--info" href="{{ url_for('library.book_detail', book_id=book.id) }}" aria-label="{{ t('common.info') }}">{{ t('common.info') }}</a>
                 </div>
             </div>
         </header>
