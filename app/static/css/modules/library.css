@@ -4797,6 +4797,15 @@ body.app-body.book-reader-page .reader-overlay__progress--section {
     min-height: 34px;
     padding: 0 12px;
     font-size: 0.78rem;
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+body.app-body.book-reader-page .reader-layout--immersive .reader-overlay__progress--section {
+    display: inline-flex;
+    width: auto;
+    justify-content: center;
 }
 
 body.app-body.book-reader-page .reader-book-badge {
@@ -4823,12 +4832,15 @@ body.app-body.book-reader-page .reader-book-badge__copy .eyebrow {
 body.app-body.book-reader-page .reader-book-badge__copy strong {
     flex: 0 1 auto;
     max-width: min(34ch, 100%);
+    white-space: nowrap;
+    word-break: keep-all;
 }
 
 body.app-body.book-reader-page .reader-book-badge__copy > span {
     flex: 0 1 auto;
     min-width: 0;
     font-size: 0.82rem;
+    white-space: nowrap;
 }
 
 body.app-body.book-reader-page .reader-progress-summary--compact {
@@ -4928,6 +4940,10 @@ body.app-body.book-reader-page .reader-bottom-actions--dense {
     flex-wrap: wrap;
 }
 
+body.app-body.book-reader-page .reader-bottom-actions--dense .reader-chip {
+    max-width: 100%;
+}
+
 body.app-body.book-reader-page .reader-bottom-actions--dense .button {
     min-height: 34px;
 }
@@ -4984,12 +5000,21 @@ body.app-body.book-reader-page .reader-notes-form__meta-grid .input {
     }
 
     body.app-body.book-reader-page .reader-book-badge__copy {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
         gap: 6px;
+    }
+
+    body.app-body.book-reader-page .reader-book-badge__copy strong,
+    body.app-body.book-reader-page .reader-book-badge__copy > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     body.app-body.book-reader-page .reader-progress-summary--compact {
         grid-template-columns: auto minmax(0, 1fr) auto;
         border-radius: 18px;
+        width: min(100%, 240px);
     }
 
     body.app-body.book-reader-page .reader-progress-summary--compact .reader-progress-summary__title {
@@ -5013,6 +5038,12 @@ body.app-body.book-reader-page .reader-notes-form__meta-grid .input {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         justify-content: stretch;
+        width: 100%;
+    }
+
+    body.app-body.book-reader-page .reader-bottom-actions--dense > * {
+        min-width: 0;
+        justify-content: center;
     }
 
     body.app-body.book-reader-page .reader-notes-form__meta-grid {
@@ -5025,6 +5056,7 @@ body.app-body.book-reader-page .reader-notes-form__meta-grid .input {
         grid-template-columns: minmax(0, 1fr) auto;
         gap: 6px;
         padding: 6px 8px;
+        width: min(100%, 180px);
     }
 
     body.app-body.book-reader-page .reader-progress-summary--compact strong {
@@ -5033,6 +5065,10 @@ body.app-body.book-reader-page .reader-notes-form__meta-grid .input {
 
     body.app-body.book-reader-page .reader-bottom-actions--dense {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.app-body.book-reader-page .reader-bottom-actions--dense > * {
+        width: 100%;
     }
 
     body.app-body.book-reader-page .reader-notes-form__meta-grid {
