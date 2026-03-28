@@ -5515,22 +5515,34 @@ body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reade
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 12px;
+    width: auto;
     font-size: 0.82rem;
     line-height: 1;
 }
 
 body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reader-toolbar-button__label {
-    display: inline-block;
-    line-height: 1;
+    display: none;
 }
 
 body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reader-toolbar-button--back {
     padding-inline: 8px;
 }
 
+body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reader-toolbar-button--notes,
 body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reader-toolbar-button--info {
-    min-width: 44px;
+    width: 30px;
+    min-width: 30px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+}
+
+body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reader-toolbar-button--notes {
+    position: relative;
+}
+
+body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reader-toolbar-button--info {
+    min-width: 30px;
 }
 
 body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reader-overlay__count {
@@ -5584,25 +5596,7 @@ body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reade
         font-size: 0.72rem;
     }
 
-    body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reader-toolbar-button--notes,
-    body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reader-toolbar-button--info {
-        width: 30px;
-        min-width: 30px;
-        padding: 0;
-        justify-content: center;
-        gap: 0;
-    }
-
-    body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reader-toolbar-button--notes {
-        position: relative;
-    }
-
-    body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reader-toolbar-button__label {
-        display: none;
-    }
-
     body.app-body.book-reader-page .reader-layout--books-native.reader-layout .reader-toolbar-button__icon {
-        width: auto;
         font-size: 0.76rem;
     }
 
