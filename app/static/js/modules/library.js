@@ -2752,13 +2752,13 @@ function initRemotePlayerShell(shell, elements) {
         applyCollapsedState();
     });
 
-    const bubbleClose = shell.querySelector("[data-player-bubble-close]");
-    if (bubbleClose instanceof HTMLButtonElement) {
-        bubbleClose.addEventListener("pointerdown", (event) => {
+    const dismissToggle = shell.querySelector("[data-player-dismiss-toggle]");
+    if (dismissToggle instanceof HTMLButtonElement) {
+        dismissToggle.addEventListener("pointerdown", (event) => {
             event.stopPropagation();
         });
 
-        bubbleClose.addEventListener("click", (event) => {
+        dismissToggle.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
             queueOpen = false;
