@@ -262,10 +262,12 @@
                     </video>
                 </a>
                 <div class="work-card__body video-library-card__body">
-                    <h3><a href="{{ url_for('library.video_detail', video_id=video.id) }}">{{ video.title }}</a></h3>
-                    <p class="video-library-card__date">{{ video.created_at|dateformat }}</p>
+                    <div class="video-library-card__header">
+                        <h3><a href="{{ url_for('library.video_detail', video_id=video.id) }}">{{ video.title }}</a></h3>
+                        <p class="video-library-card__date">{{ video.created_at|dateformat }}</p>
+                    </div>
                     {% if video_preview %}
-                        <p class="work-card__summary">{{ video_preview }}</p>
+                        <p class="work-card__summary video-library-card__summary">{{ video_preview }}</p>
                     {% endif %}
                 </div>
             </article>

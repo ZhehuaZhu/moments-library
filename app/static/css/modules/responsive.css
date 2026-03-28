@@ -663,6 +663,8 @@
 
     .video-library-page__aside {
         gap: 3px;
+        min-width: 76px;
+        padding: 3px 3px 5px;
     }
 
     .video-library-page__meta {
@@ -704,6 +706,23 @@
         padding-inline: 12px;
         border-radius: 14px;
         font-size: 0.9rem;
+    }
+
+    .video-library-card__body {
+        gap: 5px;
+        padding: 0 2px 2px;
+    }
+
+    .video-library-card__header {
+        gap: 8px;
+    }
+
+    .video-library-card__date {
+        font-size: 0.74rem;
+    }
+
+    .video-library-card__summary {
+        font-size: 0.88rem;
     }
 
     .bookshelf-card__actions {
