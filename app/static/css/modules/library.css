@@ -2753,6 +2753,34 @@
     gap: calc(8px * var(--player-ui-scale));
 }
 
+.audio-player__dismiss-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    line-height: 0;
+}
+
+.audio-player__dismiss-indicator {
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(34, 48, 60, 0.26);
+    transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.audio-player__dismiss-toggle:hover .audio-player__dismiss-indicator,
+.audio-player__dismiss-toggle:focus-visible .audio-player__dismiss-indicator {
+    background: rgba(34, 48, 60, 0.44);
+    transform: scale(1.08);
+}
+
 .audio-player__drag-handle {
     display: inline-flex;
     align-items: center;
@@ -2802,25 +2830,6 @@
     touch-action: none;
     overflow: visible;
     backdrop-filter: blur(16px);
-}
-
-.audio-player__bubble-close {
-    display: none;
-    position: absolute;
-    top: -4px;
-    right: -2px;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    border: 1px solid rgba(34, 48, 60, 0.12);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.96);
-    color: rgba(34, 48, 60, 0.78);
-    box-shadow: 0 8px 18px rgba(21, 33, 42, 0.18);
-    cursor: pointer;
-    z-index: 1;
 }
 
 .audio-player__bubble-pulse {
@@ -3448,8 +3457,10 @@
         gap: calc(6px * var(--player-ui-scale));
     }
 
-    .audio-player:not(.audio-player--window).is-audio-player-collapsed .audio-player__bubble-close {
+    .audio-player:not(.audio-player--window) .audio-player__dismiss-toggle {
         display: inline-flex;
+        width: 18px;
+        height: 18px;
     }
 
     .audio-player:not(.audio-player--window) .audio-player__drag-handle,
@@ -3837,12 +3848,14 @@
         gap: calc(8px * var(--player-ui-scale));
     }
 
-    .audio-player:not(.audio-player--window).is-audio-player-collapsed .audio-player__bubble-close {
-        width: 22px;
-        height: 22px;
-        top: -3px;
-        right: -1px;
-        font-size: 0.72rem;
+    .audio-player:not(.audio-player--window) .audio-player__dismiss-toggle {
+        width: 16px;
+        height: 16px;
+    }
+
+    .audio-player:not(.audio-player--window) .audio-player__dismiss-indicator {
+        width: 5px;
+        height: 5px;
     }
 
     .audio-player:not(.audio-player--window) .audio-player__drag-handle,

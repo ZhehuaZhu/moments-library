@@ -19,14 +19,6 @@
                     <span class="audio-player__artwork-label" data-player-artwork-label>&#9835;</span>
                 </span>
             </button>
-            <button
-                type="button"
-                class="audio-player__bubble-close"
-                data-player-bubble-close
-                aria-label="{{ t('common.close') }}"
-            >
-                <span aria-hidden="true">&#10005;</span>
-            </button>
         </div>
     {% endif %}
     <div class="audio-player__panel" data-player-panel>
@@ -61,6 +53,14 @@
                         aria-label="{{ t('player.collapse_mini_player') }}"
                     >
                         <span aria-hidden="true">&#8722;</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="audio-player__dismiss-toggle"
+                        data-player-dismiss-toggle
+                        aria-label="{{ t('common.close') }}"
+                    >
+                        <span class="audio-player__dismiss-indicator" aria-hidden="true"></span>
                     </button>
                 </div>
             </div>
