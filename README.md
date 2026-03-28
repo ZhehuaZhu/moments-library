@@ -7,6 +7,7 @@ Moments Library is a private, single-user-first archive built with Flask, SQLite
 - long-form content modules for books, music, and videos
 - a footprints map that aggregates location-based moments by city and country
 - an admin-only authoring workflow on top of a public read-only presentation layer
+- an installable iPhone-friendly PWA shell with branded icon and launch transition
 
 This README is written for maintainers. It explains how the app is structured, how data flows through it, how the modules relate to each other, and what to be careful about in production.
 
@@ -164,6 +165,22 @@ Only admins can:
 - manage workspace labels
 - create library entries and comments
 
+### Installable PWA
+
+The current public site is installable on iPhone/iPad through Safari "Add to Home Screen".
+
+What it currently includes:
+
+- installable manifest and Apple touch icon
+- service-worker-based shell caching
+- a branded launch transition for standalone mode
+- a "remember this device for 30 days" admin login option
+
+Important note:
+
+- this is still a web app first, not a fully native iOS app
+- for now, the PWA is the primary mobile-install path
+
 ## 3. High-Level Architecture
 
 The app uses a classic Flask app-factory structure:
@@ -227,7 +244,8 @@ Current deployment convention:
 - systemd service: `moments.service`
 - environment file: `/etc/moments.env`
 - local app bind: `127.0.0.1:8000`
-- public entry: `https://app.zhzhehua.com`
+- public entry: `https://www.zhzhehua.com`
+- legacy entry: `https://app.zhzhehua.com` redirects to `https://www.zhzhehua.com`
 
 ### Request lifecycle
 
@@ -557,6 +575,7 @@ The frontend entry point is:
 On page load it initializes:
 
 - navigation
+- PWA registration / standalone launch shell
 - composer modal
 - media viewer
 - moment menus
@@ -571,6 +590,7 @@ Main modules:
 - `feed.js`: feed-specific interactions
 - `media-viewer.js`: immersive preview overlay
 - `navigation.js`: sidebar, header interactions, panels, language switcher
+- `pwa.js`: service worker registration
 - `geolocation.js`: browser geolocation + reverse-geocode form binding
 - `library.js`: book/music/video module interactions
 - `footprints.js`: Leaflet-based footprints rendering, view/filter/sort/open mode handling
@@ -584,6 +604,7 @@ The main stylesheet entry is:
 It imports module files such as:
 
 - `foundation.css`
+- `pwa-shell.css`
 - `layout.css`
 - `components.css`
 - `feed.css`
@@ -597,6 +618,7 @@ It imports module files such as:
 Rough responsibility split:
 
 - `foundation.css`: tokens and base timing/shadow variables
+- `pwa-shell.css`: standalone launch transition and install-shell presentation
 - `layout.css`: frame, header, sidebar, shared shell
 - `components.css`: cards, buttons, shared UI primitives
 - `feed.css`: moment cards and feed media
@@ -813,19 +835,24 @@ This is a one-time trust configuration, not an app bug.
 
 ### Local code change
 
-1. edit files in VS Code
-2. review changes in GitHub Desktop
-3. `Commit to main`
-4. `Push origin`
+1. open `CODE-preview`
+2. run `sync-all-modules.bat` if you want every workspace aligned to the latest baseline
+3. open the module workspace you want to change
+4. commit in that module branch
+5. merge/sync the result into `codex/preview`
 
 ### Server deployment
 
-1. SSH into the server
-2. run:
+1. create a new release branch from `codex/preview`
+2. push the release branch
+3. SSH into the server
+4. run:
 
 ```bash
 cd /srv/moments/app
-bash scripts/update-production.sh
+git fetch origin
+git switch codex/release-YYYYMMDD[a-z] || git checkout -b codex/release-YYYYMMDD[a-z] origin/codex/release-YYYYMMDD[a-z]
+BRANCH=codex/release-YYYYMMDD[a-z] bash scripts/update-production.sh
 ```
 
 ### Success signal
@@ -915,5 +942,8 @@ The project is currently a medium-sized personal archive application, not a prot
 - revision history
 - recycle-bin safety
 - test coverage around the core flows
+- an installable PWA entry for iPhone/iPad
+- release-branch-based deployment
+- a multi-workspace team-style development workflow
 
 Future maintainers should treat it as a real product with a clear interaction model, not as a disposable demo.
