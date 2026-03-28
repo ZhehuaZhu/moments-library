@@ -652,8 +652,8 @@
     }
 
     .video-library-page__actions {
-        gap: 4px;
-        flex-wrap: nowrap;
+        grid-template-columns: repeat(2, 24px);
+        gap: 0;
         padding: 2px;
     }
 
