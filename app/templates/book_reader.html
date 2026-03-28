@@ -34,9 +34,18 @@
         ></button>
 
         <header class="reader-overlay reader-overlay--top" data-reader-top-panel>
-            <div class="reader-overlay__row reader-overlay__row--top">
-                <div class="reader-overlay__edge">
+            <div class="reader-overlay__row reader-overlay__row--top reader-overlay__row--top-compact">
+                <div class="reader-overlay__edge reader-overlay__edge--leading">
                     <a class="button button--ghost button--compact" href="{{ url_for('library.books') }}">{{ t('common.back') }}</a>
+                    {% if book.reader_kind == "html" %}
+                        <span class="reader-overlay__progress reader-overlay__progress--section" data-section-progress>
+                            {% if section_manifest %}
+                                {{ t('books.section') }} {{ current_section_number }} / {{ total_sections }}
+                            {% else %}
+                                {{ t('books.preparing') }}
+                            {% endif %}
+                        </span>
+                    {% endif %}
                 </div>
 
                 <div class="reader-book-badge">
@@ -62,23 +71,10 @@
                 </div>
 
                 <div class="reader-overlay__edge reader-overlay__edge--trailing">
-                    <a class="button button--ghost button--compact" href="{{ url_for('library.book_detail', book_id=book.id) }}">
-                        {{ t('common.info') }}
-                    </a>
-                    <button type="button" class="button button--ghost button--compact" data-reader-open-notes>
-                        {{ t('common.notes') }}
-                        <span class="reader-overlay__count">{{ reader_note_count }}</span>
-                    </button>
-                </div>
-            </div>
-            {% if book.reader_kind == "html" %}
-                <div class="reader-overlay__row reader-overlay__row--status">
-                    <div class="reader-progress-summary">
-                        <div class="reader-progress-summary__labels">
+                    {% if book.reader_kind == "html" %}
+                        <div class="reader-progress-summary reader-progress-summary--compact">
                             <span class="reader-progress-summary__title">{{ t('books.section') }}</span>
                             <strong data-reader-progress-text>{{ current_section_number }} / {{ total_sections }}</strong>
-                        </div>
-                        <div class="reader-progress-summary__track">
                             <div
                                 class="reader-progress-meter"
                                 data-reader-progress-meter
@@ -96,21 +92,16 @@
                             </div>
                             <span class="reader-progress-summary__percent" data-reader-progress-percent>{{ current_progress_percent }}%</span>
                         </div>
-                    </div>
-
-                    <span class="reader-overlay__progress" data-section-progress>
-                        {% if section_manifest %}
-                            {{ t('books.section') }} {{ current_section_number }} / {{ total_sections }}
-                        {% else %}
-                            {{ t('books.preparing') }}
-                        {% endif %}
-                    </span>
+                    {% else %}
+                        <span class="reader-overlay__progress">{{ book.author_name or book.source_format|upper }}</span>
+                    {% endif %}
+                    <a class="button button--ghost button--compact" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.info') }}</a>
+                    <button type="button" class="button button--ghost button--compact" data-reader-open-notes>
+                        {{ t('common.notes') }}
+                        <span class="reader-overlay__count">{{ reader_note_count }}</span>
+                    </button>
                 </div>
-            {% else %}
-                <div class="reader-overlay__row reader-overlay__row--status">
-                    <span class="reader-overlay__progress">{{ book.author_name or book.source_format|upper }}</span>
-                </div>
-            {% endif %}
+            </div>
         </header>
 
         <div class="reader-surface__stage" data-reader-stage>
@@ -171,53 +162,49 @@
         </div>
 
         <footer class="reader-overlay reader-overlay--bottom" data-reader-bottom-panel>
-            {% if book.reader_kind == "html" %}
-                <div class="reader-bottom-bar">
-                    <button type="button" class="button button--ghost button--compact reader-bottom-bar__nav" data-section-prev>
-                        {{ t('common.previous') }}
-                    </button>
+            <div class="reader-bottom-strip">
+                {% if book.reader_kind == "html" %}
+                    <div class="reader-bottom-bar reader-bottom-bar--dense">
+                        <button type="button" class="button button--ghost button--compact reader-bottom-bar__nav" data-section-prev>
+                            {{ t('common.previous') }}
+                        </button>
 
-                    <div class="reader-bottom-bar__main">
-                        <div class="reader-bottom-bar__summary">
-                            <span class="reader-bottom-bar__eyebrow">{{ t('books.reading') }}</span>
-                            <strong data-reader-current-section-label title="{{ current_section_label }}">{{ current_section_label }}</strong>
+                        <div class="reader-bottom-bar__main reader-bottom-bar__main--dense">
+                            <div class="reader-bottom-bar__summary reader-bottom-bar__summary--dense">
+                                <span class="reader-bottom-bar__eyebrow">{{ t('books.reading') }}</span>
+                                <strong data-reader-current-section-label title="{{ current_section_label }}">{{ current_section_label }}</strong>
+                            </div>
+
+                            <label class="reader-bottom-bar__toc reader-bottom-bar__toc--dense">
+                                <span>{{ t('books.section') }}</span>
+                                <select class="input" data-section-toc>
+                                    {% for section in section_manifest %}
+                                        <option value="{{ section.index }}" {% if section.index == active_section_index %}selected{% endif %}>
+                                            {{ section.label }}{% if section.is_front_matter %} ({{ t('books.front_matter') }}){% endif %}
+                                        </option>
+                                    {% else %}
+                                        <option value="0">{{ t('books.preparing_section') }}</option>
+                                    {% endfor %}
+                                </select>
+                            </label>
                         </div>
 
-                        <label class="reader-bottom-bar__toc">
-                            <span>{{ t('books.section') }}</span>
-                            <select class="input" data-section-toc>
-                                {% for section in section_manifest %}
-                                    <option value="{{ section.index }}" {% if section.index == active_section_index %}selected{% endif %}>
-                                        {{ section.label }}{% if section.is_front_matter %} ({{ t('books.front_matter') }}){% endif %}
-                                    </option>
-                                {% else %}
-                                    <option value="0">{{ t('books.preparing_section') }}</option>
-                                {% endfor %}
-                            </select>
-                        </label>
+                        <button type="button" class="button button--ghost button--compact reader-bottom-bar__nav" data-section-next>
+                            {{ t('common.next') }}
+                        </button>
                     </div>
+                {% endif %}
 
-                    <button type="button" class="button button--ghost button--compact reader-bottom-bar__nav" data-section-next>
-                        {{ t('common.next') }}
-                    </button>
-                </div>
-            {% endif %}
-
-            <div class="reader-bottom-actions">
-                <div class="reader-chip-row reader-chip-row--compact">
+                <div class="reader-bottom-actions reader-bottom-actions--dense">
                     {% if book.reader_kind == "html" %}
                         <span class="reader-chip reader-chip--ghost" data-reader-current-section-label title="{{ current_section_label }}">{{ current_section_label }}</span>
-                        <span class="reader-chip reader-chip--ghost" data-reader-progress-text>{{ current_section_number }} / {{ total_sections }}</span>
                     {% endif %}
                     <span class="reader-chip reader-chip--ghost">{{ reader_note_count }} {{ t('common.notes') }}</span>
-                </div>
-
-                <div class="reader-bottom-actions__buttons">
+                    <a class="button button--ghost button--compact" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.info') }}</a>
                     <button type="button" class="button button--ghost button--compact" data-reader-open-notes>
                         {{ t('common.notes') }}
                         <span class="reader-overlay__count">{{ reader_note_count }}</span>
                     </button>
-                    <a class="button button--ghost button--compact" href="{{ url_for('library.book_detail', book_id=book.id) }}">{{ t('common.info') }}</a>
                 </div>
             </div>
         </footer>
@@ -306,23 +293,25 @@
                             {{ t('books.manual_note_hint') }}
                         {% endif %}
                     </p>
-                    <label class="field">
-                        <span>{{ t('common.chapter_section') }}</span>
-                        <input type="text" name="chapter_label" class="input" placeholder="{{ t('common.optional') }}" data-book-chapter-field>
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.page') }}</span>
-                        <input type="text" name="page_label" class="input" placeholder="{{ t('common.optional') }}">
-                    </label>
-                    <label class="field">
-                        <span>{{ t('common.tag') }}</span>
-                        <select name="tag" class="input">
-                            <option value="">{{ t('common.no_tag') }}</option>
-                            {% for value, label in annotation_tag_choices %}
-                                <option value="{{ value }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </label>
+                    <div class="reader-notes-form__meta-grid">
+                        <label class="field">
+                            <span>{{ t('common.chapter_section') }}</span>
+                            <input type="text" name="chapter_label" class="input" placeholder="{{ t('common.optional') }}" data-book-chapter-field>
+                        </label>
+                        <label class="field">
+                            <span>{{ t('common.page') }}</span>
+                            <input type="text" name="page_label" class="input" placeholder="{{ t('common.optional') }}">
+                        </label>
+                        <label class="field">
+                            <span>{{ t('common.tag') }}</span>
+                            <select name="tag" class="input">
+                                <option value="">{{ t('common.no_tag') }}</option>
+                                {% for value, label in annotation_tag_choices %}
+                                    <option value="{{ value }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </div>
                     <label class="field">
                         <span>{{ t('common.comment') }}</span>
                         <textarea name="comment" rows="6" class="input textarea" required data-book-comment></textarea>
