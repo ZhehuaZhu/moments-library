@@ -66,10 +66,14 @@
 
                 <div class="reader-overlay__edge reader-overlay__edge--trailing">
                     <button type="button" class="button button--ghost button--compact reader-toolbar-button reader-toolbar-button--notes" data-reader-open-notes aria-label="{{ t('common.notes') }}">
-                        {{ t('common.notes') }}
+                        <span class="reader-toolbar-button__icon" aria-hidden="true">✎</span>
+                        <span class="reader-toolbar-button__label">{{ t('common.notes') }}</span>
                         <span class="reader-overlay__count">{{ reader_note_count }}</span>
                     </button>
-                    <a class="button button--ghost button--compact reader-toolbar-button reader-toolbar-button--info" href="{{ url_for('library.book_detail', book_id=book.id) }}" aria-label="{{ t('common.info') }}">{{ t('common.info') }}</a>
+                    <a class="button button--ghost button--compact reader-toolbar-button reader-toolbar-button--info" href="{{ url_for('library.book_detail', book_id=book.id) }}" aria-label="{{ t('common.info') }}">
+                        <span class="reader-toolbar-button__icon" aria-hidden="true">i</span>
+                        <span class="reader-toolbar-button__label">{{ t('common.info') }}</span>
+                    </a>
                 </div>
             </div>
         </header>
