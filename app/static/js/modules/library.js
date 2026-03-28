@@ -63,7 +63,7 @@ function isCompactReaderViewport() {
     return window.matchMedia("(max-width: 720px)").matches;
 }
 
-function scheduleReaderUiHide(shell, delay = 2600) {
+function scheduleReaderUiHide(shell, delay = 4200) {
     if (!(shell instanceof HTMLElement) || shell.classList.contains("is-reader-notes-visible")) {
         return;
     }
@@ -82,6 +82,17 @@ function openReaderPanel(shell, panel) {
     }
 
     shell.classList.add(`is-reader-${panel}-visible`);
+    scheduleReaderUiHide(shell);
+}
+
+function openReaderPanels(shell, panels = ["top", "bottom"]) {
+    if (!(shell instanceof HTMLElement)) {
+        return;
+    }
+
+    panels.forEach((panel) => {
+        shell.classList.add(`is-reader-${panel}-visible`);
+    });
     scheduleReaderUiHide(shell);
 }
 
@@ -570,7 +581,7 @@ function initImmersiveReaderShells() {
 
             if (
                 event.target.closest(
-                    "a, button, input, select, textarea, label, [role='button'], [data-reader-highlight]",
+                    "a, button, input, select, textarea, label, video, audio, iframe, [role='button'], [data-reader-highlight], [data-book-inline-media]",
                 )
             ) {
                 return;
@@ -586,7 +597,10 @@ function initImmersiveReaderShells() {
                 shell.classList.contains("is-reader-bottom-visible")
             ) {
                 closeReaderPanels(shell);
+                return;
             }
+
+            openReaderPanels(shell);
         }, { signal });
     });
 

@@ -3,14 +3,16 @@ from __future__ import annotations
 import shutil
 from copy import deepcopy
 from html import escape
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from lxml import html as lxml_html
 
 from .library import BOOK_ALLOWED_EXTENSIONS
 from .storage import (
+    AUDIO_EXTENSIONS,
     IMAGE_EXTENSIONS,
     UploadValidationError,
+    VIDEO_EXTENSIONS,
     resolve_storage_path,
     save_upload,
     store_generated_asset,
@@ -58,6 +60,8 @@ FRONT_MATTER_HINTS = (
 )
 
 ANNOTATABLE_BLOCK_TAGS = {"p", "li", "blockquote", "pre"}
+EMBEDDABLE_EPUB_EXTENSIONS = IMAGE_EXTENSIONS | VIDEO_EXTENSIONS | AUDIO_EXTENSIONS
+EMBEDDABLE_LOCAL_DOCUMENT_EXTENSIONS = EMBEDDABLE_EPUB_EXTENSIONS | {".html", ".htm"}
 
 
 def normalize_book_upload(
@@ -81,6 +85,8 @@ def normalize_book_upload(
         )
     else:
         cover_meta = extract_cover_from_epub(upload_root, reader_meta or source_meta)
+        if cover_meta is None:
+            cover_meta = extract_cover_from_mobi(upload_root, source_meta)
 
     return {
         "source": source_meta,
@@ -154,6 +160,14 @@ def normalize_reader_asset(
         normalized_extension = extracted.suffix.lower()
         if normalized_extension == ".epub":
             return build_epub_reader_asset(extracted, upload_root, f"{Path(original_name).stem}-reader")
+        if normalized_extension == ".html":
+            reader_meta = build_html_reader_asset(
+                extracted,
+                upload_root,
+                f"{Path(original_name).stem}-reader",
+            )
+            if reader_meta is not None:
+                return reader_meta
         if normalized_extension not in {".pdf", ".html"}:
             return None
 
@@ -181,8 +195,24 @@ def extract_cover_from_epub(
         return None
 
     asset_path = resolve_storage_path(upload_root, str(asset_meta["relative_path"]))
+    return extract_cover_from_epub_file(
+        asset_path,
+        upload_root,
+        fallback_name=f"{Path(original_name).stem}-cover.jpg",
+    )
+
+
+def extract_cover_from_epub_file(
+    epub_path: Path,
+    upload_root: str,
+    *,
+    fallback_name: str,
+) -> dict[str, str | int] | None:
+    if epub is None or not epub_path.exists():
+        return None
+
     try:
-        book = epub.read_epub(str(asset_path))
+        book = epub.read_epub(str(epub_path))
     except Exception:
         return None
 
@@ -190,7 +220,7 @@ def extract_cover_from_epub(
     if cover_item is None:
         return None
 
-    file_name = getattr(cover_item, "file_name", None) or f"{Path(original_name).stem}-cover.jpg"
+    file_name = getattr(cover_item, "file_name", None) or fallback_name
     media_type = getattr(cover_item, "media_type", None)
     content = cover_item.get_content()
     if not content:
@@ -205,6 +235,43 @@ def extract_cover_from_epub(
         )
     except UploadValidationError:
         return None
+
+
+def extract_cover_from_mobi(
+    upload_root: str,
+    asset_meta: dict[str, str | int],
+) -> dict[str, str | int] | None:
+    original_name = str(asset_meta["original_name"])
+    if Path(original_name).suffix.lower() != ".mobi" or mobi is None:
+        return None
+
+    source_path = resolve_storage_path(upload_root, str(asset_meta["relative_path"]))
+    tempdir = None
+    try:
+        tempdir, extracted_path = mobi.extract(str(source_path))
+        extracted = Path(extracted_path)
+        if not extracted.exists():
+            return None
+
+        normalized_extension = extracted.suffix.lower()
+        if normalized_extension == ".epub":
+            return extract_cover_from_epub_file(
+                extracted,
+                upload_root,
+                fallback_name=f"{Path(original_name).stem}-cover.jpg",
+            )
+        if normalized_extension == ".html":
+            return extract_cover_from_html_file(
+                extracted,
+                upload_root,
+                fallback_name=f"{Path(original_name).stem}-cover.jpg",
+            )
+        return None
+    except Exception:
+        return None
+    finally:
+        if tempdir:
+            shutil.rmtree(tempdir, ignore_errors=True)
 
 
 def ensure_book_reader_ready(book, upload_root: str) -> bool:
@@ -228,6 +295,8 @@ def ensure_book_reader_ready(book, upload_root: str) -> bool:
             "relative_path": book.relative_path,
         }
         cover_meta = extract_cover_from_epub(upload_root, source_meta)
+        if cover_meta is None:
+            cover_meta = extract_cover_from_mobi(upload_root, source_meta)
         if cover_meta:
             book.cover_original_name = cover_meta["original_name"]
             book.cover_stored_name = cover_meta["stored_name"]
@@ -262,6 +331,491 @@ def resolve_epub_cover_item(book) -> object | None:
     return None
 
 
+def normalize_epub_path(value: str) -> str:
+    parts: list[str] = []
+    for part in PurePosixPath(str(value or "").replace("\\", "/")).parts:
+        if part in {"", "."}:
+            continue
+        if part == "..":
+            if parts:
+                parts.pop()
+            continue
+        parts.append(part)
+    return PurePosixPath(*parts).as_posix() if parts else ""
+
+
+def is_external_epub_resource(value: str) -> bool:
+    normalized = str(value or "").strip().lower()
+    return normalized.startswith(("http://", "https://", "//", "data:", "mailto:", "tel:"))
+
+
+def resolve_epub_resource_path(base_file_name: str, reference: str) -> str | None:
+    candidate = normalize_href(reference).strip()
+    if not candidate or candidate.startswith("#") or is_external_epub_resource(candidate):
+        return None
+
+    if candidate.startswith("/"):
+        return normalize_epub_path(candidate)
+
+    base_path = normalize_epub_path(base_file_name)
+    if not base_path:
+        return normalize_epub_path(candidate)
+
+    return normalize_epub_path(str(PurePosixPath(base_path).parent / candidate))
+
+
+def merge_class_names(node, *class_names: str) -> None:
+    existing = [part for part in str(node.get("class") or "").split() if part]
+    for class_name in class_names:
+        if class_name and class_name not in existing:
+            existing.append(class_name)
+    if existing:
+        node.set("class", " ".join(existing))
+
+
+def replace_node(target, replacement) -> None:
+    parent = target.getparent()
+    if parent is None:
+        return
+    target.addprevious(replacement)
+    parent.remove(target)
+
+
+def create_reader_placeholder(message: str) -> object:
+    placeholder = lxml_html.Element("p")
+    placeholder.set("class", "book-reader-media-placeholder")
+    placeholder.text = message
+    return placeholder
+
+
+def ensure_media_wrapper(node, kind: str):
+    parent = node.getparent()
+    if parent is None:
+        return node
+
+    wrapper = parent if parent.tag == "figure" else None
+    if wrapper is None:
+        wrapper = lxml_html.Element("figure")
+        node.addprevious(wrapper)
+        parent.remove(node)
+        wrapper.append(node)
+
+    merge_class_names(wrapper, "book-reader-media-card", f"book-reader-media-card--{kind}")
+    wrapper.set("data-book-inline-media", kind)
+    return wrapper
+
+
+def append_media_caption(wrapper, caption: str | None) -> None:
+    text = " ".join(str(caption or "").split())
+    if not text:
+        return
+
+    existing = wrapper.xpath("./figcaption")
+    if existing:
+        merge_class_names(existing[0], "book-reader-media-card__caption")
+        return
+
+    caption_node = lxml_html.Element("figcaption")
+    caption_node.set("class", "book-reader-media-card__caption")
+    caption_node.text = text
+    wrapper.append(caption_node)
+
+
+def resolve_epub_media_asset(
+    asset_map: dict[str, dict[str, str]],
+    base_file_name: str,
+    reference: str | None,
+) -> dict[str, str] | None:
+    candidate = str(reference or "").strip()
+    if not candidate:
+        return None
+
+    if is_external_epub_resource(candidate):
+        return {
+            "src": candidate,
+            "mime_type": "",
+        }
+
+    resolved_path = resolve_epub_resource_path(base_file_name, candidate)
+    if resolved_path is None:
+        return None
+
+    return asset_map.get(resolved_path)
+
+
+def build_local_document_asset_map(
+    document,
+    document_path: Path,
+    upload_root: str,
+) -> dict[str, dict[str, str]]:
+    references: set[str] = set()
+    for attribute in ("src", "poster"):
+        for node in document.xpath(f".//*[@{attribute}]"):
+            value = str(node.get(attribute) or "").strip()
+            if value:
+                references.add(value)
+
+    asset_map: dict[str, dict[str, str]] = {}
+    for reference in references:
+        resolved_path = resolve_epub_resource_path(document_path.name, reference)
+        if resolved_path is None or resolved_path in asset_map:
+            continue
+
+        candidate_path = document_path.parent.joinpath(*PurePosixPath(resolved_path).parts)
+        if not candidate_path.exists() or not candidate_path.is_file():
+            continue
+        if candidate_path.suffix.lower() not in EMBEDDABLE_LOCAL_DOCUMENT_EXTENSIONS:
+            continue
+
+        try:
+            generated = store_generated_asset(
+                candidate_path.read_bytes(),
+                upload_root,
+                candidate_path.name,
+            )
+        except (OSError, UploadValidationError):
+            continue
+
+        asset_map[resolved_path] = {
+            "src": f"/static/{generated['relative_path']}",
+            "mime_type": str(generated["mime_type"] or ""),
+        }
+
+    return asset_map
+
+
+def find_html_cover_candidate(document, html_path: Path) -> Path | None:
+    prioritized: list[tuple[int, int, Path]] = []
+    for index, image in enumerate(document.xpath(".//img[@src]")):
+        reference = str(image.get("src") or "").strip()
+        resolved_path = resolve_epub_resource_path(html_path.name, reference)
+        if resolved_path is None:
+            continue
+
+        candidate_path = html_path.parent.joinpath(*PurePosixPath(resolved_path).parts)
+        if not candidate_path.exists() or not candidate_path.is_file():
+            continue
+        if candidate_path.suffix.lower() not in IMAGE_EXTENSIONS:
+            continue
+
+        descriptor = " ".join(
+            part for part in (
+                candidate_path.name,
+                image.get("alt"),
+                image.get("title"),
+                image.get("class"),
+                image.get("id"),
+            )
+            if part
+        ).lower()
+        priority = 0 if "cover" in descriptor else 10
+        prioritized.append((priority, index, candidate_path))
+
+    if prioritized:
+        prioritized.sort(key=lambda item: (item[0], item[1]))
+        return prioritized[0][2]
+
+    for candidate_path in html_path.parent.rglob("*"):
+        if (
+            candidate_path.is_file()
+            and candidate_path.suffix.lower() in IMAGE_EXTENSIONS
+            and "cover" in candidate_path.name.lower()
+        ):
+            return candidate_path
+
+    return None
+
+
+def extract_cover_from_html_file(
+    html_path: Path,
+    upload_root: str,
+    *,
+    fallback_name: str,
+) -> dict[str, str | int] | None:
+    try:
+        raw = html_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        raw = html_path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return None
+
+    try:
+        document = lxml_html.fromstring(raw)
+    except Exception:
+        return None
+
+    candidate_path = find_html_cover_candidate(document, html_path)
+    if candidate_path is None:
+        return None
+
+    try:
+        return store_generated_asset(
+            candidate_path.read_bytes(),
+            upload_root,
+            candidate_path.name or fallback_name,
+        )
+    except (OSError, UploadValidationError):
+        return None
+
+
+def build_epub_asset_map(book, upload_root: str) -> dict[str, dict[str, str]]:
+    asset_map: dict[str, dict[str, str]] = {}
+
+    for item in book.get_items():
+        file_name = normalize_epub_path(getattr(item, "file_name", "") or "")
+        if not file_name:
+            continue
+
+        media_type = str(getattr(item, "media_type", "") or "")
+        extension = Path(file_name).suffix.lower()
+        if not (
+            extension in EMBEDDABLE_EPUB_EXTENSIONS
+            or media_type.startswith(("image/", "video/", "audio/"))
+        ):
+            continue
+
+        try:
+            content = item.get_content()
+        except Exception:
+            continue
+
+        if not content:
+            continue
+
+        try:
+            generated = store_generated_asset(
+                content,
+                upload_root,
+                Path(file_name).name,
+                mime_type=media_type or None,
+            )
+        except UploadValidationError:
+            continue
+
+        asset_map[file_name] = {
+            "src": f"/static/{generated['relative_path']}",
+            "mime_type": str(generated["mime_type"] or ""),
+        }
+
+    return asset_map
+
+
+def rewrite_epub_media_nodes(
+    body,
+    file_name: str,
+    asset_map: dict[str, dict[str, str]],
+) -> None:
+    for image in list(body.xpath(".//img")):
+        alt_text = image.get("alt") or image.get("title") or ""
+        resolved_asset = resolve_epub_media_asset(asset_map, file_name, image.get("src"))
+        if resolved_asset is None:
+            replace_node(
+                image.getparent() if image.getparent() is not None and image.getparent().tag == "figure" else image,
+                create_reader_placeholder(
+                    alt_text or "Illustration omitted in the fast reader.",
+                ),
+            )
+            continue
+
+        image.set("src", resolved_asset["src"])
+        image.attrib.pop("srcset", None)
+        image.set("loading", "lazy")
+        image.set("decoding", "async")
+        merge_class_names(image, "book-reader-inline-image")
+        wrapper = ensure_media_wrapper(image, "image")
+        append_media_caption(wrapper, alt_text)
+
+    for video in list(body.xpath(".//video")):
+        wrapper = ensure_media_wrapper(video, "video")
+        merge_class_names(video, "book-reader-inline-video")
+        video.attrib.pop("autoplay", None)
+        video.set("controls", "controls")
+        video.set("playsinline", "playsinline")
+        video.set("preload", "metadata")
+
+        poster_asset = resolve_epub_media_asset(asset_map, file_name, video.get("poster"))
+        if poster_asset is not None:
+            video.set("poster", poster_asset["src"])
+        elif video.get("poster"):
+            video.attrib.pop("poster", None)
+
+        has_source = False
+        direct_asset = resolve_epub_media_asset(asset_map, file_name, video.get("src"))
+        if direct_asset is not None:
+            video.set("src", direct_asset["src"])
+            has_source = True
+        elif video.get("src"):
+            video.attrib.pop("src", None)
+
+        for source in list(video.xpath("./source")):
+            resolved_asset = resolve_epub_media_asset(asset_map, file_name, source.get("src"))
+            if resolved_asset is None:
+                source_parent = source.getparent()
+                if source_parent is not None:
+                    source_parent.remove(source)
+                continue
+
+            source.set("src", resolved_asset["src"])
+            if resolved_asset["mime_type"]:
+                source.set("type", resolved_asset["mime_type"])
+            has_source = True
+
+        if not has_source:
+            replace_node(wrapper, create_reader_placeholder("Embedded video is unavailable in the fast reader."))
+            continue
+
+        append_media_caption(wrapper, video.get("title") or video.get("aria-label"))
+
+    for audio in list(body.xpath(".//audio")):
+        wrapper = ensure_media_wrapper(audio, "audio")
+        merge_class_names(audio, "book-reader-inline-audio")
+        audio.set("controls", "controls")
+        audio.set("preload", "metadata")
+
+        has_source = False
+        direct_asset = resolve_epub_media_asset(asset_map, file_name, audio.get("src"))
+        if direct_asset is not None:
+            audio.set("src", direct_asset["src"])
+            has_source = True
+        elif audio.get("src"):
+            audio.attrib.pop("src", None)
+
+        for source in list(audio.xpath("./source")):
+            resolved_asset = resolve_epub_media_asset(asset_map, file_name, source.get("src"))
+            if resolved_asset is None:
+                source_parent = source.getparent()
+                if source_parent is not None:
+                    source_parent.remove(source)
+                continue
+
+            source.set("src", resolved_asset["src"])
+            if resolved_asset["mime_type"]:
+                source.set("type", resolved_asset["mime_type"])
+            has_source = True
+
+        if not has_source:
+            replace_node(wrapper, create_reader_placeholder("Embedded audio is unavailable in the fast reader."))
+            continue
+
+        append_media_caption(wrapper, audio.get("title") or audio.get("aria-label"))
+
+    for iframe in list(body.xpath(".//iframe")):
+        resolved_asset = resolve_epub_media_asset(asset_map, file_name, iframe.get("src"))
+        if resolved_asset is None:
+            replace_node(
+                iframe.getparent() if iframe.getparent() is not None and iframe.getparent().tag == "figure" else iframe,
+                create_reader_placeholder("Interactive embed unavailable in the fast reader."),
+            )
+            continue
+
+        iframe.set("src", resolved_asset["src"])
+        iframe.set("loading", "lazy")
+        iframe.set("allowfullscreen", "allowfullscreen")
+        iframe.set(
+            "allow",
+            "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen",
+        )
+        iframe.set("referrerpolicy", "strict-origin-when-cross-origin")
+        merge_class_names(iframe, "book-reader-inline-embed")
+        wrapper = ensure_media_wrapper(iframe, "embed")
+        append_media_caption(wrapper, iframe.get("title") or iframe.get("aria-label"))
+
+
+def render_reader_body_section(
+    body,
+    *,
+    file_name: str,
+    label: str,
+    index: int,
+    asset_map: dict[str, dict[str, str]],
+) -> dict[str, object] | None:
+    anchor = f"reader-section-{index + 1}"
+    rewrite_epub_media_nodes(body, file_name, asset_map)
+    text_content = " ".join(body.text_content().split())
+    has_embedded_media = bool(
+        body.xpath(".//*[contains(concat(' ', normalize-space(@class), ' '), ' book-reader-media-card ')]")
+    )
+    if not text_content and not has_embedded_media:
+        return None
+
+    annotate_section_blocks(body, anchor)
+
+    inner_html = "".join(
+        lxml_html.tostring(child, encoding="unicode", method="html")
+        for child in body
+    ).strip()
+    if not inner_html:
+        inner_html = (
+            f'<p data-reader-paragraph-id="{escape(anchor)}-p-1" data-reader-block-index="1">'
+            f"{escape(text_content)}</p>"
+        )
+
+    return {
+        "anchor": anchor,
+        "label": label,
+        "html": inner_html,
+        "source_href": normalize_href(file_name),
+        "is_front_matter": is_front_matter(file_name, label),
+    }
+
+
+def build_html_reader_asset(
+    html_path: Path,
+    upload_root: str,
+    file_stem: str,
+) -> dict[str, str | int] | None:
+    try:
+        raw = html_path.read_text(encoding="utf-8")
+    except UnicodeDecodeError:
+        raw = html_path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return None
+
+    try:
+        document = lxml_html.fromstring(raw)
+    except Exception:
+        return None
+
+    if document.xpath(
+        ".//section[contains(concat(' ', normalize-space(@class), ' '), ' book-reader-section ')]"
+    ):
+        return store_generated_asset(
+            raw.encode("utf-8"),
+            upload_root,
+            f"{file_stem}.html",
+            mime_type="text/html",
+        )
+
+    body = document.find(".//body")
+    if body is None:
+        body = document
+
+    for node in body.xpath(".//script|.//style|.//svg"):
+        parent = node.getparent()
+        if parent is not None:
+            parent.remove(node)
+
+    asset_map = build_local_document_asset_map(document, html_path, upload_root)
+    label = resolve_section_label(body, None, html_path.name, 0)
+    section = render_reader_body_section(
+        body,
+        file_name=html_path.name,
+        label=label,
+        index=0,
+        asset_map=asset_map,
+    )
+    if section is None:
+        return None
+
+    fragment = build_reader_fragment([section])
+    return store_generated_asset(
+        fragment.encode("utf-8"),
+        upload_root,
+        f"{file_stem}.html",
+        mime_type="text/html",
+    )
+
+
 def build_epub_reader_asset(
     epub_path: Path,
     upload_root: str,
@@ -276,6 +830,7 @@ def build_epub_reader_asset(
         return None
 
     navigation_map = build_navigation_map(book.toc)
+    asset_map = build_epub_asset_map(book, upload_root)
     sections: list[dict[str, object]] = []
     section_index = 0
 
@@ -289,7 +844,7 @@ def build_epub_reader_asset(
         if not file_name.lower().endswith((".xhtml", ".html", ".htm")):
             continue
 
-        section = render_epub_section(item, navigation_map, section_index)
+        section = render_epub_section(item, navigation_map, section_index, asset_map)
         if section is None:
             continue
 
@@ -336,6 +891,7 @@ def render_epub_section(
     item,
     navigation_map: dict[str, str],
     index: int,
+    asset_map: dict[str, dict[str, str]],
 ) -> dict[str, object] | None:
     try:
         document = lxml_html.fromstring(item.get_content())
@@ -351,42 +907,15 @@ def render_epub_section(
         if parent is not None:
             parent.remove(node)
 
-    for image in body.xpath(".//img"):
-        placeholder = lxml_html.Element("p")
-        placeholder.set("class", "book-reader-image-placeholder")
-        placeholder.text = image.get("alt") or "Illustration omitted in the fast reader."
-        image.addprevious(placeholder)
-        parent = image.getparent()
-        if parent is not None:
-            parent.remove(image)
-
-    text_content = " ".join(body.text_content().split())
     file_name = getattr(item, "file_name", "") or ""
     label = resolve_section_label(body, navigation_map.get(normalize_href(file_name)), file_name, index)
-    anchor = f"reader-section-{index + 1}"
-
-    if not text_content:
-        return None
-
-    annotate_section_blocks(body, anchor)
-
-    inner_html = "".join(
-        lxml_html.tostring(child, encoding="unicode", method="html")
-        for child in body
-    ).strip()
-    if not inner_html:
-        inner_html = (
-            f'<p data-reader-paragraph-id="{escape(anchor)}-p-1" data-reader-block-index="1">'
-            f"{escape(text_content)}</p>"
-        )
-
-    return {
-        "anchor": anchor,
-        "label": label,
-        "html": inner_html,
-        "source_href": normalize_href(file_name),
-        "is_front_matter": is_front_matter(file_name, label),
-    }
+    return render_reader_body_section(
+        body,
+        file_name=file_name,
+        label=label,
+        index=index,
+        asset_map=asset_map,
+    )
 
 
 def resolve_section_label(body, nav_label: str | None, file_name: str, index: int) -> str:

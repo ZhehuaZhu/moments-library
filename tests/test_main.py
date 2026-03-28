@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import shutil
+import tempfile
 from datetime import date, datetime, timedelta
 from io import BytesIO
+from pathlib import Path
 
 from ebooklib import epub
 from PIL import Image
@@ -21,6 +24,7 @@ from app.models import (
     VideoComment,
     VideoEntry,
 )
+from app.services.books import ensure_book_reader_ready
 from app.services.folders import serialize_folder_snapshot
 from app.services.image_previews import ensure_attachment_image_preview
 from app.services.storage import resolve_storage_path
@@ -70,6 +74,38 @@ def build_epub_with_front_matter_bytes(title: str) -> bytes:
         epub.Link("chapter-1.xhtml", "First Night", "chapter-1"),
     )
     book.spine = ["nav", copyright_page, contents_page, chapter]
+    book.add_item(epub.EpubNcx())
+    book.add_item(epub.EpubNav())
+
+    output = BytesIO()
+    epub.write_epub(output, book)
+    return output.getvalue()
+
+
+def build_epub_with_embedded_video_bytes(title: str, chapter_title: str) -> bytes:
+    book = epub.EpubBook()
+    book.set_identifier(f"{title}-video-id")
+    book.set_title(title)
+    book.set_language("en")
+
+    chapter = epub.EpubHtml(title=chapter_title, file_name="chapter-1.xhtml", lang="en")
+    chapter.content = """
+        <video title="MBTI walkthrough" controls>
+            <source src="media/demo.mp4" type="video/mp4">
+        </video>
+    """
+
+    demo_video = epub.EpubItem(
+        uid="demo-video",
+        file_name="media/demo.mp4",
+        media_type="video/mp4",
+        content=b"fake video bytes",
+    )
+
+    book.add_item(chapter)
+    book.add_item(demo_video)
+    book.toc = (epub.Link("chapter-1.xhtml", chapter_title, "chapter-1"),)
+    book.spine = ["nav", chapter]
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
 
@@ -606,6 +642,106 @@ def test_admin_can_create_epub_book_and_open_epub_reader(admin_client, app):
     payload = section_response.get_json()
     assert payload["number"] == 2
     assert "First Night" in payload["label"]
+
+
+def test_epub_reader_keeps_embedded_video_sections(admin_client, app):
+    response = admin_client.post(
+        "/books",
+        data={
+            "title": "MBTI App Walkthrough",
+            "source_file": (
+                BytesIO(build_epub_with_embedded_video_bytes("MBTI App Walkthrough", "Software Demo")),
+                "mbti-demo.epub",
+            ),
+        },
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+
+    with app.app_context():
+        book = Book.query.filter_by(title="MBTI App Walkthrough").one()
+        book_id = book.id
+
+    reader_response = admin_client.get(f"/books/{book_id}/reader")
+    assert reader_response.status_code == 200
+    assert b"book-reader-media-card--video" in reader_response.data
+    assert b"book-reader-inline-video" in reader_response.data
+    assert b"MBTI walkthrough" in reader_response.data
+    assert b"/static/uploads/" in reader_response.data
+    assert b"Embedded video is unavailable in the fast reader." not in reader_response.data
+
+
+def test_mobi_reader_ready_builds_fast_reader_and_cover(app, monkeypatch):
+    upload_root = Path(app.config["UPLOAD_FOLDER"])
+    source_relative_path = "uploads/2026/03/test-book.mobi"
+    source_path = resolve_storage_path(app.config["UPLOAD_FOLDER"], source_relative_path)
+    source_path.parent.mkdir(parents=True, exist_ok=True)
+    source_path.write_bytes(b"fake mobi bytes")
+
+    extracted_roots: list[Path] = []
+
+    def fake_extract(_):
+        extracted_root = Path(tempfile.mkdtemp())
+        extracted_roots.append(extracted_root)
+        html_path = extracted_root / "book.html"
+        cover_path = extracted_root / "cover.jpg"
+        html_path.write_text(
+            """
+            <html>
+                <body>
+                    <h1>MBTI Notes</h1>
+                    <p>This MOBI file should become a fast reader section.</p>
+                    <img src="cover.jpg" alt="Cover image">
+                </body>
+            </html>
+            """,
+            encoding="utf-8",
+        )
+        cover_path.write_bytes(build_photo_bytes((640, 960)))
+        return str(extracted_root), str(html_path)
+
+    monkeypatch.setattr("app.services.books.mobi.extract", fake_extract)
+
+    try:
+        with app.app_context():
+            owner = User.query.filter_by(username="admin").one()
+            book = Book(
+                title="Imported MOBI",
+                author_name="Reader",
+                status="want_to_read",
+                owner_id=owner.id,
+                source_format="mobi",
+                original_name="imported.mobi",
+                stored_name="test-book.mobi",
+                relative_path=source_relative_path,
+                mime_type="application/x-mobipocket-ebook",
+                size_bytes=source_path.stat().st_size,
+            )
+            db.session.add(book)
+            db.session.commit()
+
+            changed = ensure_book_reader_ready(book, app.config["UPLOAD_FOLDER"])
+
+            assert changed is True
+            assert book.reader_format == "html"
+            assert book.reader_relative_path is not None
+            assert book.cover_relative_path is not None
+
+            reader_asset = resolve_storage_path(app.config["UPLOAD_FOLDER"], book.reader_relative_path)
+            reader_markup = reader_asset.read_text(encoding="utf-8", errors="ignore")
+            assert "book-reader-section" in reader_markup
+            assert "MBTI Notes" in reader_markup
+            assert "book-reader-inline-image" in reader_markup
+            assert "/static/uploads/" in reader_markup
+
+            cover_asset = resolve_storage_path(app.config["UPLOAD_FOLDER"], book.cover_relative_path)
+            assert cover_asset.exists()
+            assert cover_asset.suffix.lower() == ".jpg"
+    finally:
+        for extracted_root in extracted_roots:
+            shutil.rmtree(extracted_root, ignore_errors=True)
 
 
 def test_html_reader_skips_front_matter_by_default(admin_client, app):
