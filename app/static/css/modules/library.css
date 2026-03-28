@@ -4055,3 +4055,725 @@
         justify-content: center;
     }
 }
+
+.app-body.book-reader-page .reader-overlay--top {
+    width: min(calc(100% - 56px), 980px);
+    padding: 14px 16px;
+    border-radius: 26px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(252, 247, 239, 0.88)),
+        rgba(255, 255, 255, 0.84);
+    box-shadow:
+        0 22px 38px rgba(88, 73, 48, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.app-body.book-reader-page .reader-overlay--bottom {
+    width: min(calc(100% - 56px), 820px);
+    padding: 12px 14px;
+    border-radius: 28px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(252, 247, 239, 0.82)),
+        rgba(255, 255, 255, 0.8);
+    box-shadow:
+        0 26px 44px rgba(88, 73, 48, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.app-body.book-reader-page .reader-overlay__row--status {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+}
+
+.app-body.book-reader-page .reader-overlay__row--status .reader-overlay__progress {
+    justify-self: end;
+}
+
+.app-body.book-reader-page .reader-book-badge__copy strong,
+.app-body.book-reader-page .reader-notes-summary__copy strong {
+    white-space: nowrap;
+}
+
+.app-body.book-reader-page .reader-book-badge__copy > span,
+.app-body.book-reader-page .reader-notes-summary__copy > span {
+    font-size: 0.84rem;
+}
+
+.app-body.book-reader-page .reader-bottom-bar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 14px;
+    padding: 10px;
+    border-radius: 22px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(249, 244, 235, 0.72)),
+        rgba(255, 255, 255, 0.72);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.78),
+        0 12px 22px rgba(88, 73, 48, 0.08);
+}
+
+.app-body.book-reader-page .reader-bottom-bar__nav {
+    min-width: 112px;
+    justify-content: center;
+}
+
+.app-body.book-reader-page .reader-bottom-bar__main {
+    min-width: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.app-body.book-reader-page .reader-bottom-bar__summary {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+}
+
+.app-body.book-reader-page .reader-bottom-bar__eyebrow {
+    color: rgba(85, 101, 110, 0.74);
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.app-body.book-reader-page .reader-bottom-bar__summary strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #213c37;
+    font-size: 0.98rem;
+    letter-spacing: -0.03em;
+}
+
+.app-body.book-reader-page .reader-bottom-bar__toc {
+    gap: 6px;
+}
+
+.app-body.book-reader-page .reader-bottom-bar__toc .input {
+    min-height: 42px;
+    border-radius: 16px;
+}
+
+.app-body.book-reader-page .reader-bottom-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+}
+
+.app-body.book-reader-page .reader-bottom-actions__buttons {
+    justify-content: flex-end;
+}
+
+.app-body.book-reader-page .reader-chip-row {
+    gap: 7px;
+}
+
+.app-body.book-reader-page .reader-chip {
+    min-height: 30px;
+    background: rgba(255, 255, 255, 0.74);
+}
+
+.app-body.book-reader-page .reader-progress-summary__labels strong {
+    white-space: nowrap;
+}
+
+.app-body.book-reader-page .reader-surface__content--book {
+    padding: 34px 28px 32px;
+    background:
+        linear-gradient(90deg, rgba(184, 160, 119, 0.08) 0, rgba(255, 255, 255, 0) 8%, rgba(255, 255, 255, 0) 92%, rgba(184, 160, 119, 0.08) 100%),
+        linear-gradient(180deg, rgba(252, 249, 242, 0.99), rgba(247, 241, 231, 0.97));
+}
+
+.app-body.book-reader-page .book-reader-article {
+    gap: 30px;
+}
+
+.app-body.book-reader-page .book-reader-section,
+.app-body.book-reader-page .reader-surface__content:not(.reader-surface__content--book) {
+    font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+}
+
+.app-body.book-reader-page .book-reader-section {
+    max-width: 920px;
+    min-height: calc(100% - 40px);
+    padding: clamp(48px, 6vw, 74px) clamp(34px, 6vw, 88px) clamp(94px, 12vw, 132px);
+    border-radius: 32px;
+    border-color: rgba(136, 118, 84, 0.08);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 252, 246, 0.99) 18%, rgba(248, 242, 231, 0.99) 100%);
+    box-shadow:
+        0 34px 58px rgba(104, 88, 63, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.app-body.book-reader-page .book-reader-section__header {
+    gap: 10px;
+    margin-bottom: 36px;
+    padding-bottom: 20px;
+}
+
+.app-body.book-reader-page .book-reader-section__header h2 {
+    max-width: 24ch;
+    font-size: clamp(1.42rem, 2.2vw, 1.96rem);
+    line-height: 1.15;
+    color: #1c3732;
+}
+
+.app-body.book-reader-page .book-reader-section p,
+.app-body.book-reader-page .book-reader-section li,
+.app-body.book-reader-page .book-reader-section blockquote {
+    max-width: 68ch;
+    font-size: 1.08rem;
+    line-height: 2.02;
+    color: #2d3b43;
+}
+
+.app-body.book-reader-page .book-reader-section [data-reader-paragraph-id] {
+    scroll-margin-top: 96px;
+}
+
+.app-body.book-reader-page .book-reader-media-card {
+    max-width: min(100%, 74ch);
+    display: grid;
+    gap: 12px;
+    margin: 2.4rem auto;
+    padding: 14px;
+    border: 1px solid rgba(115, 100, 75, 0.12);
+    border-radius: 28px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 242, 231, 0.92)),
+        rgba(255, 255, 255, 0.92);
+    box-shadow:
+        0 24px 40px rgba(88, 73, 48, 0.11),
+        inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.app-body.book-reader-page .book-reader-media-card--video,
+.app-body.book-reader-page .book-reader-media-card--embed {
+    max-width: min(100%, 78ch);
+}
+
+.app-body.book-reader-page .book-reader-inline-image,
+.app-body.book-reader-page .book-reader-inline-video,
+.app-body.book-reader-page .book-reader-inline-embed,
+.app-body.book-reader-page .book-reader-inline-audio {
+    width: 100%;
+    display: block;
+    border: 0;
+    border-radius: 22px;
+}
+
+.app-body.book-reader-page .book-reader-inline-image {
+    max-height: min(76vh, 720px);
+    object-fit: contain;
+    background: rgba(245, 240, 231, 0.84);
+}
+
+.app-body.book-reader-page .book-reader-inline-video,
+.app-body.book-reader-page .book-reader-inline-embed {
+    aspect-ratio: 16 / 9;
+    background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.16), transparent 30%),
+        linear-gradient(145deg, rgba(22, 31, 39, 0.98), rgba(39, 55, 63, 0.96));
+    box-shadow: 0 18px 30px rgba(20, 28, 34, 0.18);
+}
+
+.app-body.book-reader-page iframe.book-reader-inline-embed {
+    min-height: 320px;
+}
+
+.app-body.book-reader-page .book-reader-inline-audio {
+    min-height: 56px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: inset 0 0 0 1px rgba(115, 100, 75, 0.08);
+}
+
+.app-body.book-reader-page .book-reader-media-card__caption {
+    color: rgba(85, 101, 110, 0.92);
+    font-size: 0.86rem;
+    line-height: 1.55;
+    text-align: center;
+}
+
+.app-body.book-reader-page .book-reader-media-placeholder {
+    max-width: min(100%, 68ch);
+    display: grid;
+    place-items: center;
+    min-height: 120px;
+    margin: 2rem auto;
+    padding: 20px 24px;
+    border: 1px dashed rgba(115, 100, 75, 0.28);
+    border-radius: 24px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 242, 231, 0.84)),
+        rgba(255, 255, 255, 0.8);
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+}
+
+@media (max-width: 980px) {
+    .app-body.book-reader-page .reader-overlay--top,
+    .app-body.book-reader-page .reader-overlay--bottom {
+        width: calc(100% - 32px);
+    }
+
+    .app-body.book-reader-page .reader-overlay__row--top,
+    .app-body.book-reader-page .reader-overlay__row--status {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-body.book-reader-page .reader-overlay__edge,
+    .app-body.book-reader-page .reader-overlay__edge--trailing {
+        justify-content: space-between;
+    }
+
+    .app-body.book-reader-page .reader-bottom-actions {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-body.book-reader-page .reader-bottom-actions__buttons {
+        justify-content: flex-start;
+    }
+
+    .app-body.book-reader-page .reader-surface__content--book {
+        padding: 28px 20px 24px;
+    }
+
+    .app-body.book-reader-page .book-reader-section {
+        padding: clamp(40px, 5vw, 62px) clamp(24px, 5vw, 60px) clamp(82px, 10vw, 112px);
+    }
+}
+
+@media (max-width: 720px) {
+    .app-body.book-reader-page .page-shell {
+        padding: 10px;
+    }
+
+    .app-body.book-reader-page .main-panel {
+        padding-bottom: 92px;
+    }
+
+    .app-body.book-reader-page .reader-surface--immersive,
+    .app-body.book-reader-page .reader-surface__content,
+    .app-body.book-reader-page .reader-surface__embed,
+    .app-body.book-reader-page .reader-layout--immersive .reader-surface__content--book {
+        min-height: calc(100vh - 20px);
+        height: calc(100vh - 20px);
+        border-radius: 28px;
+    }
+
+    .app-body.book-reader-page .reader-overlay--top {
+        top: 12px;
+    }
+
+    .app-body.book-reader-page .reader-overlay--bottom {
+        bottom: 12px;
+    }
+
+    .app-body.book-reader-page .reader-overlay--top,
+    .app-body.book-reader-page .reader-overlay--bottom {
+        width: calc(100% - 20px);
+        padding: 11px 12px;
+        border-radius: 22px;
+    }
+
+    .app-body.book-reader-page .reader-book-badge {
+        grid-template-columns: 36px minmax(0, 1fr);
+        gap: 8px;
+    }
+
+    .app-body.book-reader-page .reader-book-badge__cover {
+        width: 36px;
+        height: 50px;
+        border-radius: 12px;
+    }
+
+    .app-body.book-reader-page .reader-overlay__edge {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .app-body.book-reader-page .reader-bottom-bar {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-body.book-reader-page .reader-bottom-bar__nav {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .app-body.book-reader-page .reader-bottom-actions__buttons {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .app-body.book-reader-page .reader-notes-sheet {
+        top: auto;
+        right: 10px;
+        bottom: 10px;
+        left: 10px;
+        width: auto;
+        max-height: min(78vh, 720px);
+        border-radius: 28px;
+        transform: translateY(18px);
+    }
+
+    .app-body.book-reader-page .reader-layout--immersive.is-reader-notes-visible .reader-notes-sheet {
+        transform: translateY(0);
+    }
+
+    .app-body.book-reader-page .book-reader-section {
+        border-radius: 26px;
+        padding: 34px 20px 78px;
+    }
+
+    .app-body.book-reader-page .book-reader-section__header {
+        margin-bottom: 24px;
+        padding-bottom: 14px;
+    }
+
+    .app-body.book-reader-page .book-reader-section p,
+    .app-body.book-reader-page .book-reader-section li,
+    .app-body.book-reader-page .book-reader-section blockquote {
+        font-size: 1rem;
+        line-height: 1.88;
+    }
+
+    .app-body.book-reader-page .book-reader-media-card {
+        margin: 1.8rem auto;
+        padding: 10px;
+        border-radius: 22px;
+    }
+
+    .app-body.book-reader-page iframe.book-reader-inline-embed {
+        min-height: 240px;
+    }
+}
+
+@media (max-width: 540px) {
+    .app-body.book-reader-page .reader-overlay--top,
+    .app-body.book-reader-page .reader-overlay--bottom {
+        width: calc(100% - 12px);
+        padding: 10px;
+        border-radius: 20px;
+    }
+
+    .app-body.book-reader-page .reader-overlay .button {
+        min-height: 34px;
+        font-size: 0.78rem;
+    }
+
+    .app-body.book-reader-page .reader-overlay__progress {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .app-body.book-reader-page .reader-book-badge__copy strong {
+        font-size: 0.9rem;
+    }
+
+    .app-body.book-reader-page .reader-book-badge__copy > span {
+        font-size: 0.78rem;
+    }
+
+    .app-body.book-reader-page .reader-progress-summary__labels,
+    .app-body.book-reader-page .reader-progress-summary__track {
+        gap: 8px;
+    }
+
+    .app-body.book-reader-page .reader-bottom-actions__buttons {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .app-body.book-reader-page .reader-chip-row {
+        gap: 6px;
+    }
+
+    .app-body.book-reader-page .reader-chip {
+        min-height: 28px;
+        padding: 0 9px;
+        font-size: 0.7rem;
+    }
+
+    .app-body.book-reader-page .reader-surface__content--book {
+        padding: 22px 10px 16px;
+    }
+
+    .app-body.book-reader-page .book-reader-section {
+        padding: 28px 16px 72px;
+        border-radius: 22px;
+    }
+
+    .app-body.book-reader-page .book-reader-section__header h2 {
+        font-size: 1.24rem;
+    }
+
+    .app-body.book-reader-page .book-reader-section p,
+    .app-body.book-reader-page .book-reader-section li,
+    .app-body.book-reader-page .book-reader-section blockquote {
+        font-size: 0.96rem;
+        line-height: 1.82;
+    }
+
+    .app-body.book-reader-page .book-reader-media-placeholder {
+        min-height: 96px;
+        padding: 16px 18px;
+        border-radius: 20px;
+        font-size: 0.84rem;
+    }
+
+    .app-body.book-reader-page iframe.book-reader-inline-embed {
+        min-height: 200px;
+    }
+}
+
+body.app-body.book-reader-page .page-shell {
+    padding: 18px;
+}
+
+body.app-body.book-reader-page .main-panel {
+    padding-bottom: 132px;
+}
+
+body.app-body.book-reader-page .reader-layout--immersive .reader-overlay {
+    width: min(calc(100% - 56px), 980px);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+}
+
+body.app-body.book-reader-page .reader-layout--immersive .reader-overlay--top {
+    top: 26px;
+    transform: translate(-50%, -10px);
+}
+
+body.app-body.book-reader-page .reader-layout--immersive .reader-overlay--bottom {
+    width: min(calc(100% - 56px), 820px);
+    bottom: 26px;
+    transform: translate(-50%, 10px);
+}
+
+body.app-body.book-reader-page .reader-layout--immersive .reader-surface__content--book {
+    padding: 34px 28px 32px;
+}
+
+body.app-body.book-reader-page .reader-layout--immersive .book-reader-section {
+    max-width: 920px;
+    padding: clamp(48px, 6vw, 74px) clamp(34px, 6vw, 88px) clamp(94px, 12vw, 132px);
+    border: 1px solid rgba(136, 118, 84, 0.08);
+    border-radius: 32px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 252, 246, 0.99) 18%, rgba(248, 242, 231, 0.99) 100%);
+    box-shadow:
+        0 34px 58px rgba(104, 88, 63, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+body.app-body.book-reader-page .reader-layout--immersive .reader-bottom-actions {
+    display: grid;
+}
+
+@media (max-width: 1080px) {
+    body.app-body.book-reader-page .page-shell {
+        padding: 14px;
+    }
+
+    body.app-body.book-reader-page .main-panel {
+        padding-bottom: 108px;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-overlay__row--status {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 720px) {
+    body.app-body.book-reader-page .page-shell {
+        padding: 10px;
+    }
+
+    body.app-body.book-reader-page .main-panel {
+        padding-bottom: 92px;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-overlay {
+        width: calc(100% - 20px);
+        left: 10px;
+        right: 10px;
+        padding: 11px 12px;
+        border-radius: 22px;
+        transform: none;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-overlay--top {
+        top: 12px;
+        transform: translateY(-10px);
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-overlay--bottom {
+        width: calc(100% - 20px);
+        bottom: 12px;
+        transform: translateY(10px);
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-overlay__edge,
+    body.app-body.book-reader-page .reader-layout--immersive .reader-overlay__edge--trailing {
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-book-badge {
+        grid-template-columns: 36px minmax(0, 1fr);
+        gap: 8px;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-book-badge__cover,
+    body.app-body.book-reader-page .reader-layout--immersive .reader-book-badge__copy .eyebrow,
+    body.app-body.book-reader-page .reader-layout--immersive .reader-overlay__progress {
+        display: block;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-overlay__progress {
+        display: inline-flex;
+        width: 100%;
+        justify-content: center;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-bottom-bar {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 14px;
+        padding: 10px;
+        border-radius: 22px;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-bottom-bar__toc span {
+        display: block;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-bottom-actions {
+        display: grid;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-bottom-actions__buttons {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        justify-content: stretch;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-surface--immersive,
+    body.app-body.book-reader-page .reader-layout--immersive .reader-surface__stage,
+    body.app-body.book-reader-page .reader-layout--immersive .reader-surface__content,
+    body.app-body.book-reader-page .reader-layout--immersive .reader-surface__content--book,
+    body.app-body.book-reader-page .reader-layout--immersive .reader-surface__embed {
+        min-height: calc(100vh - 20px);
+        height: calc(100vh - 20px);
+        border-radius: 28px;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-surface__content {
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-surface__content--book {
+        padding: 28px 20px 24px;
+        background:
+            linear-gradient(90deg, rgba(184, 160, 119, 0.08) 0, rgba(255, 255, 255, 0) 8%, rgba(255, 255, 255, 0) 92%, rgba(184, 160, 119, 0.08) 100%),
+            linear-gradient(180deg, rgba(252, 249, 242, 0.99), rgba(247, 241, 231, 0.97));
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .book-reader-section {
+        max-width: none;
+        padding: 34px 20px 78px;
+        border: 1px solid rgba(136, 118, 84, 0.08);
+        border-radius: 26px;
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 252, 246, 0.99) 18%, rgba(248, 242, 231, 0.99) 100%);
+        box-shadow:
+            0 24px 40px rgba(104, 88, 63, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.74);
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .book-reader-section__header {
+        margin-bottom: 24px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(115, 100, 75, 0.12);
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .book-reader-section__header h2 {
+        font-size: 1.24rem;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-notes-sheet {
+        top: auto;
+        right: 10px;
+        bottom: 10px;
+        left: 10px;
+        width: auto;
+        max-height: min(78vh, 720px);
+        padding: 18px;
+        border-radius: 28px;
+        transform: translateY(18px);
+    }
+}
+
+@media (max-width: 540px) {
+    body.app-body.book-reader-page .page-shell {
+        padding: 8px;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-overlay {
+        width: calc(100% - 12px);
+        left: 6px;
+        right: 6px;
+        padding: 10px;
+        border-radius: 20px;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-overlay--top {
+        top: 8px;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-overlay--bottom {
+        width: calc(100% - 12px);
+        bottom: 8px;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-overlay .button {
+        min-height: 34px;
+        font-size: 0.78rem;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-bottom-actions__buttons {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-surface__content--book {
+        padding: 22px 10px 16px;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .book-reader-section {
+        padding: 28px 16px 72px;
+        border-radius: 22px;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .book-reader-section p,
+    body.app-body.book-reader-page .reader-layout--immersive .book-reader-section li,
+    body.app-body.book-reader-page .reader-layout--immersive .book-reader-section blockquote {
+        font-size: 0.96rem;
+        line-height: 1.82;
+    }
+
+    body.app-body.book-reader-page .reader-layout--immersive .reader-notes-sheet {
+        right: 8px;
+        bottom: 8px;
+        left: 8px;
+        padding: 16px;
+        border-radius: 22px;
+    }
+}
