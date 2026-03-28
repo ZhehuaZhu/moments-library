@@ -651,7 +651,7 @@
         padding: 13px 12px 11px;
     }
 
-    .video-library-page__actions {
+    .video-library-page__controls {
         gap: 6px;
     }
 
@@ -671,8 +671,7 @@
         font-size: 0.84rem;
     }
 
-    .video-library-page__add-button,
-    .video-library-page__folder-button {
+    .video-library-page__control {
         width: 32px;
         height: 32px;
         border-radius: 10px;
@@ -707,10 +706,6 @@
     .video-library-card__body {
         gap: 5px;
         padding: 0 2px 2px;
-    }
-
-    .video-library-card__header {
-        gap: 8px;
     }
 
     .video-library-card__date {
